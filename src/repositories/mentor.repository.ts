@@ -21,10 +21,12 @@ export class MentorRepository {
   }
 
  async create(item: Omit<Mentor, "id" | "created_at" | "updated_at">): Promise<Mentor> {
+  const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const [result] = await pool.query<any>(
       `INSERT INTO mentors 
       (name, thumbnail, experience, verified, assist_student, connection_link, label, created_at, updated_at) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         item.name,
         item.thumbnail,
