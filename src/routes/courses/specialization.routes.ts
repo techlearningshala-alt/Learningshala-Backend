@@ -9,6 +9,6 @@ router.get("/", SpecializationController.getAll);
 router.get("/:id", SpecializationController.getOne);
 router.post("/",  upload.single("thumbnail"), SpecializationController.create);
 router.put("/:id",  upload.single("thumbnail"), SpecializationController.update);
-router.delete("/:id", authMiddleware, SpecializationController.remove);
+router.delete("/:id", SpecializationController.remove);
 
 export default router;
