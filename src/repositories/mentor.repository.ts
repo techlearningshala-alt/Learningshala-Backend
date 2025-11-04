@@ -35,6 +35,7 @@ export class MentorRepository {
         item.assist_student,
         item.connection_link,
         item.label,
+        createdAt
         // item.status, // if you have a status field
       ]
     );
