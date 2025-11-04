@@ -2,6 +2,8 @@ import pool from "../config/db";
 
 export class TokenRepository {
   async saveRefreshToken(userId: number, token: string, expiresAt: string) {
+     expiresAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
     await pool.query("INSERT INTO refresh_tokens (user_id, token, expires_at, created_at) VALUES (?, ?, ?, NOW())", [userId, token, expiresAt]);
   }
 
