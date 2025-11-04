@@ -45,36 +45,46 @@ export class MentorRepository {
     return rows[0] as Mentor;
   }
 
-async update(
-  id: number,
-  item: Partial<Mentor>,
-  saveWithDate: boolean
-): Promise<boolean> {
-  const fields: string[] = [];
-  const values: any[] = [];
-
-  // Add all fields except saveWithDate
-  for (const [key, value] of Object.entries(item)) {
-    fields.push(`${key} = ?`);
-    values.push(value);
+  async update(
+    id: number,
+    item: Partial<Mentor>,
+    saveWithDate: boolean
+  ): Promise<boolean> {
+    const fields: string[] = [];
+    const values: any[] = [];
+  
+    // Helper: Convert ISO string (with T/Z) to MySQL DATETIME format
+    const toMySQLDateTime = (val: any) => {
+      if (typeof val === "string" && val.includes("T")) {
+        const date = new Date(val);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString().slice(0, 19).replace("T", " "); // "YYYY-MM-DD HH:MM:SS"
+        }
+      }
+      return val;
+    };
+  
+    // Add all fields except saveWithDate
+    for (const [key, value] of Object.entries(item)) {
+      fields.push(`${key} = ?`);
+      values.push(toMySQLDateTime(value));
+    }
+  
+    if (fields.length === 0) return false;
+  
+    // Only update updated_at if saveWithDate is true
+    if (saveWithDate) fields.push("updated_at = NOW()");
+  
+    values.push(id);
+  
+    const [result]: any = await pool.query(
+      `UPDATE mentors SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
+  
+    return result.affectedRows > 0;
   }
-
-  if (fields.length === 0) return false;
-
-  // Only update updated_at if saveWithDate is true
-  console.log(typeof(saveWithDate),"save")
-  console.log(saveWithDate,"save")
-  if (saveWithDate) fields.push("updated_at = NOW()");
-
-  values.push(id);
-
-  const [result]: any = await pool.query(
-    `UPDATE mentors SET ${fields.join(", ")} WHERE id = ?`,
-    values
-  );
-
-  return result.affectedRows > 0;
-}
+  
 
 
 
