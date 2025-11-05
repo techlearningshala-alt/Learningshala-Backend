@@ -3,6 +3,8 @@ import * as SpecializationService from "../../services/courses/specialization.se
 import { successResponse, errorResponse } from "../../utills/response";
 import { createSpecializationSchema, updateSpecializationSchema } from "../../validators/courses/domain.validator";
 import slugify from "slugify";
+import { uploadToS3, deleteFromS3 } from "../../config/s3";
+import { generateFileName } from "../../config/multer";
 
 export const getAll = async (req: Request, res: Response) => {
   try {
@@ -27,9 +29,22 @@ export const getOne = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
+    let thumbnailUrl: string | undefined;
+
+    // Upload to S3 if file exists
+    if (req.file) {
+      const fileName = generateFileName(req.file.originalname);
+      thumbnailUrl = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "specializations",
+        req.file.mimetype
+      );
+    }
+
     const body = {
       ...req.body,
-      thumbnail: req.file ? `/uploads/${req.file.filename}` : undefined,
+      thumbnail: thumbnailUrl,
     };
 
     const toBoolean = (val: any) => val === "true" || val === true;
@@ -41,7 +56,7 @@ export const create = async (req: Request, res: Response) => {
 
     const validatedData: any = createSpecializationSchema.parse(body);
     validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
-    validatedData.thumbnail = validatedData.thumbnail || "/uploads/default-thumbnail.png";
+    validatedData.thumbnail = validatedData.thumbnail || undefined;
 
     const specialization = await SpecializationService.addSpecialization(validatedData);
     return successResponse(res, specialization, "Specialization created successfully", 201);
@@ -55,6 +70,27 @@ export const update = async (req: Request, res: Response) => {
   try {
     const { saveWithDate = "true", existingThumbnail, ...rest } = req.body;
 
+    // Get current specialization to delete old thumbnail from S3
+    const currentSpecialization = await SpecializationService.getSpecialization(Number(req.params.id));
+    
+    let thumbnailUrl: string | undefined = existingThumbnail;
+
+    // Upload new file to S3 if provided
+    if (req.file) {
+      const fileName = generateFileName(req.file.originalname);
+      thumbnailUrl = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "specializations",
+        req.file.mimetype
+      );
+
+      // Delete old thumbnail from S3 if it exists and is from S3
+      if (currentSpecialization?.thumbnail && currentSpecialization.thumbnail !== existingThumbnail) {
+        await deleteFromS3(currentSpecialization.thumbnail);
+      }
+    }
+
     const parsedData: any = {
       ...rest,
       course_id: rest.course_id ? Number(rest.course_id) : null,
@@ -62,13 +98,10 @@ export const update = async (req: Request, res: Response) => {
       is_active: rest.is_active === "true" || rest.is_active === true || rest.is_active === 1,
       menu_visibility: rest.menu_visibility === "true" || rest.menu_visibility === true || rest.menu_visibility === 1,
     };
-    parsedData.thumbnail = req.file
-      ? `/uploads/${req.file.filename}`
-      : existingThumbnail;
+    parsedData.thumbnail = thumbnailUrl;
     const saveDateFlag = saveWithDate === "true";
 
-
-    const validatedData : any = updateSpecializationSchema.parse(parsedData);
+    const validatedData: any = updateSpecializationSchema.parse(parsedData);
 
     if (validatedData.name) {
       validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });

@@ -4,6 +4,8 @@ import { successResponse, errorResponse } from "../../utills/response";
 import { createCourseSchema, updateCourseSchema } from "../../validators/courses/domain.validator";
 import slugify from "slugify";
 import { number } from "zod";
+import { uploadToS3, deleteFromS3 } from "../../config/s3";
+import { generateFileName } from "../../config/multer";
 
 export const getAll = async (req: Request, res: Response) => {
   try {
@@ -37,18 +39,31 @@ export const getOne = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
+    let thumbnailUrl: string | undefined;
+
+    // Upload to S3 if file exists
+    if (req.file) {
+      const fileName = generateFileName(req.file.originalname);
+      thumbnailUrl = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "courses",
+        req.file.mimetype
+      );
+    }
+
     const body = {
       ...req.body,
-      thumbnail: req.file ? `/uploads/${req.file.filename}` : undefined,
+      thumbnail: thumbnailUrl,
     };
-    console.log(body,"body")
-    body.domain_id = Number(body.domain_id)
-    body.priority = Number(body.priority)
-    body.menu_visibility = Boolean(body.menu_visibility)
-    body.is_active = Boolean(body.is_active)
-    const validatedData : any = createCourseSchema.parse(body);
+    console.log(body, "body");
+    body.domain_id = Number(body.domain_id);
+    body.priority = Number(body.priority);
+    body.menu_visibility = Boolean(body.menu_visibility);
+    body.is_active = Boolean(body.is_active);
+    const validatedData: any = createCourseSchema.parse(body);
     validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
-    validatedData.thumbnail = validatedData.thumbnail || "/uploads/default-thumbnail.png";
+    validatedData.thumbnail = validatedData.thumbnail || undefined;
 
     const course = await CourseService.addCourse(validatedData);
     return successResponse(res, course, "Course created successfully", 201);
@@ -63,6 +78,27 @@ export const update = async (req: Request, res: Response) => {
     const saveDateFlag = saveWithDate === "true";
     console.log(existingThumbnail, "validated course data");
 
+    // Get current course to delete old thumbnail from S3
+    const currentCourse = await CourseService.getCourse(Number(req.params.id));
+
+    let thumbnailUrl: string | undefined = existingThumbnail;
+
+    // Upload new file to S3 if provided
+    if (req.file) {
+      const fileName = generateFileName(req.file.originalname);
+      thumbnailUrl = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "courses",
+        req.file.mimetype
+      );
+
+      // Delete old thumbnail from S3 if it exists and is from S3
+      if (currentCourse?.thumbnail && currentCourse.thumbnail !== existingThumbnail) {
+        await deleteFromS3(currentCourse.thumbnail);
+      }
+    }
+
     // Convert types properly before validation
     const parsedData: any = {
       ...rest,
@@ -71,15 +107,9 @@ export const update = async (req: Request, res: Response) => {
       is_active: rest.is_active === "true" || rest.is_active === true || rest.is_active === 1,
       menu_visibility: rest.menu_visibility === "true" || rest.menu_visibility === true || rest.menu_visibility === 1,
     };
-  // const thumbnail = req.file ? `/uploads/${req.file.filename}` : existingThumbnail;
-
-  //   const updates: any = { ...rest };
-  //   if (thumbnail) updates.thumbnail = thumbnail;
 
     // Handle thumbnail (new or existing)
-    parsedData.thumbnail = req.file
-      ? `/uploads/${req.file.filename}`
-      : existingThumbnail;
+    parsedData.thumbnail = thumbnailUrl;
 
     // Validate using Zod schema
     const validatedData: any = updateCourseSchema.parse(parsedData);

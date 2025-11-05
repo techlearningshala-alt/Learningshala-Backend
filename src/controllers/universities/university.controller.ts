@@ -6,18 +6,35 @@ import {
 } from "../../validators/universities/university.validator";
 import { successResponse, errorResponse } from "../../utills/response";
 import * as UniversityService from "../../services/universities/university.service";
+import { uploadToS3, deleteFromS3 } from "../../config/s3";
+import { generateFileName } from "../../config/multer";
+import { UniversityRepo } from "../../repositories/universities/university.repository";
 
 export const create = async (req: Request, res: Response) => {
   try {
     const body = { ...req.body };
     const files = req.files as any;
 
-    // ✅ handle known top-level fields
-    if (files?.university_logo?.[0])
-      body.university_logo = `/uploads/${files.university_logo[0].filename}`;
+    // ✅ handle known top-level fields - upload to S3
+    if (files?.university_logo?.[0]) {
+      const fileName = generateFileName(files.university_logo[0].originalname);
+      body.university_logo = await uploadToS3(
+        files.university_logo[0].buffer,
+        fileName,
+        "universities/logo",
+        files.university_logo[0].mimetype
+      );
+    }
 
-    if (files?.university_brochure?.[0])
-      body.university_brochure = `/uploads/${files.university_brochure[0].filename}`;
+    if (files?.university_brochure?.[0]) {
+      const fileName = generateFileName(files.university_brochure[0].originalname);
+      body.university_brochure = await uploadToS3(
+        files.university_brochure[0].buffer,
+        fileName,
+        "universities/brochure",
+        files.university_brochure[0].mimetype
+      );
+    }
 
     body.university_slug = slugify(body.university_slug, { lower: true, strict: true });
     body.is_active = Boolean(body.is_active);
@@ -26,34 +43,47 @@ export const create = async (req: Request, res: Response) => {
     const banners = body.banners ? JSON.parse(body.banners) : [];
     const sections = body.sections ? JSON.parse(body.sections) : [];
 
-    // ✅ Handle multiple banner images (banner_image_0, banner_image_1, etc.)
+    // ✅ Handle multiple banner images (banner_image_0, banner_image_1, etc.) - upload to S3
     if (files && typeof files === "object") {
       const bannerKeys = Object.keys(files).filter((key) => key.startsWith("banner_image_"));
-      bannerKeys.forEach((key) => {
+      for (const key of bannerKeys) {
         const index = Number(key.split("_")[2]);
         if (!isNaN(index) && banners[index]) {
-          banners[index].banner_image = `/uploads/${files[key][0].filename}`;
+          const file = files[key][0];
+          const fileName = generateFileName(file.originalname);
+          banners[index].banner_image = await uploadToS3(
+            file.buffer,
+            fileName,
+            "universities/banners",
+            file.mimetype
+          );
         }
-      });
+      }
     }
 
-    // 🧩 Handle section images with unique keys (section_image_0, section_image_1, etc.)
+        // 🧩 Handle section images with unique keys (section_image_0, section_image_1, etc.) - upload to S3
     if (files && typeof files === "object") {
       const sectionImageKeys = Object.keys(files).filter((key) => key.startsWith("section_image_"));
       console.log("🟢 [CREATE] Section image keys found:", sectionImageKeys);
-      
+
       if (sectionImageKeys.length > 0) {
-        // Build map from original filename → upload path
+        // Build map from original filename → S3 URL
         const fileMap = new Map();
-        sectionImageKeys.forEach((key) => {
+        for (const key of sectionImageKeys) {
           const file = files[key][0];
+          const fileName = generateFileName(file.originalname);
+          const s3Url = await uploadToS3(
+            file.buffer,
+            fileName,
+            "universities/sections",
+            file.mimetype
+          );
           console.log(`🔍 [CREATE] File details for ${key}:`, {
             originalname: file.originalname,
-            filename: file.filename,
-            uploadPath: `/uploads/${file.filename}`
+            s3Url: s3Url
           });
-          fileMap.set(file.originalname, `/uploads/${file.filename}`);
-        });
+          fileMap.set(file.originalname, s3Url);
+        }
     
         console.log("🔍 [CREATE] FileMap contents:", Array.from(fileMap.entries()));
         console.log("🔍 [CREATE] Sections BEFORE replacement:", JSON.stringify(sections, null, 2));
@@ -130,53 +160,83 @@ console.log(body,"body")
 
     const files = req.files as any
 
-    // 🎓 University-level files
+    // Get current university to delete old files from S3
+    const currentUniversity: any = await UniversityRepo.getUniversityById(Number(id));
+
+    // 🎓 University-level files - upload to S3
     if (files?.university_logo?.[0]) {
-      body.university_logo = `/uploads/${files.university_logo[0].filename}`;
-    }
-    if (files?.university_brochure?.[0]) {
-      body.university_brochure = `/uploads/${files.university_brochure[0].filename}`;
+      const fileName = generateFileName(files.university_logo[0].originalname);
+      body.university_logo = await uploadToS3(
+        files.university_logo[0].buffer,
+        fileName,
+        "universities/logo",
+        files.university_logo[0].mimetype
+      );
+
+      // Delete old logo from S3 if it exists and is not a local path
+      if (currentUniversity?.university_logo && typeof currentUniversity.university_logo === "string" && !currentUniversity.university_logo.startsWith("/uploads/")) {
+        await deleteFromS3(currentUniversity.university_logo);
+      }
     }
 
-    // 🖼️ Handle multiple banner images (banner_image_0, banner_image_1, etc.)
+    if (files?.university_brochure?.[0]) {
+      const fileName = generateFileName(files.university_brochure[0].originalname);
+      body.university_brochure = await uploadToS3(
+        files.university_brochure[0].buffer,
+        fileName,
+        "universities/brochure",
+        files.university_brochure[0].mimetype
+      );
+
+      // Delete old brochure from S3 if it exists and is not a local path
+      if (currentUniversity?.university_brochure && typeof currentUniversity.university_brochure === "string" && !currentUniversity.university_brochure.startsWith("/uploads/")) {
+        await deleteFromS3(currentUniversity.university_brochure);
+      }
+    }
+
+    // 🖼️ Handle multiple banner images (banner_image_0, banner_image_1, etc.) - upload to S3
     if (files && typeof files === "object") {
       const bannerKeys = Object.keys(files).filter((key) => key.startsWith("banner_image_"));
       console.log("🟢 Banner image keys found:", bannerKeys);
-      bannerKeys.forEach((key) => {
+      for (const key of bannerKeys) {
         const index = Number(key.split("_")[2]);
         if (!isNaN(index) && banners[index]) {
-          banners[index].banner_image = `/uploads/${files[key][0].filename}`;
+          const file = files[key][0];
+          const fileName = generateFileName(file.originalname);
+          banners[index].banner_image = await uploadToS3(
+            file.buffer,
+            fileName,
+            "universities/banners",
+            file.mimetype
+          );
           console.log(`🟢 Mapped ${key} to banner[${index}]: ${banners[index].banner_image}`);
         }
-      });
-    }
-
-    // 🧹 Clean up banner_image values - normalize them
-    banners.forEach((banner: any, index: number) => {
-      // If banner_image doesn't start with /uploads/, treat it as invalid
-      if (banner.banner_image && !banner.banner_image.startsWith('/uploads/')) {
-        console.log(`🟡 Banner[${index}] has invalid path "${banner.banner_image}", will use existing`);
-        banner.banner_image = null; // Mark as null so service will use old one
       }
-    });
+    }
     
-   // 🧩 Handle section images like Add API
+      // 🧩 Handle section images like Add API - upload to S3
     if (files && typeof files === "object") {
       const sectionImageKeys = Object.keys(files).filter((key) => key.startsWith("section_image_"));
       console.log("🟢 Section image keys found:", sectionImageKeys);
-      
+
       if (sectionImageKeys.length > 0) {
-        // Build map from original filename → upload path
+        // Build map from original filename → S3 URL
         const fileMap = new Map();
-        sectionImageKeys.forEach((key) => {
+        for (const key of sectionImageKeys) {
           const file = files[key][0];
+          const fileName = generateFileName(file.originalname);
+          const s3Url = await uploadToS3(
+            file.buffer,
+            fileName,
+            "universities/sections",
+            file.mimetype
+          );
           console.log(`🔍 File details for ${key}:`, {
             originalname: file.originalname,
-            filename: file.filename,
-            uploadPath: `/uploads/${file.filename}`
+            s3Url: s3Url
           });
-          fileMap.set(file.originalname, `/uploads/${file.filename}`);
-        });
+          fileMap.set(file.originalname, s3Url);
+        }
        
         const replaceSectionImages = (obj: any) => {
           Object.entries(obj).forEach(([key, val]) => {

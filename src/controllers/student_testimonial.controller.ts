@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import * as TestimonialService from "../services/student_testimonial.service";
 import { errorResponse, successResponse } from "../utills/response";
 import { createStudentTestimonialSchema } from "../validators/student_testimonials";
+import { uploadToS3, deleteFromS3 } from "../config/s3";
+import { generateFileName } from "../config/multer";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -29,15 +31,24 @@ export const create = async (req: Request, res: Response) => {
       return errorResponse(res, "Thumbnail is required", 400);
     }
 
+    // Upload to S3
+    const fileName = generateFileName(req.file.originalname);
+    const thumbnailUrl = await uploadToS3(
+      req.file.buffer,
+      fileName,
+      "student-testimonials",
+      req.file.mimetype
+    );
+
     const body = {
       name: req.body.name,
       video_id: req.body.video_id,
       video_title: req.body.video_title,
-      thumbnail: `/uploads/${req.file.filename}`,
+      thumbnail: thumbnailUrl,
     };
 
-    const validated : any= createStudentTestimonialSchema.parse(body);
-    console.log(validated)
+    const validated: any = createStudentTestimonialSchema.parse(body);
+    console.log(validated);
     const result = await TestimonialService.addTestimonial(validated);
 
     return successResponse(res, result, "Student testimonial created successfully", 201);
@@ -50,13 +61,33 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { saveWithDate = "true", existingThumbnail, ...rest } = req.body;
     const saveDateFlag = saveWithDate === "true";
-    const thumbnail = req.file ? `/uploads/${req.file.filename}` : existingThumbnail;
+
+    // Get current testimonial to delete old thumbnail from S3
+    const currentTestimonial: any = await TestimonialService.getTestimonial(Number(req.params.id));
+
+    let thumbnailUrl: string | undefined = existingThumbnail;
+
+    // Upload new file to S3 if provided
+    if (req.file) {
+      const fileName = generateFileName(req.file.originalname);
+      thumbnailUrl = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "student-testimonials",
+        req.file.mimetype
+      );
+
+      // Delete old thumbnail from S3 if it exists and is not a local path
+      if (currentTestimonial?.thumbnail && typeof currentTestimonial.thumbnail === "string" && !currentTestimonial.thumbnail.startsWith("/uploads/")) {
+        await deleteFromS3(currentTestimonial.thumbnail);
+      }
+    }
 
     const updates: any = { ...rest };
-    if (thumbnail) updates.thumbnail = thumbnail;
+    if (thumbnailUrl) updates.thumbnail = thumbnailUrl;
 
     const result = await TestimonialService.updateTestimonial(Number(req.params.id), updates, saveDateFlag);
-     return successResponse(res, result, "Student testimonial updated successfully");
+    return successResponse(res, result, "Student testimonial updated successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Update failed", err.statusCode || 400);
   }

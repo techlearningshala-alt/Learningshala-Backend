@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import * as MentorService from "../services/mentor.service";
-import { addMentor } from "../services/mentor.service"; 
+import { addMentor } from "../services/mentor.service";
 import { createMentorSchema } from "../validators/mentor.validator";
 import { successResponse } from "../utills/response";
+import { uploadToS3, deleteFromS3 } from "../config/s3";
+import { generateFileName } from "../config/multer";
 
 export const getAllMentors = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -24,35 +26,33 @@ export const getOne = async (req: Request, res: Response, next: NextFunction) =>
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const logo = req.file ? `/uploads/${req.file.filename}` : req.body.logo;
     // 1️⃣ Validate file
     if (!req.file) {
       return res.status(400).json({ success: false, message: "Thumbnail image is required" });
     }
-console.log(req.file)
-    // const metadata = await sharp(req.file.buffer).metadata();
-    // if (metadata.width !== 260 || metadata.height !== 250) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Thumbnail dimensions must be 260 x 250 px",
-    //   });
-    // }
+    console.log(req.file);
+
+    // Upload to S3
+    const fileName = generateFileName(req.file.originalname);
+    const logo = await uploadToS3(
+      req.file.buffer,
+      fileName,
+      "mentors",
+      req.file.mimetype
+    );
 
     // 2️⃣ Extract and convert body fields
     const body = {
       name: req.body.name,
       experience: Number(req.body.experience),
       verified: req.body.verified === "true" || req.body.verified === true,
-      assist_student: Number(req.body.assist_student) ,
+      assist_student: Number(req.body.assist_student),
       connection_link: req.body.connection_link,
       label: req.body.label,
-      // status: req.body.status, 
+      // status: req.body.status,
     };
     // 3️⃣ Validate body fields
     const validatedData = createMentorSchema.parse(body);
-
-    // 4️⃣ Convert uploaded image to base64 (or upload to cloud)
-// const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
 
     // 5️⃣ Save to database
     const result = await addMentor({
@@ -62,7 +62,7 @@ console.log(req.file)
 
     return successResponse(res, result, "Mentor created successfully", 201);
   } catch (err) {
-    console.log(err)
+    console.log(err);
     next(err);
   }
 };
@@ -76,13 +76,27 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
     const saveDateFlag = saveWithDate === "true";
 
+    // Get current mentor to delete old thumbnail from S3
+    const currentMentor: any = await MentorService.getMentor(Number(id));
+
     // Build updates object
     const updates: any = { ...rest };
-    updates.verified = Boolean(updates.verified)
+    updates.verified = Boolean(updates.verified);
 
-    if (req.file && req.file.filename) {
-      // New file uploaded → use it
-      updates.thumbnail = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      // New file uploaded → upload to S3
+      const fileName = generateFileName(req.file.originalname);
+      updates.thumbnail = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "mentors",
+        req.file.mimetype
+      );
+
+      // Delete old thumbnail from S3 if it exists and is not a local path
+      if (currentMentor?.thumbnail && typeof currentMentor.thumbnail === "string" && !currentMentor.thumbnail.startsWith("/uploads/")) {
+        await deleteFromS3(currentMentor.thumbnail);
+      }
     } else if (existingThumbnail) {
       // No new file → keep existing thumbnail
       updates.thumbnail = existingThumbnail;

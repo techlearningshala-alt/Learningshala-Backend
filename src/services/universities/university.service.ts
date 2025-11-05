@@ -474,8 +474,6 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
     }
 };
 
-
-
 export const getUniversityById = async (id: number) => {
   const [rows]: any = await pool.query(
     `SELECT * FROM universities WHERE id = ?`,

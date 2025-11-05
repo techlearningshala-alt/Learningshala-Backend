@@ -5,6 +5,8 @@ import {
   updateUniversityApprovalSchema,
 } from "../../validators/universities/university.validator";
 import { successResponse } from "../../utills/response";
+import { uploadToS3, deleteFromS3 } from "../../config/s3";
+import { generateFileName } from "../../config/multer";
 
 export const getAllUniversityApprovals = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -45,7 +47,18 @@ export const createUniversityApproval = async (req: Request, res: Response, next
       return successResponse(res, parsed.error, "Validation error", 400);
     }
 
-    const logo = req.file ? `/uploads/${req.file.filename}` : null; // Adjust path as per your setup
+    let logo: string | null = null;
+
+    if (req.file) {
+      // Upload to S3
+      const fileName = generateFileName(req.file.originalname);
+      logo = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "university-approvals",
+        req.file.mimetype
+      );
+    }
 
     const result = await UniversityApprovalService.addUniversityApproval({
       ...parsed.data,
@@ -78,11 +91,25 @@ export const updateUniversityApproval = async (req: Request, res: Response, next
       description: req.body.description,
     };
 
+        // Get current approval to delete old logo from S3
+    const currentApproval: any = await UniversityApprovalService.getUniversityApprovalById(id);
+
     // Handle logo update logic
     if (req.file) {
-      // New file uploaded
-      updateData.logo = `/uploads/${req.file.filename}`;
+      // New file uploaded → upload to S3
+      const fileName = generateFileName(req.file.originalname);
+      updateData.logo = await uploadToS3(
+        req.file.buffer,
+        fileName,
+        "university-approvals",
+        req.file.mimetype
+      );
       console.log("✅ Using new uploaded logo:", updateData.logo);
+
+      // Delete old logo from S3 if it exists and is not a local path
+      if (currentApproval?.logo && typeof currentApproval.logo === "string" && !currentApproval.logo.startsWith("/uploads/")) {
+        await deleteFromS3(currentApproval.logo);
+      }
     } else if (req.body.existingLogo && req.body.existingLogo.trim() !== "" && req.body.existingLogo !== "null" && req.body.existingLogo !== "undefined") {
       // Keep existing logo
       updateData.logo = req.body.existingLogo;
