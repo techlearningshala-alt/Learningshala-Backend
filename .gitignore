@@ -51,3 +51,6 @@ Thumbs.db
 # yarn.lock
 # package-lock.json
 # pnpm-lock.yaml
+
+AWS_IAM_POLICY.json
+AWS_S3_SETUP.md
