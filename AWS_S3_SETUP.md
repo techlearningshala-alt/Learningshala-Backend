@@ -31,6 +31,9 @@ AWS_S3_BASE_URL=https://your-s3-bucket-name.s3.ap-south-1.amazonaws.com
    - `src/controllers/mentor.controller.ts` - S3 upload for thumbnails
    - `src/controllers/media_spotlight.controller.ts` - S3 upload for logos
    - `src/controllers/universities/university_approval.controller.ts` - S3 upload for logos
+   - `src/controllers/student_testimonial.controller.ts` - S3 upload for thumbnails
+   - `src/controllers/universities/placement-partner.controller.ts` - S3 upload for logos
+   - `src/controllers/universities/emi-partner.controller.ts` - S3 upload for logos
 
 ### 3. **Package Installed:**
    - `@aws-sdk/client-s3` - AWS SDK for S3 operations
@@ -47,6 +50,9 @@ Files are organized in S3 as follows:
 - `mentors/{filename}` - Mentor thumbnails
 - `media-spotlight/{filename}` - Media spotlight logos
 - `university-approvals/{filename}` - University approval logos
+- `student-testimonials/{filename}` - Student testimonial thumbnails
+- `placement-partners/{filename}` - Placement partner logos
+- `emi-partners/{filename}` - EMI partner logos
 
 ## 🔄 Features Implemented
 

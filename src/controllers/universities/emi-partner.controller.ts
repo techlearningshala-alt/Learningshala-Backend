@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { successResponse, errorResponse } from "../../utills/response";
 import * as EmiPartnerService from "../../services/universities/emi-partner.service";
+import { uploadToS3, deleteFromS3 } from "../../config/s3";
+import { generateFileName } from "../../config/multer";
 
 /**
  * Create new EMI partner
@@ -10,9 +12,15 @@ export const create = async (req: Request, res: Response) => {
     const body = { ...req.body };
     const file = req.file;
 
-    // Handle logo upload
+    // Upload to S3 if file exists
     if (file) {
-      body.logo = `/uploads/${file.filename}`;
+      const fileName = generateFileName(file.originalname);
+      body.logo = await uploadToS3(
+        file.buffer,
+        fileName,
+        "emi-partners",
+        file.mimetype
+      );
     }
 
     const newPartner = await EmiPartnerService.createEmiPartner(body);
@@ -29,13 +37,34 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const body = { ...req.body };
+    const { existingLogo, ...rest } = req.body;
     const file = req.file;
 
-    // Handle logo upload
+    // Get current partner to delete old logo from S3
+    const currentPartner: any = await EmiPartnerService.getEmiPartnerById(parseInt(id, 10));
+
+    let logoUrl: string | undefined = existingLogo;
+
+    // Upload new file to S3 if provided
     if (file) {
-      body.logo = `/uploads/${file.filename}`;
+      const fileName = generateFileName(file.originalname);
+      logoUrl = await uploadToS3(
+        file.buffer,
+        fileName,
+        "emi-partners",
+        file.mimetype
+      );
+
+      // Delete old logo from S3 if it exists and is not a local path
+      if (currentPartner?.logo && typeof currentPartner.logo === "string" && !currentPartner.logo.startsWith("/uploads/")) {
+        await deleteFromS3(currentPartner.logo);
+      }
     }
+
+    const body = {
+      ...rest,
+      logo: logoUrl,
+    };
 
     const updatedPartner = await EmiPartnerService.updateEmiPartner(
       parseInt(id, 10),
