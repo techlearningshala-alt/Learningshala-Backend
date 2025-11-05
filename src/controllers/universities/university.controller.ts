@@ -46,17 +46,24 @@ export const create = async (req: Request, res: Response) => {
     // ✅ Handle multiple banner images (banner_image_0, banner_image_1, etc.) - upload to S3
     if (files && typeof files === "object") {
       const bannerKeys = Object.keys(files).filter((key) => key.startsWith("banner_image_"));
+      console.log("🟢 [CREATE] Banner image keys found:", bannerKeys);
       for (const key of bannerKeys) {
         const index = Number(key.split("_")[2]);
+        console.log(`🟢 [CREATE] Processing ${key}, index: ${index}, banner exists: ${!!banners[index]}`);
         if (!isNaN(index) && banners[index]) {
           const file = files[key][0];
           const fileName = generateFileName(file.originalname);
-          banners[index].banner_image = await uploadToS3(
+          const s3Key = await uploadToS3(
             file.buffer,
             fileName,
             "universities/banners",
             file.mimetype
           );
+          banners[index].banner_image = s3Key;
+          console.log(`✅ [CREATE] Mapped ${key} to banner[${index}]: ${s3Key}`);
+          console.log(`🔍 [CREATE] Banner[${index}] object after assignment:`, JSON.stringify(banners[index], null, 2));
+        } else {
+          console.log(`⚠️ [CREATE] Skipping ${key} - index ${index} is invalid or banner[${index}] doesn't exist`);
         }
       }
     }

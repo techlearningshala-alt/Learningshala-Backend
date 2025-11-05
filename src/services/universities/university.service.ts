@@ -13,6 +13,8 @@ export const UniversityService = {
 
       // 🖼️ Insert banners
       for (const b of banners) {
+        console.log("🔍 [SERVICE] Banner object before insert:", JSON.stringify(b, null, 2));
+        console.log("🔍 [SERVICE] banner_image value:", b.banner_image);
         await UniversityRepo.createBanner(universityId, b, b.banner_image);
       }
 
@@ -82,17 +84,16 @@ export const updateUniversity = async (
         // There's a banner in the request at this position
         let finalImage = null;
         
-        // Priority: 1) new uploaded image 2) existing_banner_image from frontend 3) old banner from DB
-        if (newBanner.banner_image && newBanner.banner_image.startsWith('/uploads/')) {
-          // Valid new uploaded path - use new image
+        // Priority: 1) new uploaded image (S3 key or local path) 2) existing_banner_image from frontend 3) old banner from DB
+        if (newBanner.banner_image && newBanner.banner_image.trim() !== "") {
+          // Valid new uploaded image (S3 key or local path) - use new image
           finalImage = newBanner.banner_image;
-        } else if (newBanner.existing_banner_image && newBanner.existing_banner_image.startsWith('/uploads/')) {
-          // Frontend sent existing valid path - preserve it
+        } else if (newBanner.existing_banner_image && newBanner.existing_banner_image.trim() !== "") {
+          // Frontend sent existing valid path (S3 key or local path) - preserve it
           finalImage = newBanner.existing_banner_image;
-        } else if (oldBanner?.banner_image && oldBanner.banner_image.startsWith('/uploads/')) {
-          // Use valid old banner from database
+        } else if (oldBanner?.banner_image && oldBanner.banner_image.trim() !== "") {
+          // Use valid old banner from database (S3 key or local path)
           finalImage = oldBanner.banner_image;
-        } else {
         }
         mergedBanners.push({
           video_id: newBanner.video_id || null,
@@ -101,7 +102,7 @@ export const updateUniversity = async (
         });
       } else if (oldBanner) {
         // No banner in request, but exists in DB - preserve it
-        const validOldImage = oldBanner.banner_image?.startsWith('/uploads/') ? oldBanner.banner_image : null;
+        const validOldImage = oldBanner.banner_image && oldBanner.banner_image.trim() !== "" ? oldBanner.banner_image : null;
         mergedBanners.push({
           banner_image: validOldImage,
           video_id: oldBanner.video_id,
@@ -222,7 +223,14 @@ await conn.query(sql, params);
     await conn.query(`DELETE FROM university_sections WHERE university_id = ?`, [id]);
 
     // 🖼 Re-insert merged banners
+    console.log("🔍 [SERVICE] Merged banners before insert:", JSON.stringify(mergedBanners, null, 2));
     for (const b of mergedBanners) {
+      console.log("🔍 [SERVICE] Inserting banner:", {
+        university_id: id,
+        banner_image: b.banner_image,
+        video_id: b.video_id,
+        video_title: b.video_title
+      });
       await conn.query(
         `INSERT INTO university_banners (university_id, banner_image, video_id, video_title)
          VALUES (?, ?, ?, ?)`,

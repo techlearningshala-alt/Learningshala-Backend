@@ -6,7 +6,7 @@ export const createMentorSchema = z.object({
   verified: z.boolean(),
   assist_student: z.number(),
   connection_link: z.string(),
-  label: z.enum(["top rated", "popular", "featured"]),
+  label: z.string(),
   // status: z.enum(["published", "draft"]),
 });
 

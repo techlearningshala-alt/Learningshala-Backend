@@ -40,11 +40,20 @@ export const UniversityRepo = {
   },
 
   async createBanner(university_id: number, banner: any, banner_image: any) {
-    console.log(banner,"banner")
+    console.log("🔍 [REPO] createBanner called with:", {
+      university_id,
+      banner_image,
+      banner: JSON.stringify(banner, null, 2)
+    });
+    
+    // Ensure banner_image is a string (not null/undefined)
+    const imageValue = banner_image || banner?.banner_image || "";
+    console.log("🔍 [REPO] Final banner_image value:", imageValue);
+    
     await pool.query(
       `INSERT INTO university_banners (university_id, banner_image, video_id, video_title)
        VALUES (?, ?, ?, ?)`,
-      [university_id, banner_image || "", banner.video_id || null, banner.video_title || null]
+      [university_id, imageValue, banner.video_id || null, banner.video_title || null]
     );
   },
 
