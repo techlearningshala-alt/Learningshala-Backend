@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as FaqController from "../controllers/faq.controller";
 import { validate } from "../middlewares/validate.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -9,6 +10,9 @@ import {
 } from "../validators/faq.validator";
 
 const router = Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // Categories
 router.get("/categories", FaqController.listCategories);

@@ -5,6 +5,9 @@ import { upload } from "../../config/multer";
 
 const router = Router();
 
+// Apply auth middleware to all routes
+router.use(authMiddleware);
+
 router.get("/", SpecializationController.getAll);
 router.get("/:id", SpecializationController.getOne);
 router.post("/",  upload.single("thumbnail"), SpecializationController.create);

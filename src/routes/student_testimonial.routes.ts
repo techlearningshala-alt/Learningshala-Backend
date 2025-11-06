@@ -6,6 +6,9 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+// Apply auth middleware to all routes
+router.use(authMiddleware);
+
 router.get("/", TestimonialController.getAll);
 router.get("/:id", TestimonialController.getOne);
 router.post("/", upload.single("thumbnail"), TestimonialController.create);

@@ -7,6 +7,9 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+// Apply auth middleware to all routes
+router.use(authMiddleware);
+
 router.get("/", MediaController.getAll);
 router.get("/:id", MediaController.getOne);
 router.post("/", upload.single("logo"), MediaController.create);

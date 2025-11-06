@@ -5,6 +5,9 @@ import { upload } from "../../config/multer"; // multer setup for thumbnail
 
 const router = Router();
 
+// Apply auth middleware to all routes
+router.use(authMiddleware);
+
 router.get("/", CourseController.getAll);
 router.get("/course-name", CourseController.getCourseName);
 router.get("/:id", CourseController.getOne);

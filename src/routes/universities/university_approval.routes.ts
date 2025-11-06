@@ -1,9 +1,12 @@
 import { Router } from "express";
 import * as UniversityApprovalController from "../../controllers/universities/university_approval.controller";
 import { upload } from "../../config/multer";
-import {  } from "../../middlewares/auth.middleware";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // List all university approvals with pagination
 router.get("/",  UniversityApprovalController.getAllUniversityApprovals);

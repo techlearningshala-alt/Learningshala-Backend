@@ -166,11 +166,11 @@ console.log(body,"body")
     const sections = body.sections ? JSON.parse(body.sections) : [];
 
     const files = req.files as any
-
+console.log(files,"filesbefore")
     // Get current university to delete old files from S3
     const currentUniversity: any = await UniversityRepo.getUniversityById(Number(id));
 
-    // 🎓 University-level files - upload to S3
+    // 🎓 University-level files - upload to S3 or handle removal
     if (files?.university_logo?.[0]) {
       const fileName = generateFileName(files.university_logo[0].originalname);
       body.university_logo = await uploadToS3(
@@ -184,6 +184,19 @@ console.log(body,"body")
       if (currentUniversity?.university_logo && typeof currentUniversity.university_logo === "string" && !currentUniversity.university_logo.startsWith("/uploads/")) {
         await deleteFromS3(currentUniversity.university_logo);
       }
+    } else if (body.university_logo === "" || body.university_logo === "null") {
+      // Image was removed - delete from S3 and set to null
+      console.log("🗑️ [BACKEND] University logo removal detected");
+      console.log("🗑️ [BACKEND] body.university_logo:", body.university_logo);
+      console.log("🗑️ [BACKEND] currentUniversity.university_logo:", currentUniversity?.university_logo);
+      if (currentUniversity?.university_logo && typeof currentUniversity.university_logo === "string" && !currentUniversity.university_logo.startsWith("/uploads/")) {
+        console.log("🗑️ [BACKEND] Deleting logo from S3:", currentUniversity.university_logo);
+        await deleteFromS3(currentUniversity.university_logo);
+      }
+      body.university_logo = null;
+      console.log("🗑️ [BACKEND] Set body.university_logo to null");
+    } else {
+      console.log("📝 [BACKEND] No logo change - keeping existing:", currentUniversity?.university_logo);
     }
 
     if (files?.university_brochure?.[0]) {
@@ -221,6 +234,29 @@ console.log(body,"body")
       }
     }
     
+    // Handle banner image removal (empty string in banner_image field)
+    console.log("📤 [BACKEND] Processing banners for removal check");
+    console.log("📤 [BACKEND] banners array:", JSON.stringify(banners, null, 2));
+    console.log("📤 [BACKEND] currentUniversity.banners:", JSON.stringify(currentUniversity?.banners, null, 2));
+    banners.forEach((banner: any, index: number) => {
+      console.log(`📤 [BACKEND] Banner ${index}:`, JSON.stringify(banner, null, 2));
+      if (banner.banner_image === "" || banner.banner_image === "null") {
+        console.log(`🗑️ [BACKEND] Banner ${index} image removal detected`);
+        // Find existing banner to delete from S3
+        const existingBanner = currentUniversity?.banners?.[index];
+        console.log(`🗑️ [BACKEND] Existing banner ${index}:`, existingBanner);
+        if (existingBanner?.banner_image && typeof existingBanner.banner_image === "string" && !existingBanner.banner_image.startsWith("/uploads/")) {
+          console.log(`🗑️ [BACKEND] Deleting banner ${index} from S3:`, existingBanner.banner_image);
+          deleteFromS3(existingBanner.banner_image).catch(err => console.error("Error deleting banner from S3:", err));
+        }
+        banner.banner_image = null;
+        console.log(`🗑️ [BACKEND] Set banner ${index}.banner_image to null`);
+      } else {
+        console.log(`📝 [BACKEND] Banner ${index} - no removal (value: "${banner.banner_image}")`);
+      }
+    });
+    console.log("📤 [BACKEND] Final banners after removal processing:", JSON.stringify(banners, null, 2));
+    
       // 🧩 Handle section images like Add API - upload to S3
     if (files && typeof files === "object") {
       const sectionImageKeys = Object.keys(files).filter((key) => key.startsWith("section_image_"));
@@ -245,9 +281,21 @@ console.log(body,"body")
           fileMap.set(file.originalname, s3Url);
         }
        
-        const replaceSectionImages = (obj: any) => {
+        const replaceSectionImages = (obj: any, sectionIndex: number) => {
           Object.entries(obj).forEach(([key, val]) => {
-            if (typeof val === "string" && fileMap.has(val)) {
+            // Check if this is an image field that was removed (empty string)
+            if (
+              typeof val === "string" && 
+              val === "" &&
+              (key.toLowerCase().includes("img") || key.toLowerCase().includes("logo") || key.toLowerCase().includes("image") || key.toLowerCase().includes("sample"))
+            ) {
+              // Image was removed - set to null and delete from S3 if it exists
+              const existingImage = currentUniversity?.sections?.[sectionIndex]?.props?.[key];
+              if (existingImage && typeof existingImage === "string" && !existingImage.startsWith("/uploads/")) {
+                deleteFromS3(existingImage).catch(err => console.error("Error deleting section image from S3:", err));
+              }
+              obj[key] = null;
+            } else if (typeof val === "string" && fileMap.has(val)) {
               console.log(`✅ Replacing ${key}: "${val}" → "${fileMap.get(val)}"`);
               obj[key] = fileMap.get(val);
             } else if (typeof val === "string" && (val.includes('.webp') || val.includes('.jpg') || val.includes('.png'))) {
@@ -255,20 +303,50 @@ console.log(body,"body")
             }
             
             if (Array.isArray(val)) {
-              val.forEach((item) => replaceSectionImages(item));
+              val.forEach((item) => replaceSectionImages(item, sectionIndex));
             } else if (val && typeof val === "object") {
-              replaceSectionImages(val);
+              replaceSectionImages(val, sectionIndex);
             }
           });
         };
     
-        sections.forEach((section: any) => {
-          if (section.props) replaceSectionImages(section.props);
+        sections.forEach((section: any, sIndex: number) => {
+          if (section.props) replaceSectionImages(section.props, sIndex);
         });
     
         console.log("🔍 Sections AFTER replacement:", JSON.stringify(sections, null, 2));
       }
     }
+    
+    // Handle section image removal (empty strings) even when no new files are uploaded
+    sections.forEach((section: any, sIndex: number) => {
+      if (section.props) {
+        const handleImageRemoval = (obj: any) => {
+          Object.entries(obj).forEach(([key, val]) => {
+            // Check if this is an image field that was removed (empty string)
+            if (
+              typeof val === "string" && 
+              val === "" &&
+              (key.toLowerCase().includes("img") || key.toLowerCase().includes("logo") || key.toLowerCase().includes("image") || key.toLowerCase().includes("sample"))
+            ) {
+              // Image was removed - set to null and delete from S3 if it exists
+              const existingImage = currentUniversity?.sections?.[sIndex]?.props?.[key];
+              if (existingImage && typeof existingImage === "string" && !existingImage.startsWith("/uploads/")) {
+                deleteFromS3(existingImage).catch(err => console.error("Error deleting section image from S3:", err));
+              }
+              obj[key] = null;
+            }
+            
+            if (Array.isArray(val)) {
+              val.forEach((item) => handleImageRemoval(item));
+            } else if (val && typeof val === "object") {
+              handleImageRemoval(val);
+            }
+          });
+        };
+        handleImageRemoval(section.props);
+      }
+    });
     // 🧾 Handle approvals
     if (body.approval_id && typeof body.approval_id === "string") {
       try {
@@ -307,6 +385,7 @@ console.log(body,"body")
       sections,
     });
     const { banners: validBanners = [], sections: validSections = [], ...updateData } = validated;
+    console.log(files,"filesafter")
 
     // 💾 Save to DB
     const updated = await UniversityService.updateUniversity(

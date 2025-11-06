@@ -1,8 +1,12 @@
 import express from "express";
 import * as UniversityController from "../../controllers/universities/university.controller";
 import { upload } from "../../config/multer";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = express.Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // Handle image + PDF uploads
 router.post(

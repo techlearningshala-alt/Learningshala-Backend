@@ -14,6 +14,7 @@ import specializationRoutes from "./courses/specialization.routes";
 import universityApprovalsRoutes from "./universities/university_approval.routes";
 import placementPartnerRoutes from "./universities/placement-partner.routes";
 import emiPartnerRoutes from "./universities/emi-partner.routes";
+import universityFaqRoutes from "./university_faq.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -23,10 +24,12 @@ router.use("/cms/faqs", faqRoutes);
 router.use("/cms/media-spotlight", mediaRoutes);
 router.use("/cms/mentors", mentorRoutes);
 router.use("/cms/student-testimonials", testimonialRoutes);
-router.use("/cms/universities", universityRoutes);
+// ✅ IMPORTANT: More specific routes must come BEFORE general routes
+router.use("/cms/universities/faqs", universityFaqRoutes);
 router.use("/cms/universities-approvals", universityApprovalsRoutes);
 router.use("/cms/placement-partners", placementPartnerRoutes);
 router.use("/cms/emi-partners", emiPartnerRoutes);
+router.use("/cms/universities", universityRoutes);
 // router.use("/cms/universities-section", universitySectionRoute);
 router.use("/cms/users", userRoutes);
 

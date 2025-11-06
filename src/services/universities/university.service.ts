@@ -56,10 +56,18 @@ export const updateUniversity = async (
     const existing = existingRows[0];
     if (!existing) throw new Error("University not found");
 
-    // 🖼 Keep old images if new ones aren't uploaded
-    const universityLogo = updateData.university_logo || existing.university_logo;
-    const universityBrochure =
-      updateData.university_brochure || existing.university_brochure;
+    // 🖼 Handle image updates: null/empty means remove, undefined means keep existing
+    console.log("💾 [SERVICE] Processing image updates");
+    console.log("💾 [SERVICE] updateData.university_logo:", updateData.university_logo);
+    console.log("💾 [SERVICE] existing.university_logo:", existing.university_logo);
+    const universityLogo = updateData.university_logo !== undefined 
+      ? (updateData.university_logo === null || updateData.university_logo === "" ? null : updateData.university_logo)
+      : existing.university_logo;
+    console.log("💾 [SERVICE] Final universityLogo:", universityLogo);
+    const universityBrochure = updateData.university_brochure !== undefined
+      ? (updateData.university_brochure === null || updateData.university_brochure === "" ? null : updateData.university_brochure)
+      : existing.university_brochure;
+    console.log("💾 [SERVICE] Final universityBrochure:", universityBrochure);
 
     // 🧩 Fetch existing banners and sections
     const [existingBanners]: any = await conn.query(
@@ -84,8 +92,18 @@ export const updateUniversity = async (
         // There's a banner in the request at this position
         let finalImage = null;
         
-        // Priority: 1) new uploaded image (S3 key or local path) 2) existing_banner_image from frontend 3) old banner from DB
-        if (newBanner.banner_image && newBanner.banner_image.trim() !== "") {
+        // Check if image was explicitly removed (empty string or null)
+        console.log(`💾 [SERVICE] Processing banner ${i}:`, {
+          newBanner: newBanner,
+          oldBanner: oldBanner,
+          newBanner_banner_image: newBanner.banner_image,
+          newBanner_existing_banner_image: newBanner.existing_banner_image
+        });
+        if (newBanner.banner_image === "" || newBanner.banner_image === null) {
+          // Image was removed - set to null
+          console.log(`🗑️ [SERVICE] Banner ${i} image was removed - setting to null`);
+          finalImage = null;
+        } else if (newBanner.banner_image && newBanner.banner_image.trim() !== "") {
           // Valid new uploaded image (S3 key or local path) - use new image
           finalImage = newBanner.banner_image;
         } else if (newBanner.existing_banner_image && newBanner.existing_banner_image.trim() !== "") {
@@ -95,6 +113,7 @@ export const updateUniversity = async (
           // Use valid old banner from database (S3 key or local path)
           finalImage = oldBanner.banner_image;
         }
+        console.log(`💾 [SERVICE] Final banner ${i} image:`, finalImage);
         mergedBanners.push({
           video_id: newBanner.video_id || null,
           video_title: newBanner.video_title || null,
@@ -189,6 +208,13 @@ await conn.query(sql, params);
         const oldVal = oldObj[key];
         const newVal = newObj[key];
 
+        // If newVal is empty string or null, it means image was removed
+        if (newVal === "" || newVal === null) {
+          console.log(`🗑️ [SERVICE] Section image removed: ${key} (was: "${oldVal}")`);
+          result[key] = null;
+          return; // Skip further processing for this key
+        }
+        
         // If newVal already has a valid /uploads/ path, ALWAYS use it (don't merge)
         if (typeof newVal === 'string' && newVal.startsWith('/uploads/')) {
           result[key] = newVal;

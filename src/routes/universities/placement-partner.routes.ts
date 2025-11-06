@@ -1,8 +1,12 @@
 import express from "express";
 import * as PlacementPartnerController from "../../controllers/universities/placement-partner.controller";
 import { upload } from "../../config/multer";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = express.Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // Create placement partner with logo upload
 router.post(

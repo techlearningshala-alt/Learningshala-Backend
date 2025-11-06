@@ -1,8 +1,12 @@
 import express from "express";
 import * as EmiPartnerController from "../../controllers/universities/emi-partner.controller";
 import { upload } from "../../config/multer";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = express.Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // Create new EMI partner
 router.post(
