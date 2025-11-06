@@ -144,8 +144,11 @@ export class UniversityFaqRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
+    // Only allow valid university_faqs table columns to be updated
+    const allowedFields = ['university_id', 'category_id', 'title', 'description'];
+
     for (const [key, value] of Object.entries(item)) {
-      if (key !== "saveWithDate") { // skip frontend flag
+      if (key !== "saveWithDate" && allowedFields.includes(key)) { // skip frontend flag and only allow valid fields
         fields.push(`${key} = ?`);
         values.push(value);
       }

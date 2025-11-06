@@ -613,6 +613,51 @@ export const getUniversityBySlug = async (slug: string) => {
     console.error('Error parsing emi_partner_ids:', e);
   }
 
+  // Fetch University FAQs grouped by category
+  let universityFaqs = [];
+  try {
+    const [faqsData]: any = await pool.query(
+      `SELECT 
+        f.id,
+        f.university_id,
+        f.category_id,
+        f.title,
+        f.description,
+        f.created_at,
+        f.updated_at,
+        c.heading as category_heading
+      FROM university_faqs f
+      LEFT JOIN university_faq_categories c ON f.category_id = c.id
+      WHERE f.university_id = ?
+      ORDER BY c.id, f.created_at DESC`,
+      [universityId]
+    );
+
+    // Group FAQs by category
+    const faqsByCategory: { [key: number]: any } = {};
+    faqsData.forEach((faq: any) => {
+      const categoryId = faq.category_id;
+      if (!faqsByCategory[categoryId]) {
+        faqsByCategory[categoryId] = {
+          category: faq.category_heading || 'Uncategorized',
+          id: categoryId,
+          cat_id: faq.category_heading || 'Uncategorized',
+          items: []
+        };
+      }
+      faqsByCategory[categoryId].items.push({
+        id: faq.id,
+        question: faq.title,
+        answer: faq.description,
+      });
+    });
+
+    // Convert to array format
+    universityFaqs = Object.values(faqsByCategory);
+  } catch (e) {
+    console.error('Error fetching university FAQs:', e);
+  }
+
   const result = {  data: {
     ...rows[0],
     approvals, // Add approval objects for website
@@ -623,10 +668,12 @@ export const getUniversityBySlug = async (slug: string) => {
       ...s,
       props: JSON.parse(s.props || "{}"),
     })),
+    university_faqs: universityFaqs, // Add university FAQs grouped by category
   }};
   
   console.log("🔍 Backend returning placement_partners:", placementPartners);
   console.log("🔍 Backend returning emi_partners:", emiPartners);
+  console.log("🔍 Backend returning university_faqs:", universityFaqs);
   
   return result;
 };
