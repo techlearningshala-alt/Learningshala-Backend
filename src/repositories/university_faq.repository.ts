@@ -43,11 +43,13 @@ export class UniversityFaqRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
+    const allowedFields = new Set(["heading"]);
+
     for (const [key, value] of Object.entries(item)) {
-      if (key !== "saveWithDate") { // skip frontend flag
-        fields.push(`${key} = ?`);
-        values.push(value);
-      }
+      if (key === "saveWithDate") continue;
+      if (!allowedFields.has(key)) continue;
+      fields.push(`${key} = ?`);
+      values.push(value);
     }
 
     // Only update updated_at if saveWithDate === true
