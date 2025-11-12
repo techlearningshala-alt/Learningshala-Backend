@@ -81,53 +81,53 @@ export const updateUniversity = async (
     );
 
     // ✅ Determine the final number of banners (max of existing or new)
-    const maxLength = Math.max(existingBanners.length, banners.length);
-    
     const mergedBanners = [];
-    for (let i = 0; i < maxLength; i++) {
+    for (let i = 0; i < banners.length; i++) {
       const newBanner = banners[i];
       const oldBanner = existingBanners[i];
-      
-      if (newBanner) {
-        // There's a banner in the request at this position
-        let finalImage = null;
-        
-        // Check if image was explicitly removed (empty string or null)
-        console.log(`💾 [SERVICE] Processing banner ${i}:`, {
-          newBanner: newBanner,
-          oldBanner: oldBanner,
-          newBanner_banner_image: newBanner.banner_image,
-          newBanner_existing_banner_image: newBanner.existing_banner_image
-        });
-        if (newBanner.banner_image === "" || newBanner.banner_image === null) {
-          // Image was removed - set to null
-          console.log(`🗑️ [SERVICE] Banner ${i} image was removed - setting to null`);
-          finalImage = null;
-        } else if (newBanner.banner_image && newBanner.banner_image.trim() !== "") {
-          // Valid new uploaded image (S3 key or local path) - use new image
-          finalImage = newBanner.banner_image;
-        } else if (newBanner.existing_banner_image && newBanner.existing_banner_image.trim() !== "") {
-          // Frontend sent existing valid path (S3 key or local path) - preserve it
-          finalImage = newBanner.existing_banner_image;
-        } else if (oldBanner?.banner_image && oldBanner.banner_image.trim() !== "") {
-          // Use valid old banner from database (S3 key or local path)
-          finalImage = oldBanner.banner_image;
-        }
-        console.log(`💾 [SERVICE] Final banner ${i} image:`, finalImage);
-        mergedBanners.push({
-          video_id: newBanner.video_id || null,
-          video_title: newBanner.video_title || null,
-          banner_image: finalImage,
-        });
-      } else if (oldBanner) {
-        // No banner in request, but exists in DB - preserve it
-        const validOldImage = oldBanner.banner_image && oldBanner.banner_image.trim() !== "" ? oldBanner.banner_image : null;
-        mergedBanners.push({
-          banner_image: validOldImage,
-          video_id: oldBanner.video_id,
-          video_title: oldBanner.video_title,
-        });
+
+      if (!newBanner) continue;
+
+      console.log(`💾 [SERVICE] Processing banner ${i}:`, {
+        newBanner,
+        oldBanner,
+        newBanner_banner_image: newBanner.banner_image,
+        newBanner_existing_banner_image: newBanner.existing_banner_image,
+      });
+
+      // If the banner was explicitly removed, skip adding it to merged list
+      if (newBanner.banner_image === "" || newBanner.banner_image === null) {
+        console.log(`🗑️ [SERVICE] Banner ${i} flagged for removal. Skipping insert.`);
+        continue;
       }
+
+      let finalImage: string | null = null;
+
+      if (typeof newBanner.banner_image === "string" && newBanner.banner_image.trim() !== "") {
+        finalImage = newBanner.banner_image.trim();
+      } else if (
+        typeof newBanner.existing_banner_image === "string" &&
+        newBanner.existing_banner_image.trim() !== ""
+      ) {
+        finalImage = newBanner.existing_banner_image.trim();
+      } else if (
+        oldBanner?.banner_image &&
+        typeof oldBanner.banner_image === "string" &&
+        oldBanner.banner_image.trim() !== ""
+      ) {
+        finalImage = oldBanner.banner_image.trim();
+      }
+
+      if (!finalImage) {
+        console.log(`⚠️ [SERVICE] Banner ${i} has no valid image after merge. Skipping.`);
+        continue;
+      }
+
+      mergedBanners.push({
+        video_id: newBanner.video_id || null,
+        video_title: newBanner.video_title || null,
+        banner_image: finalImage,
+      });
     }
 let sql = `
   UPDATE universities 
