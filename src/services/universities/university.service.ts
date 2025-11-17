@@ -658,6 +658,43 @@ export const getUniversityBySlug = async (slug: string) => {
     console.error('Error fetching university FAQs:', e);
   }
 
+  // Fetch courses for this university
+  let courseData = [];
+  try {
+    const [courses]: any = await pool.query(
+      `SELECT 
+        id,
+        name,
+        slug,
+        duration,
+        course_thumbnail as image,
+        fee_type_values
+      FROM university_courses 
+      WHERE university_id = ? AND is_active = 1
+      ORDER BY created_at ASC`,
+      [universityId]
+    );
+
+    // Format courses with full fee_type_values as fees
+    courseData = courses.map((course: any) => {
+      const fees = course.fee_type_values 
+        ? (typeof course.fee_type_values === 'string' 
+            ? JSON.parse(course.fee_type_values) 
+            : course.fee_type_values)
+        : null;
+
+      return {
+        name: course.name,
+        slug: course.slug,
+        duration: course.duration,
+        image: course.image,
+        fees: fees
+      };
+    });
+  } catch (e) {
+    console.error('Error fetching university courses:', e);
+  }
+
   const result = {  data: {
     ...rows[0],
     approvals, // Add approval objects for website
@@ -669,11 +706,8 @@ export const getUniversityBySlug = async (slug: string) => {
       props: JSON.parse(s.props || "{}"),
     })),
     university_faqs: universityFaqs, // Add university FAQs grouped by category
+    course_data: courseData, // Add course data
   }};
-  
-  console.log("🔍 Backend returning placement_partners:", placementPartners);
-  console.log("🔍 Backend returning emi_partners:", emiPartners);
-  console.log("🔍 Backend returning university_faqs:", universityFaqs);
   
   return result;
 };
