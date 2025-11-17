@@ -695,25 +695,48 @@ export const getUniversityBySlug = async (slug: string) => {
     console.error('Error fetching university courses:', e);
   }
 
-  const result = {  data: {
+  // First, compute cleanedSections outside the object
+const cleanedSections = Object.values(sections).reduce((acc: Record<string, any>, value: any) => {
+  let props =
+    typeof value === "object" && value !== null && "props" in value
+      ? value.props
+      : undefined;
+
+  if (typeof props === "string") {
+    // Remove the "content": part
+    props = props.replace(/"content"\s*:\s*/g, "");
+  }
+
+  const titleKey = value.title ? value.title.toLowerCase() : "unknown";
+  acc[titleKey] = props;
+
+  return acc;
+}, {});
+
+// ✅ Build your final result
+const result = {
+  data: {
     ...rows[0],
     approvals, // Add approval objects for website
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects
     banners,
-    ...sections.reduce((acc: any, s: any) => {
-      acc[s.title.toLowerCase()] = s.props;
-      return acc;
-    }, {}),
-    sections: sections.map((s: { props: any; }) => ({
+
+    // 👇 Spread the cleaned section data here
+    ...cleanedSections,
+
+    sections: sections.map((s: { props: any }) => ({
       ...s,
       props: JSON.parse(s.props || "{}"),
     })),
+
     university_faqs: universityFaqs, // Add university FAQs grouped by category
     course_data: courseData, // Add course data
-  }};
-  
-  return result;
+  },
+};
+
+return result;
+
 };
 
 export const deleteUniversity = async (id: number) => {
