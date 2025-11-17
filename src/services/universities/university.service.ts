@@ -701,14 +701,10 @@ export const getUniversityBySlug = async (slug: string) => {
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects
     banners,
-    latest_updates: "content",
-    about: "content",
-    why_choose: "content",
-    university_emi: "content",
-    popular_courses: "content",
-    student_ratings: "content",
-    other_popular_universities: "content",
-    approval_logos: "content",
+    ...sections.reduce((acc: any, s: any) => {
+      acc[s.title.toLowerCase()] = s.props;
+      return acc;
+    }, {}),
     sections: sections.map((s: { props: any; }) => ({
       ...s,
       props: JSON.parse(s.props || "{}"),
