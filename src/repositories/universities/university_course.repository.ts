@@ -85,6 +85,21 @@ export class UniversityCourseRepository {
     return rows.length ? this.mapRowToModel(rows[0]) : null;
   }
 
+  async findByUniversityIdAndSlug(universityId: number, slug: string) {
+    console.log(universityId, slug, "universityId and slug");
+    const [rows]: any = await pool.query(
+      `SELECT 
+          uc.*,
+          u.university_name
+        FROM university_courses uc
+        INNER JOIN universities u ON uc.university_id = u.id
+       WHERE uc.university_id = ? AND uc.slug = ?
+       LIMIT 1`,
+      [universityId, slug]
+    );
+    return rows.length ? this.mapRowToModel(rows[0]) : null;
+  }
+
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses

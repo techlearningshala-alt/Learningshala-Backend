@@ -4,6 +4,7 @@ import {
   deleteUniversityCourse,
   getUniversityCourseById,
   getUniversityCourseBySlug,
+  getUniversityCourseByUniversityIdAndSlug,
   listUniversityCourses,
   toggleUniversityCourseStatus,
   updateUniversityCourse,
@@ -45,7 +46,25 @@ export const findAll = async (req: Request, res: Response) => {
 
 export const findOne = async (req: Request, res: Response) => {
   try {
+    // Check if this might be a two-segment URL that should match the university_id/slug route
     const slugOrId = String(req.params.slug || "").trim();
+    const pathSegments = req.path.split("/").filter(Boolean);
+    
+    // If there are 2 segments in the path, this route shouldn't have matched
+    // It means Express matched :slug to the first segment incorrectly
+    if (pathSegments.length === 2 && req.params.university_id === undefined) {
+      // Try to call the correct handler
+      const universityId = Number(pathSegments[0]);
+      const slug = pathSegments[1];
+      
+      if (!Number.isNaN(universityId) && universityId > 0 && slug) {
+        const course = await getUniversityCourseByUniversityIdAndSlug(universityId, slug);
+        if (course) {
+          return successResponse(res, course, "University course fetched successfully");
+        }
+      }
+    }
+    
     if (!slugOrId) {
       return errorResponse(res, "Course slug or ID is required", 400);
     }
@@ -57,6 +76,45 @@ export const findOne = async (req: Request, res: Response) => {
     } else {
       course = await getUniversityCourseBySlug(slugOrId);
     }
+
+    if (!course) {
+      return errorResponse(res, "University course not found", 404);
+    }
+
+    return successResponse(
+      res,
+      course,
+      "University course fetched successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error fetching university course:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to fetch university course",
+      500
+    );
+  }
+};
+
+export const findByUniversityAndSlug = async (req: Request, res: Response) => {
+  try {
+    const universityId = req.params.university_id
+      ? Number(req.params.university_id)
+      : null;
+    const slug = typeof req.params.slug === "string" ? req.params.slug.trim() : null;
+    console.log(universityId, slug,"universityId and slug");
+
+    if (!universityId || universityId <= 0 || Number.isNaN(universityId)) {
+      return errorResponse(res, "Valid university_id is required", 400);
+    }
+
+    if (!slug || slug.length === 0) {
+      return errorResponse(res, "Course slug is required", 400);
+    }
+    const course = await getUniversityCourseByUniversityIdAndSlug(
+      universityId,
+      slug
+    );
 
     if (!course) {
       return errorResponse(res, "University course not found", 404);

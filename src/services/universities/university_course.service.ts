@@ -80,6 +80,18 @@ export async function getUniversityCourseBySlug(slug: string) {
   return enrichCourseFeeTypeValues(course, lookup);
 }
 
+export async function getUniversityCourseByUniversityIdAndSlug(
+  universityId: number,
+  slug: string
+) {
+  const course = await courseRepo.findByUniversityIdAndSlug(universityId, slug);
+  if (!course) return null;
+  const banners = await getCourseBanners(course.id);
+  (course as any).banners = banners || [];
+  const lookup = await buildFeeTypeLookup();
+  return enrichCourseFeeTypeValues(course, lookup);
+}
+
 export async function createUniversityCourse(payload: any) {
   const normalized = normaliseCoursePayload(payload);
   const course = await courseRepo.create(normalized);

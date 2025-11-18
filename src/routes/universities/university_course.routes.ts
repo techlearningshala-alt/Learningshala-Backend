@@ -12,7 +12,9 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
+// Specific routes must come before generic parameter routes
 router.get("/", UniversityCourseController.findAll);
+router.get("/by-university-and-slug/:university_id/:slug", UniversityCourseController.findByUniversityAndSlug);
 router.get("/:slug", UniversityCourseController.findOne);
 router.post(
   "/",
