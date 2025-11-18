@@ -86,7 +86,6 @@ export class UniversityCourseRepository {
   }
 
   async findByUniversityIdAndSlug(universityId: number, slug: string) {
-    console.log(universityId, slug, "universityId and slug");
     const [rows]: any = await pool.query(
       `SELECT 
           uc.*,

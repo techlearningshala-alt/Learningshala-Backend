@@ -1,6 +1,7 @@
 import slugify from "slugify";
 import courseRepo from "../../repositories/universities/university_course.repository";
 import feeTypeRepo from "../../repositories/universities/fee_type.repository";
+import { UniversityRepo } from "../../repositories/universities/university.repository";
 import {
   CreateUniversityCourseDto,
   UpdateUniversityCourseDto,
@@ -80,11 +81,19 @@ export async function getUniversityCourseBySlug(slug: string) {
   return enrichCourseFeeTypeValues(course, lookup);
 }
 
-export async function getUniversityCourseByUniversityIdAndSlug(
-  universityId: number,
-  slug: string
+export async function getUniversityCourseByUniversitySlugAndCourseSlug(
+  universitySlug: string,
+  courseSlug: string
 ) {
-  const course = await courseRepo.findByUniversityIdAndSlug(universityId, slug);
+  // First, get the university by slug to find its ID
+  const university = await UniversityRepo.getUniversityBySlug(universitySlug);
+  
+  if (!university || !university.id) {
+    return null;
+  }
+
+  // Then find the course using university_id and course slug
+  const course = await courseRepo.findByUniversityIdAndSlug(university.id, courseSlug);
   if (!course) return null;
   const banners = await getCourseBanners(course.id);
   (course as any).banners = banners || [];
