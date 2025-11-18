@@ -398,12 +398,16 @@ function extractBannerPayload(payload: any) {
 }
 
 function normalizeNullable(value: any) {
-  if (value === undefined || value === null) return undefined;
+  // If explicitly null, return null (to allow clearing fields)
+  if (value === null) return null;
+  
+  // If undefined, return undefined (to skip updating the field)
+  if (value === undefined) return undefined;
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    if (trimmed === "") return undefined;
-    if (trimmed === "null") return undefined;
+    if (trimmed === "") return null; // Convert empty strings to null to clear fields
+    if (trimmed === "null") return null;
     if (trimmed === "__REMOVE__") return null;
     return trimmed;
   }
