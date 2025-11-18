@@ -12,6 +12,7 @@ import {
 import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
+import { processSectionImages, handleSectionImageRemoval } from "../../utills/sectionImageHandler";
 
 export const findAll = async (req: Request, res: Response) => {
   try {
@@ -195,6 +196,54 @@ export const create = async (req: Request, res: Response) => {
       }
     }
 
+    // Parse sections - handle both string and object cases
+    let sections: any[] = [];
+    if (body.sections) {
+      if (typeof body.sections === "string") {
+        try {
+          sections = JSON.parse(body.sections);
+        } catch (err) {
+          console.error("❌ Error parsing sections:", err);
+          sections = [];
+        }
+      } else if (Array.isArray(body.sections)) {
+        // Check if array contains JSON strings that need parsing
+        if (body.sections.length > 0 && typeof body.sections[0] === "string") {
+          // Try to find a valid JSON string in the array (look for one that starts with [)
+          let foundValidJson = false;
+          for (const item of body.sections) {
+            if (typeof item === "string" && item.trim().startsWith("[")) {
+              try {
+                const parsed = JSON.parse(item);
+                if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "object" && parsed[0].hasOwnProperty("title")) {
+                  sections = parsed;
+                  foundValidJson = true;
+                  break;
+                }
+              } catch (e) {
+                // Continue to next item
+              }
+            }
+          }
+          if (!foundValidJson) {
+            sections = [];
+          }
+        } else {
+          // It's already an array of objects
+          sections = body.sections;
+        }
+      }
+    }
+
+    // 🧩 Handle section images - upload to S3
+    await processSectionImages({
+      files,
+      sections,
+      s3BasePath: "universities/courses/sections",
+    });
+
+    body.sections = sections;
+
     const course = await createUniversityCourse(body);
     return successResponse(
       res,
@@ -370,6 +419,58 @@ export const update = async (req: Request, res: Response) => {
         console.error("❌ Error parsing banners:", err);
       }
     }
+
+    // Parse sections - handle both string and object cases
+    let sections: any[] = [];
+    if (body.sections) {
+      if (typeof body.sections === "string") {
+        try {
+          sections = JSON.parse(body.sections);
+        } catch (err) {
+          console.error("❌ Error parsing sections:", err);
+          sections = [];
+        }
+      } else if (Array.isArray(body.sections)) {
+        // Check if array contains JSON strings that need parsing
+        if (body.sections.length > 0 && typeof body.sections[0] === "string") {
+          // Try to find a valid JSON string in the array (look for one that starts with [)
+          let foundValidJson = false;
+          for (const item of body.sections) {
+            if (typeof item === "string" && item.trim().startsWith("[")) {
+              try {
+                const parsed = JSON.parse(item);
+                if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "object" && parsed[0].hasOwnProperty("title")) {
+                  sections = parsed;
+                  foundValidJson = true;
+                  break;
+                }
+              } catch (e) {
+                // Continue to next item
+              }
+            }
+          }
+          if (!foundValidJson) {
+            sections = [];
+          }
+        } else {
+          // It's already an array of objects
+          sections = body.sections;
+        }
+      }
+    }
+
+    // 🧩 Handle section images - upload to S3
+    await processSectionImages({
+      files,
+      sections,
+      s3BasePath: "universities/courses/sections",
+      existingSections: existing?.sections,
+    });
+    
+    // Handle section image removal (empty strings) even when no new files are uploaded
+    handleSectionImageRemoval(sections, existing?.sections);
+
+    body.sections = sections;
 
     const course = await updateUniversityCourse(id, body);
 

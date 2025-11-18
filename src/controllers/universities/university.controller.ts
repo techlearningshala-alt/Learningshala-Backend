@@ -8,6 +8,7 @@ import { successResponse, errorResponse } from "../../utills/response";
 import * as UniversityService from "../../services/universities/university.service";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
+import { processSectionImages, handleSectionImageRemoval } from "../../utills/sectionImageHandler";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
 
 export const create = async (req: Request, res: Response) => {
@@ -69,56 +70,12 @@ export const create = async (req: Request, res: Response) => {
     }
 
         // 🧩 Handle section images with unique keys (section_image_0, section_image_1, etc.) - upload to S3
-    if (files && typeof files === "object") {
-      const sectionImageKeys = Object.keys(files).filter((key) => key.startsWith("section_image_"));
-      console.log("🟢 [CREATE] Section image keys found:", sectionImageKeys);
-
-      if (sectionImageKeys.length > 0) {
-        // Build map from original filename → S3 URL
-        const fileMap = new Map();
-        for (const key of sectionImageKeys) {
-          const file = files[key][0];
-          const fileName = generateFileName(file.originalname);
-          const s3Url = await uploadToS3(
-            file.buffer,
-            fileName,
-            "universities/sections",
-            file.mimetype
-          );
-          console.log(`🔍 [CREATE] File details for ${key}:`, {
-            originalname: file.originalname,
-            s3Url: s3Url
-          });
-          fileMap.set(file.originalname, s3Url);
-        }
-    
-        console.log("🔍 [CREATE] FileMap contents:", Array.from(fileMap.entries()));
-        console.log("🔍 [CREATE] Sections BEFORE replacement:", JSON.stringify(sections, null, 2));
-    
-        const replaceSectionImages = (obj: any) => {
-          Object.entries(obj).forEach(([key, val]) => {
-            if (typeof val === "string" && fileMap.has(val)) {
-              console.log(`✅ [CREATE] Replacing ${key}: "${val}" → "${fileMap.get(val)}"`);
-              obj[key] = fileMap.get(val);
-            } else if (typeof val === "string" && (val.includes('.webp') || val.includes('.jpg') || val.includes('.png'))) {
-              console.log(`⚠️ [CREATE] Found image filename but NOT in fileMap: ${key} = "${val}"`);
-            }
-            
-            if (Array.isArray(val)) {
-              val.forEach((item) => replaceSectionImages(item));
-            } else if (val && typeof val === "object") {
-              replaceSectionImages(val);
-            }
-          });
-        };
-    
-        sections.forEach((section: any) => {
-          if (section.props) replaceSectionImages(section.props);
-        });
-    
-        console.log("🔍 [CREATE] Sections AFTER replacement:", JSON.stringify(sections, null, 2));
-      }
-    }
+    await processSectionImages({
+      files,
+      sections,
+      s3BasePath: "universities/sections",
+      enableLogging: true,
+    });
 
     // 🧾 Handle placement partners
     if (body.placement_partner_ids && typeof body.placement_partner_ids === "string") {
@@ -258,95 +215,15 @@ console.log(files,"filesbefore")
     console.log("📤 [BACKEND] Final banners after removal processing:", JSON.stringify(banners, null, 2));
     
       // 🧩 Handle section images like Add API - upload to S3
-    if (files && typeof files === "object") {
-      const sectionImageKeys = Object.keys(files).filter((key) => key.startsWith("section_image_"));
-      console.log("🟢 Section image keys found:", sectionImageKeys);
-
-      if (sectionImageKeys.length > 0) {
-        // Build map from original filename → S3 URL
-        const fileMap = new Map();
-        for (const key of sectionImageKeys) {
-          const file = files[key][0];
-          const fileName = generateFileName(file.originalname);
-          const s3Url = await uploadToS3(
-            file.buffer,
-            fileName,
-            "universities/sections",
-            file.mimetype
-          );
-          console.log(`🔍 File details for ${key}:`, {
-            originalname: file.originalname,
-            s3Url: s3Url
-          });
-          fileMap.set(file.originalname, s3Url);
-        }
-       
-        const replaceSectionImages = (obj: any, sectionIndex: number) => {
-          Object.entries(obj).forEach(([key, val]) => {
-            // Check if this is an image field that was removed (empty string)
-            if (
-              typeof val === "string" && 
-              val === "" &&
-              (key.toLowerCase().includes("img") || key.toLowerCase().includes("logo") || key.toLowerCase().includes("image") || key.toLowerCase().includes("sample"))
-            ) {
-              // Image was removed - set to null and delete from S3 if it exists
-              const existingImage = currentUniversity?.sections?.[sectionIndex]?.props?.[key];
-              if (existingImage && typeof existingImage === "string" && !existingImage.startsWith("/uploads/")) {
-                deleteFromS3(existingImage).catch(err => console.error("Error deleting section image from S3:", err));
-              }
-              obj[key] = null;
-            } else if (typeof val === "string" && fileMap.has(val)) {
-              console.log(`✅ Replacing ${key}: "${val}" → "${fileMap.get(val)}"`);
-              obj[key] = fileMap.get(val);
-            } else if (typeof val === "string" && (val.includes('.webp') || val.includes('.jpg') || val.includes('.png'))) {
-              console.log(`⚠️ Found image filename but NOT in fileMap: ${key} = "${val}"`);
-            }
-            
-            if (Array.isArray(val)) {
-              val.forEach((item) => replaceSectionImages(item, sectionIndex));
-            } else if (val && typeof val === "object") {
-              replaceSectionImages(val, sectionIndex);
-            }
-          });
-        };
-    
-        sections.forEach((section: any, sIndex: number) => {
-          if (section.props) replaceSectionImages(section.props, sIndex);
-        });
-    
-        console.log("🔍 Sections AFTER replacement:", JSON.stringify(sections, null, 2));
-      }
-    }
+    await processSectionImages({
+      files,
+      sections,
+      s3BasePath: "universities/sections",
+      existingSections: currentUniversity?.sections,
+    });
     
     // Handle section image removal (empty strings) even when no new files are uploaded
-    sections.forEach((section: any, sIndex: number) => {
-      if (section.props) {
-        const handleImageRemoval = (obj: any) => {
-          Object.entries(obj).forEach(([key, val]) => {
-            // Check if this is an image field that was removed (empty string)
-            if (
-              typeof val === "string" && 
-              val === "" &&
-              (key.toLowerCase().includes("img") || key.toLowerCase().includes("logo") || key.toLowerCase().includes("image") || key.toLowerCase().includes("sample"))
-            ) {
-              // Image was removed - set to null and delete from S3 if it exists
-              const existingImage = currentUniversity?.sections?.[sIndex]?.props?.[key];
-              if (existingImage && typeof existingImage === "string" && !existingImage.startsWith("/uploads/")) {
-                deleteFromS3(existingImage).catch(err => console.error("Error deleting section image from S3:", err));
-              }
-              obj[key] = null;
-            }
-            
-            if (Array.isArray(val)) {
-              val.forEach((item) => handleImageRemoval(item));
-            } else if (val && typeof val === "object") {
-              handleImageRemoval(val);
-            }
-          });
-        };
-        handleImageRemoval(section.props);
-      }
-    });
+    handleSectionImageRemoval(sections, currentUniversity?.sections);
     // 🧾 Handle approvals
     if (body.approval_id && typeof body.approval_id === "string") {
       try {

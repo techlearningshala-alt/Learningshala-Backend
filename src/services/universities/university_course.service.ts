@@ -1,4 +1,5 @@
 import slugify from "slugify";
+import pool from "../../config/db";
 import courseRepo from "../../repositories/universities/university_course.repository";
 import feeTypeRepo from "../../repositories/universities/fee_type.repository";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
@@ -7,6 +8,7 @@ import {
   UpdateUniversityCourseDto,
 } from "../../models/universities/university_course.model";
 import { syncCourseBanners, getCourseBanners } from "./university_course_banner.service";
+import UniversityCourseSectionService, { generateSectionKey } from "./university_course_section.service";
 
 interface ListCourseOptions {
   universityId?: number;
@@ -63,11 +65,24 @@ export async function listUniversityCourses(
   return result;
 }
 
+async function getCourseSections(courseId: number) {
+  const sections = await UniversityCourseSectionService.getSectionsByCourseId(courseId);
+  return sections.map((s: any) => ({
+    id: s.id,
+    section_key: s.section_key,
+    title: s.title,
+    component: s.component,
+    props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
+  }));
+}
+
 export async function getUniversityCourseById(id: number) {
   const course = await courseRepo.findById(id);
   if (!course) return null;
   const banners = await getCourseBanners(id);
+  const sections = await getCourseSections(id);
   (course as any).banners = banners || [];
+  (course as any).sections = sections || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -76,7 +91,9 @@ export async function getUniversityCourseBySlug(slug: string) {
   const course = await courseRepo.findBySlug(slug);
   if (!course) return null;
   const banners = await getCourseBanners(course.id);
+  const sections = await getCourseSections(course.id);
   (course as any).banners = banners || [];
+  (course as any).sections = sections || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -96,108 +113,253 @@ export async function getUniversityCourseByUniversitySlugAndCourseSlug(
   const course = await courseRepo.findByUniversityIdAndSlug(university.id, courseSlug);
   if (!course) return null;
   const banners = await getCourseBanners(course.id);
+  const sections = await getCourseSections(course.id);
   (course as any).banners = banners || [];
+  (course as any).sections = sections || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
 
 export async function createUniversityCourse(payload: any) {
-  const normalized = normaliseCoursePayload(payload);
-  const course = await courseRepo.create(normalized);
-  if (!course) {
-    throw new Error("Failed to create university course");
-  }
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
 
-  const banners = extractBannersArray(payload);
-  if (banners && banners.length > 0) {
-    await syncCourseBanners(course.id, banners);
-  }
+    const normalized = normaliseCoursePayload(payload);
+    const course = await courseRepo.create(normalized);
+    if (!course) {
+      throw new Error("Failed to create university course");
+    }
 
-  const refreshed = await courseRepo.findById(course.id);
-  if (refreshed) {
-    const banners = await getCourseBanners(course.id);
-    (refreshed as any).banners = banners || [];
+    const banners = extractBannersArray(payload);
+    if (banners && banners.length > 0) {
+      await syncCourseBanners(course.id, banners);
+    }
+
+    const sections = extractSectionsArray(payload);
+    
+    if (sections && sections.length > 0) {
+      // Filter out sections with invalid/missing titles or components
+      const validSections = sections.filter(
+        (section: any) => section && section.title && section.title.trim() && section.component && section.component.trim()
+      );
+
+      // Insert sections using transaction connection
+      for (const section of validSections) {
+        try {
+          const sectionKey = section.section_key || generateSectionKey(section.title);
+          await conn.query(
+            `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
+            [course.id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
+          );
+        } catch (error: any) {
+          console.error("❌ [CREATE] Error saving section:", section.title, error.message);
+          throw error; // Re-throw to rollback transaction
+        }
+      }
+    }
+
+    await conn.commit();
+
+    const refreshed = await courseRepo.findById(course.id);
+    if (refreshed) {
+      const banners = await getCourseBanners(course.id);
+      const sections = await getCourseSections(course.id);
+      (refreshed as any).banners = banners || [];
+      (refreshed as any).sections = sections || [];
+    }
+    const lookup = await buildFeeTypeLookup();
+    return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-  const lookup = await buildFeeTypeLookup();
-  return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
 }
 
 export async function updateUniversityCourse(id: number, payload: any) {
-  const normalized: UpdateUniversityCourseDto = {};
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
 
-  if (payload.university_id !== undefined) {
-    normalized.university_id = Number(payload.university_id);
-  }
+    const normalized: UpdateUniversityCourseDto = {};
 
-  if (payload.name !== undefined) {
-    const name = String(payload.name).trim();
-    if (!name) {
-      throw new Error("Name cannot be empty");
+    if (payload.university_id !== undefined) {
+      normalized.university_id = Number(payload.university_id);
     }
-    normalized.name = name;
-    if (!payload.slug) {
-      normalized.slug = slugify(name, { lower: true, strict: true });
+
+    if (payload.name !== undefined) {
+      const name = String(payload.name).trim();
+      if (!name) {
+        throw new Error("Name cannot be empty");
+      }
+      normalized.name = name;
+      if (!payload.slug) {
+        normalized.slug = slugify(name, { lower: true, strict: true });
+      }
     }
-  }
 
-  if (payload.slug !== undefined) {
-    const slug = String(payload.slug).trim();
-    normalized.slug =
-      slug || slugify(String(normalized.name ?? ""), { lower: true, strict: true });
-  }
-
-  if (payload.duration !== undefined) {
-    normalized.duration = payload.duration ?? null;
-  }
-  if (payload.label !== undefined) {
-    normalized.label = payload.label ?? null;
-  }
-  if (payload.course_thumbnail !== undefined) {
-    normalized.course_thumbnail = payload.course_thumbnail ?? null;
-  }
-  if (payload.author_name !== undefined) {
-    normalized.author_name = payload.author_name ?? null;
-  }
-  if (payload.is_active !== undefined) {
-    const boolValue = toBoolean(payload.is_active);
-    if (boolValue !== undefined) {
-      normalized.is_active = boolValue;
+    if (payload.slug !== undefined) {
+      const slug = String(payload.slug).trim();
+      normalized.slug =
+        slug || slugify(String(normalized.name ?? ""), { lower: true, strict: true });
     }
-  }
-  if (payload.syllabus_file !== undefined) {
-    normalized.syllabus_file = payload.syllabus_file ?? null;
-  }
-  if (payload.brochure_file !== undefined) {
-    normalized.brochure_file = payload.brochure_file ?? null;
-  }
-  if (payload.fee_type_values !== undefined) {
-    const parsed = parseFeeTypeValues(payload.fee_type_values);
-    normalized.fee_type_values = parsed && Object.keys(parsed).length ? parsed : null;
-  }
-  if (payload.saveWithDate !== undefined) {
-    normalized.saveWithDate =
-      payload.saveWithDate === true || payload.saveWithDate === "true";
-  }
 
-  const updated = await courseRepo.update(id, normalized);
-  const lookup = await buildFeeTypeLookup();
+    if (payload.duration !== undefined) {
+      normalized.duration = payload.duration ?? null;
+    }
+    if (payload.label !== undefined) {
+      normalized.label = payload.label ?? null;
+    }
+    if (payload.course_thumbnail !== undefined) {
+      normalized.course_thumbnail = payload.course_thumbnail ?? null;
+    }
+    if (payload.author_name !== undefined) {
+      normalized.author_name = payload.author_name ?? null;
+    }
+    if (payload.is_active !== undefined) {
+      const boolValue = toBoolean(payload.is_active);
+      if (boolValue !== undefined) {
+        normalized.is_active = boolValue;
+      }
+    }
+    if (payload.syllabus_file !== undefined) {
+      normalized.syllabus_file = payload.syllabus_file ?? null;
+    }
+    if (payload.brochure_file !== undefined) {
+      normalized.brochure_file = payload.brochure_file ?? null;
+    }
+    if (payload.fee_type_values !== undefined) {
+      const parsed = parseFeeTypeValues(payload.fee_type_values);
+      normalized.fee_type_values = parsed && Object.keys(parsed).length ? parsed : null;
+    }
+    if (payload.saveWithDate !== undefined) {
+      normalized.saveWithDate =
+        payload.saveWithDate === true || payload.saveWithDate === "true";
+    }
 
-  const banners = extractBannersArray(payload);
-  if (banners !== undefined) {
-    await syncCourseBanners(id, banners);
+    const updated = await courseRepo.update(id, normalized);
+    const lookup = await buildFeeTypeLookup();
+
+    const banners = extractBannersArray(payload);
+    if (banners !== undefined) {
+      await syncCourseBanners(id, banners);
+    }
+
+    const sections = extractSectionsArray(payload);
+    
+    // Always process sections if they're provided (even if empty array)
+    if (payload.sections !== undefined) {
+      // Get existing sections for merging
+      const existingSections = await UniversityCourseSectionService.getSectionsByCourseId(id);
+      
+      // Helper function to deep merge and preserve valid image paths
+      function deepMergeImages(oldObj: any, newObj: any): any {
+        if (!newObj || typeof newObj !== 'object') return newObj;
+        if (!oldObj || typeof oldObj !== 'object') return newObj;
+
+        const result: any = { ...newObj };
+
+        Object.keys(oldObj).forEach(key => {
+          const oldVal = oldObj[key];
+          const newVal = newObj[key];
+
+          // If newVal is empty string or null, it means image was removed
+          if (newVal === "" || newVal === null) {
+            result[key] = null;
+            return;
+          }
+          
+          // If newVal already has a valid /uploads/ path, use it
+          if (typeof newVal === 'string' && newVal.startsWith('/uploads/')) {
+            result[key] = newVal;
+            return;
+          }
+
+          if (Array.isArray(oldVal) && Array.isArray(newVal)) {
+            result[key] = newVal.map((item: any, idx: number) => {
+              if (typeof item === 'object' && typeof oldVal[idx] === 'object') {
+                return deepMergeImages(oldVal[idx], item);
+              }
+              return item;
+            });
+          } else if (typeof oldVal === 'object' && typeof newVal === 'object' && !Array.isArray(oldVal)) {
+            result[key] = deepMergeImages(oldVal, newVal);
+          } else if (typeof newVal === 'string' && newVal && !newVal.startsWith('/uploads/')) {
+            if (typeof oldVal === 'string' && oldVal.startsWith('/uploads/')) {
+              result[key] = oldVal;
+            }
+          }
+        });
+
+        return result;
+      }
+
+      // Use extracted sections or default to empty array
+      const sectionsToProcess = Array.isArray(sections) ? sections : [];
+
+      // Merge sections - preserve old images for unchanged sections
+      const mergedSections = sectionsToProcess.map((newSection: any, index: number) => {
+        const oldSection = existingSections[index];
+        
+        if (!oldSection) {
+          return newSection;
+        }
+
+        const oldProps = typeof oldSection.props === 'string' 
+          ? JSON.parse(oldSection.props || '{}') 
+          : oldSection.props || {};
+        
+        const newProps = newSection.props || {};
+        const mergedProps = deepMergeImages(oldProps, newProps);
+
+        return {
+          ...newSection,
+          section_key: newSection.section_key || generateSectionKey(newSection.title),
+          props: mergedProps
+        };
+      });
+
+      // Delete old sections using transaction connection
+      await conn.query(`DELETE FROM university_course_sections WHERE course_id = ?`, [id]);
+
+      // Filter out sections with invalid/missing titles or components
+      const validMergedSections = mergedSections.filter(
+        (section: any) => section && section.title && section.title.trim() && section.component && section.component.trim()
+      );
+
+      // Insert merged sections using transaction connection
+      for (const section of validMergedSections) {
+        try {
+          const sectionKey = section.section_key || generateSectionKey(section.title);
+          await conn.query(
+            `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
+            [id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
+          );
+        } catch (error: any) {
+          console.error("❌ [UPDATE] Error saving section:", section.title, error.message);
+          throw error; // Re-throw to rollback transaction
+        }
+      }
+    }
+
+    await conn.commit();
+
     const refreshed = await courseRepo.findById(id);
     if (refreshed) {
       const banners = await getCourseBanners(id);
+      const sections = await getCourseSections(id);
       (refreshed as any).banners = banners || [];
+      (refreshed as any).sections = sections || [];
     }
     return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-
-  if (updated) {
-    const banners = await getCourseBanners(id);
-    (updated as any).banners = banners || [];
-  }
-  return updated ? enrichCourseFeeTypeValues(updated, lookup) : updated;
 }
 
 export async function deleteUniversityCourse(id: number) {
@@ -368,6 +530,19 @@ function extractBannersArray(payload: any) {
       video_id: normalizeNullable(b.video_id),
       video_title: normalizeNullable(b.video_title),
     }));
+}
+
+function extractSectionsArray(payload: any) {
+  if (!payload.sections || !Array.isArray(payload.sections)) {
+    return undefined;
+  }
+
+  return payload.sections.map((s: any) => ({
+    section_key: s.section_key || generateSectionKey(s.title),
+    title: s.title,
+    component: s.component,
+    props: s.props || {},
+  }));
 }
 
 function extractBannerPayload(payload: any) {
