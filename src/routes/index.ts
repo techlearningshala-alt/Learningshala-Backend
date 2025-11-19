@@ -17,9 +17,11 @@ import placementPartnerRoutes from "./universities/placement-partner.routes";
 import emiPartnerRoutes from "./universities/emi-partner.routes";
 import universityCourseRoutes from "./universities/university_course.routes";
 import universitySpecializationRoutes from "./universities/university_specialization.routes";
+import universityCourseSpecializationRoutes from "./universities/university_course_specialization.routes";
 import feeTypeRoutes from "./universities/fee_type.routes";
 import universityFaqRoutes from "./university_faq.routes";
 import universityCourseFaqRoutes from "./university_course_faq.routes";
+import universityCourseSpecializationFaqRoutes from "./university_course_specialization_faq.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -33,10 +35,12 @@ router.use("/cms/leads", leadRoutes);
 // ✅ IMPORTANT: More specific routes must come BEFORE general routes
 router.use("/cms/universities/faqs", universityFaqRoutes);
 router.use("/cms/university-courses/faqs", universityCourseFaqRoutes);
+router.use("/cms/university-course-specializations/faqs", universityCourseSpecializationFaqRoutes);
 router.use("/cms/universities-approvals", universityApprovalsRoutes);
 router.use("/cms/placement-partners", placementPartnerRoutes);
 router.use("/cms/emi-partners", emiPartnerRoutes);
 router.use("/cms/university-specializations", universitySpecializationRoutes);
+router.use("/cms/university-course-specializations", universityCourseSpecializationRoutes);
 router.use("/cms/university-courses", universityCourseRoutes);
 router.use("/cms/fee-types", feeTypeRoutes);
 router.use("/cms/universities", universityRoutes);

@@ -11,8 +11,9 @@ const optionalNumber = z
   }, z.number().int().positive())
   .optional();
 
-export const createUniversityCourseSchema = z.object({
+export const createUniversityCourseSpecializationSchema = z.object({
   university_id: z.coerce.number().int().positive(),
+  university_course_id: z.coerce.number().int().positive(),
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1).optional(),
   h1Tag: z.string().optional(),
@@ -37,7 +38,7 @@ export const createUniversityCourseSchema = z.object({
   banners: z.string().optional(), // JSON string of banners array
 }).passthrough(); // Allow extra fields to pass through
 
-export const updateUniversityCourseSchema = createUniversityCourseSchema
+export const updateUniversityCourseSpecializationSchema = createUniversityCourseSpecializationSchema
   .partial()
   .extend({
     saveWithDate: z
@@ -45,11 +46,11 @@ export const updateUniversityCourseSchema = createUniversityCourseSchema
       .optional(),
   });
 
-export const listUniversityCourseQuerySchema = z.object({
+export const listUniversityCourseSpecializationQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
   university_id: optionalNumber,
-  specialization_id: optionalNumber,
+  university_course_id: optionalNumber,
   search: z.string().optional(),
 });
 

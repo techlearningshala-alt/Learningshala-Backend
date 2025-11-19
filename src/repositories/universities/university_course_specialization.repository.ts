@@ -1,48 +1,59 @@
 import pool from "../../config/db";
 import {
-  CreateUniversityCourseDto,
-  UniversityCourse,
-  UpdateUniversityCourseDto,
-} from "../../models/universities/university_course.model";
+  CreateUniversityCourseSpecializationDto,
+  UniversityCourseSpecialization,
+  UpdateUniversityCourseSpecializationDto,
+} from "../../models/universities/university_course_specialization.model";
 
-interface ListCourseFilters {
+interface ListSpecializationFilters {
   universityId?: number;
+  universityCourseId?: number;
   search?: string;
 }
 
-export class UniversityCourseRepository {
-  async findAll(page = 1, limit = 10, filters: ListCourseFilters = {}) {
+export class UniversityCourseSpecializationRepository {
+  async findAll(
+    page = 1,
+    limit = 10,
+    filters: ListSpecializationFilters = {}
+  ) {
     const offset = (page - 1) * limit;
     const params: any[] = [];
     const where: string[] = ["1=1"];
 
     if (filters.universityId) {
-      where.push("uc.university_id = ?");
+      where.push("ucs.university_id = ?");
       params.push(filters.universityId);
     }
 
+    if (filters.universityCourseId) {
+      where.push("ucs.university_course_id = ?");
+      params.push(filters.universityCourseId);
+    }
+
     if (filters.search) {
-      where.push("(uc.name LIKE ? OR uc.slug LIKE ?)");
+      where.push("(ucs.name LIKE ? OR ucs.slug LIKE ?)");
       params.push(`%${filters.search}%`, `%${filters.search}%`);
     }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await pool.query(
-      `SELECT 
-          uc.*,
-          u.university_name
-        FROM university_courses uc
-        INNER JOIN universities u ON uc.university_id = u.id
+      `SELECT ucs.*,
+              uc.name AS course_name,
+              u.university_name
+         FROM university_course_specialization ucs
+         INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+         INNER JOIN universities u ON ucs.university_id = u.id
         ${whereClause}
-        ORDER BY uc.updated_at DESC
+        ORDER BY ucs.updated_at DESC
         LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
 
     const [countRows]: any = await pool.query(
       `SELECT COUNT(*) as total
-         FROM university_courses uc
+         FROM university_course_specialization ucs
         ${whereClause}`,
       params
     );
@@ -57,55 +68,54 @@ export class UniversityCourseRepository {
     };
   }
 
-  async findById(id: number) {
+  async findOptionsByCourse(universityCourseId: number) {
     const [rows]: any = await pool.query(
-      `SELECT 
-          uc.*,
-          u.university_name
-        FROM university_courses uc
-        INNER JOIN universities u ON uc.university_id = u.id
-       WHERE uc.id = ?
-       LIMIT 1`,
-      [id]
+      `SELECT id, name, slug
+         FROM university_course_specialization
+        WHERE university_course_id = ?
+        ORDER BY name ASC`,
+      [universityCourseId]
     );
-    return rows.length ? this.mapRowToModel(rows[0]) : null;
+    return rows as Array<Pick<UniversityCourseSpecialization, "id" | "name" | "slug">>;
   }
 
   async findBySlug(slug: string) {
     const [rows]: any = await pool.query(
-      `SELECT 
-          uc.*,
-          u.university_name
-        FROM university_courses uc
-        INNER JOIN universities u ON uc.university_id = u.id
-       WHERE uc.slug = ?
-       LIMIT 1`,
+      `SELECT * FROM university_course_specialization WHERE slug = ? LIMIT 1`,
       [slug]
     );
     return rows.length ? this.mapRowToModel(rows[0]) : null;
   }
 
-  async findByUniversityIdAndSlug(universityId: number, slug: string) {
+  async findById(id: number) {
     const [rows]: any = await pool.query(
-      `SELECT 
-          uc.*,
-          u.university_name
-        FROM university_courses uc
-        INNER JOIN universities u ON uc.university_id = u.id
-       WHERE uc.university_id = ? AND uc.slug = ?
-       LIMIT 1`,
-      [universityId, slug]
+      `SELECT * FROM university_course_specialization WHERE id = ?`,
+      [id]
     );
     return rows.length ? this.mapRowToModel(rows[0]) : null;
   }
 
-  async create(payload: CreateUniversityCourseDto) {
+  private mapRowToModel(row: any): UniversityCourseSpecialization {
+    return {
+      ...row,
+      fee_type_values: row.fee_type_values
+        ? JSON.parse(row.fee_type_values)
+        : null,
+      is_active:
+        row.is_active === null || row.is_active === undefined
+          ? true
+          : Boolean(row.is_active),
+    };
+  }
+
+  async create(payload: CreateUniversityCourseSpecializationDto) {
     const [result]: any = await pool.query(
-      `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, duration, label, course_thumbnail, author_name, is_active, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO university_course_specialization
+        (university_id, university_course_id, name, slug, h1Tag, duration, label, course_thumbnail, author_name, is_active, syllabus_file, brochure_file, fee_type_values)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
+        payload.university_course_id,
         payload.name,
         payload.slug,
         payload.h1Tag ?? null,
@@ -123,13 +133,17 @@ export class UniversityCourseRepository {
     return this.findById(result.insertId);
   }
 
-  async update(id: number, payload: UpdateUniversityCourseDto) {
+  async update(id: number, payload: UpdateUniversityCourseSpecializationDto) {
     const fields: string[] = [];
     const values: any[] = [];
 
     if (payload.university_id !== undefined) {
       fields.push("university_id = ?");
       values.push(payload.university_id);
+    }
+    if (payload.university_course_id !== undefined) {
+      fields.push("university_course_id = ?");
+      values.push(payload.university_course_id);
     }
     if (payload.name !== undefined) {
       fields.push("name = ?");
@@ -189,7 +203,7 @@ export class UniversityCourseRepository {
     values.push(id);
 
     await pool.query(
-      `UPDATE university_courses SET ${fields.join(", ")} WHERE id = ?`,
+      `UPDATE university_course_specialization SET ${fields.join(", ")} WHERE id = ?`,
       values
     );
 
@@ -198,24 +212,12 @@ export class UniversityCourseRepository {
 
   async delete(id: number) {
     const [result]: any = await pool.query(
-      `DELETE FROM university_courses WHERE id = ?`,
+      `DELETE FROM university_course_specialization WHERE id = ?`,
       [id]
     );
     return result.affectedRows > 0;
   }
-
-  private mapRowToModel(row: any): UniversityCourse {
-    return {
-      ...row,
-      fee_type_values: row.fee_type_values
-        ? JSON.parse(row.fee_type_values)
-        : null,
-      is_active:
-        row.is_active === null || row.is_active === undefined
-          ? true
-          : Boolean(row.is_active),
-    };
-  }
 }
 
-export default new UniversityCourseRepository();
+export default new UniversityCourseSpecializationRepository();
+

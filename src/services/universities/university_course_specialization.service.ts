@@ -1,17 +1,17 @@
 import slugify from "slugify";
 import pool from "../../config/db";
-import courseRepo from "../../repositories/universities/university_course.repository";
+import specializationRepo from "../../repositories/universities/university_course_specialization.repository";
 import feeTypeRepo from "../../repositories/universities/fee_type.repository";
-import { UniversityRepo } from "../../repositories/universities/university.repository";
 import {
-  CreateUniversityCourseDto,
-  UpdateUniversityCourseDto,
-} from "../../models/universities/university_course.model";
-import { syncCourseBanners, getCourseBanners } from "./university_course_banner.service";
-import UniversityCourseSectionService, { generateSectionKey } from "./university_course_section.service";
+  CreateUniversityCourseSpecializationDto,
+  UpdateUniversityCourseSpecializationDto,
+} from "../../models/universities/university_course_specialization.model";
+import { syncSpecializationBanners, getSpecializationBanners } from "./university_course_specialization_banner.service";
+import UniversityCourseSpecializationSectionService, { generateSectionKey } from "./university_course_specialization_section.service";
 
-interface ListCourseOptions {
+interface ListSpecializationOptions {
   universityId?: number;
+  universityCourseId?: number;
   search?: string;
 }
 
@@ -25,9 +25,12 @@ const toBoolean = (value: unknown): boolean | undefined => {
   throw new Error("Invalid boolean value provided");
 };
 
-const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
+const normaliseSpecializationPayload = (payload: any): CreateUniversityCourseSpecializationDto => {
   if (!payload.university_id) {
     throw new Error("university_id is required");
+  }
+  if (!payload.university_course_id) {
+    throw new Error("university_course_id is required");
   }
 
   const name = String(payload.name || "").trim();
@@ -41,6 +44,7 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
 
   return {
     university_id: Number(payload.university_id),
+    university_course_id: Number(payload.university_course_id),
     name,
     slug,
     h1Tag: payload.h1Tag ? String(payload.h1Tag).trim() : null,
@@ -55,19 +59,19 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
   };
 };
 
-export async function listUniversityCourses(
+export async function listUniversityCourseSpecializations(
   page = 1,
   limit = 10,
-  options: ListCourseOptions = {}
+  options: ListSpecializationOptions = {}
 ) {
-  const result = await courseRepo.findAll(page, limit, options);
+  const result = await specializationRepo.findAll(page, limit, options);
   const lookup = await buildFeeTypeLookup();
-  result.data = result.data.map((course: any) => enrichCourseFeeTypeValues(course, lookup));
+  result.data = result.data.map((specialization: any) => enrichSpecializationFeeTypeValues(specialization, lookup));
   return result;
 }
 
-async function getCourseSections(courseId: number) {
-  const sections = await UniversityCourseSectionService.getSectionsByCourseId(courseId);
+async function getSpecializationSections(specializationId: number) {
+  const sections = await UniversityCourseSpecializationSectionService.getSectionsBySpecializationId(specializationId);
   
   // Old format: keep original structure
   const oldFormat = sections.map((s: any) => ({
@@ -122,125 +126,55 @@ async function getCourseSections(courseId: number) {
   };
 }
 
-async function getCourseFaqs(courseId: number) {
-  try {
-    const [rows]: any = await pool.query(
-      `SELECT f.id,
-              f.title,
-              f.description,
-              f.category_id,
-              c.heading AS category_heading
-       FROM university_course_faqs f
-       LEFT JOIN university_faq_categories c ON f.category_id = c.id
-       WHERE f.course_id = ?
-       ORDER BY 
-         CASE WHEN c.heading IS NULL THEN 1 ELSE 0 END,
-         c.heading,
-         f.created_at DESC`,
-      [courseId]
-    );
-
-
-    if (!rows || !rows.length) {
-      return [];
-    }
-
-    const grouped = rows.reduce((acc: Record<string, any>, faq: any) => {
-      const categoryId = faq.category_id || 0;
-      const heading = faq.category_heading || "Uncategorized";
-      const slug = heading.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
-
-      if (!acc[categoryId]) {
-        acc[categoryId] = {
-          category: heading,
-          cat_id: slug || `category-${categoryId || "uncategorized"}`,
-          items: [],
-        };
-      }
-
-      acc[categoryId].items.push({
-        id: faq.id,
-        question: faq.title,
-        answer: faq.description,
-        category_id: faq.category_id,
-      });
-
-      return acc;
-    }, {});
-
-    const result = Object.values(grouped);
-    console.log(`✅ [COURSE FAQ] Grouped FAQs for course_id ${courseId}:`, result.length, "categories");
-    return result;
-  } catch (error) {
-    console.error(`❌ [COURSE FAQ] Error fetching course FAQs for course_id ${courseId}:`, error);
-    return [];
-  }
-}
-
-export async function getUniversityCourseById(id: number) {
-  const course = await courseRepo.findById(id);
-  if (!course) return null;
-  const banners = await getCourseBanners(id);
-  const sectionsData = await getCourseSections(id);
-  (course as any).banners = banners || [];
-  (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || {};
-  (course as any).course_faqs = await getCourseFaqs(id);
+export async function getUniversityCourseSpecializationById(id: number) {
+  const specialization = await specializationRepo.findById(id);
+  if (!specialization) return null;
+  const banners = await getSpecializationBanners(id);
+  const sectionsData = await getSpecializationSections(id);
+  (specialization as any).banners = banners || [];
+  (specialization as any).sections = sectionsData.sections || [];
+  (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
   const lookup = await buildFeeTypeLookup();
-  return enrichCourseFeeTypeValues(course, lookup);
+  return enrichSpecializationFeeTypeValues(specialization, lookup);
 }
 
-export async function getUniversityCourseBySlug(slug: string) {
-  const course = await courseRepo.findBySlug(slug);
-  if (!course) return null;
-  const banners = await getCourseBanners(course.id);
-  const sectionsData = await getCourseSections(course.id);
-  (course as any).banners = banners || [];
-  (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || {};
-  (course as any).course_faqs = await getCourseFaqs(course.id);
+export async function getUniversityCourseSpecializationBySlug(slug: string) {
+  const [rows]: any = await pool.query(
+    `SELECT * FROM university_course_specialization WHERE slug = ? LIMIT 1`,
+    [slug]
+  );
+  if (!rows.length) return null;
+  const specialization = await specializationRepo.findById(rows[0].id);
+  if (!specialization) return null;
+  const banners = await getSpecializationBanners(rows[0].id);
+  const sectionsData = await getSpecializationSections(rows[0].id);
+  (specialization as any).banners = banners || [];
+  (specialization as any).sections = sectionsData.sections || [];
+  (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
   const lookup = await buildFeeTypeLookup();
-  return enrichCourseFeeTypeValues(course, lookup);
+  return enrichSpecializationFeeTypeValues(specialization, lookup);
 }
 
-export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
-  universitySlug: string,
-  courseSlug: string
+export async function getUniversityCourseSpecializationOptions(
+  universityCourseId: number
 ) {
-  // First, get the university by slug to find its ID
-  const university = await UniversityRepo.getUniversityBySlug(universitySlug);
-  
-  if (!university || !university.id) {
-    return null;
-  }
-
-  // Then find the course using university_id and course slug
-  const course = await courseRepo.findByUniversityIdAndSlug(university.id, courseSlug);
-  if (!course) return null;
-  const banners = await getCourseBanners(course.id);
-  const sectionsData = await getCourseSections(course.id);
-  (course as any).banners = banners || [];
-  (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || {};
-  (course as any).university_faqs = await getCourseFaqs(course.id);
-  const lookup = await buildFeeTypeLookup();
-  return enrichCourseFeeTypeValues(course, lookup);
+  return specializationRepo.findOptionsByCourse(universityCourseId);
 }
 
-export async function createUniversityCourse(payload: any) {
+export async function createUniversityCourseSpecialization(payload: any) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const normalized = normaliseCoursePayload(payload);
-    const course = await courseRepo.create(normalized);
-    if (!course) {
-      throw new Error("Failed to create university course");
+    const normalized = normaliseSpecializationPayload(payload);
+    const specialization = await specializationRepo.create(normalized);
+    if (!specialization) {
+      throw new Error("Failed to create university course specialization");
     }
 
     const banners = extractBannersArray(payload);
     if (banners && banners.length > 0) {
-      await syncCourseBanners(course.id, banners);
+      await syncSpecializationBanners(specialization.id, banners);
     }
 
     const sections = extractSectionsArray(payload);
@@ -256,8 +190,8 @@ export async function createUniversityCourse(payload: any) {
         try {
           const sectionKey = section.section_key || generateSectionKey(section.title);
           await conn.query(
-            `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
-            [course.id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
+            `INSERT INTO university_course_specialization_sections (specialization_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
+            [specialization.id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
           );
         } catch (error: any) {
           console.error("❌ [CREATE] Error saving section:", section.title, error.message);
@@ -268,17 +202,16 @@ export async function createUniversityCourse(payload: any) {
 
     await conn.commit();
 
-    const refreshed = await courseRepo.findById(course.id);
+    const refreshed = await specializationRepo.findById(specialization.id);
     if (refreshed) {
-      const banners = await getCourseBanners(course.id);
-      const sectionsData = await getCourseSections(course.id);
+      const banners = await getSpecializationBanners(specialization.id);
+      const sectionsData = await getSpecializationSections(specialization.id);
       (refreshed as any).banners = banners || [];
       (refreshed as any).sections = sectionsData.sections || [];
       (refreshed as any).sections_transformed = sectionsData.sections_transformed || {};
-      (refreshed as any).course_faqs = await getCourseFaqs(course.id);
     }
     const lookup = await buildFeeTypeLookup();
-    return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
+    return refreshed ? enrichSpecializationFeeTypeValues(refreshed, lookup) : refreshed;
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -287,15 +220,22 @@ export async function createUniversityCourse(payload: any) {
   }
 }
 
-export async function updateUniversityCourse(id: number, payload: any) {
+export async function updateUniversityCourseSpecialization(
+  id: number,
+  payload: any
+) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const normalized: UpdateUniversityCourseDto = {};
+    const normalized: UpdateUniversityCourseSpecializationDto = {};
 
     if (payload.university_id !== undefined) {
       normalized.university_id = Number(payload.university_id);
+    }
+
+    if (payload.university_course_id !== undefined) {
+      normalized.university_course_id = Number(payload.university_course_id);
     }
 
     if (payload.name !== undefined) {
@@ -352,12 +292,12 @@ export async function updateUniversityCourse(id: number, payload: any) {
         payload.saveWithDate === true || payload.saveWithDate === "true";
     }
 
-    const updated = await courseRepo.update(id, normalized);
+    const updated = await specializationRepo.update(id, normalized);
     const lookup = await buildFeeTypeLookup();
 
     const banners = extractBannersArray(payload);
     if (banners !== undefined) {
-      await syncCourseBanners(id, banners);
+      await syncSpecializationBanners(id, banners);
     }
 
     const sections = extractSectionsArray(payload);
@@ -365,45 +305,61 @@ export async function updateUniversityCourse(id: number, payload: any) {
     // Always process sections if they're provided (even if empty array)
     if (payload.sections !== undefined) {
       // Get existing sections for merging
-      const existingSections = await UniversityCourseSectionService.getSectionsByCourseId(id);
+      const existingSections = await UniversityCourseSpecializationSectionService.getSectionsBySpecializationId(id);
       
       // Helper function to deep merge and preserve valid image paths
       function deepMergeImages(oldObj: any, newObj: any): any {
         if (!newObj || typeof newObj !== 'object') return newObj;
         if (!oldObj || typeof oldObj !== 'object') return newObj;
 
+        // Start with newObj (prioritize new values)
         const result: any = { ...newObj };
 
+        // Iterate over oldObj to preserve image paths and merge nested structures
         Object.keys(oldObj).forEach(key => {
           const oldVal = oldObj[key];
           const newVal = newObj[key];
 
-          // If newVal is empty string or null, it means image was removed
+          // If key doesn't exist in newObj, preserve old value (for backward compatibility)
+          if (!(key in newObj)) {
+            result[key] = oldVal;
+            return;
+          }
+
+          // If newVal is empty string or null, preserve it (means value was removed/cleared)
           if (newVal === "" || newVal === null) {
-            result[key] = null;
+            result[key] = newVal;
             return;
           }
           
-          // If newVal already has a valid /uploads/ path, use it
+          // If newVal already has a valid /uploads/ path, use it (new upload)
           if (typeof newVal === 'string' && newVal.startsWith('/uploads/')) {
             result[key] = newVal;
             return;
           }
 
+          // Handle arrays
           if (Array.isArray(oldVal) && Array.isArray(newVal)) {
             result[key] = newVal.map((item: any, idx: number) => {
-              if (typeof item === 'object' && typeof oldVal[idx] === 'object') {
+              if (typeof item === 'object' && item !== null && typeof oldVal[idx] === 'object' && oldVal[idx] !== null) {
                 return deepMergeImages(oldVal[idx], item);
               }
               return item;
             });
-          } else if (typeof oldVal === 'object' && typeof newVal === 'object' && !Array.isArray(oldVal)) {
+          } 
+          // Handle nested objects
+          else if (typeof oldVal === 'object' && oldVal !== null && !Array.isArray(oldVal) && 
+                   typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
             result[key] = deepMergeImages(oldVal, newVal);
-          } else if (typeof newVal === 'string' && newVal && !newVal.startsWith('/uploads/')) {
-            if (typeof oldVal === 'string' && oldVal.startsWith('/uploads/')) {
-              result[key] = oldVal;
-            }
+          } 
+          // For image fields: if newVal is not an image path but oldVal is, preserve oldVal
+          // (This handles cases where user didn't upload a new image but wants to keep the old one)
+          else if (typeof newVal === 'string' && newVal && !newVal.startsWith('/uploads/') && 
+                   typeof oldVal === 'string' && oldVal.startsWith('/uploads/')) {
+            result[key] = oldVal;
           }
+          // For non-image fields: if newVal exists, use it (already done by spread operator)
+          // This ensures all non-image props are preserved
         });
 
         return result;
@@ -435,7 +391,7 @@ export async function updateUniversityCourse(id: number, payload: any) {
       });
 
       // Delete old sections using transaction connection
-      await conn.query(`DELETE FROM university_course_sections WHERE course_id = ?`, [id]);
+      await conn.query(`DELETE FROM university_course_specialization_sections WHERE specialization_id = ?`, [id]);
 
       // Filter out sections with invalid/missing titles or components
       const validMergedSections = mergedSections.filter(
@@ -447,7 +403,7 @@ export async function updateUniversityCourse(id: number, payload: any) {
         try {
           const sectionKey = section.section_key || generateSectionKey(section.title);
           await conn.query(
-            `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO university_course_specialization_sections (specialization_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
             [id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
           );
         } catch (error: any) {
@@ -459,16 +415,15 @@ export async function updateUniversityCourse(id: number, payload: any) {
 
     await conn.commit();
 
-    const refreshed = await courseRepo.findById(id);
+    const refreshed = await specializationRepo.findById(id);
     if (refreshed) {
-      const banners = await getCourseBanners(id);
-      const sectionsData = await getCourseSections(id);
+      const banners = await getSpecializationBanners(id);
+      const sectionsData = await getSpecializationSections(id);
       (refreshed as any).banners = banners || [];
       (refreshed as any).sections = sectionsData.sections || [];
       (refreshed as any).sections_transformed = sectionsData.sections_transformed || {};
-      (refreshed as any).course_faqs = await getCourseFaqs(id);
     }
-    return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
+    return refreshed ? enrichSpecializationFeeTypeValues(refreshed, lookup) : refreshed;
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -477,16 +432,16 @@ export async function updateUniversityCourse(id: number, payload: any) {
   }
 }
 
-export async function deleteUniversityCourse(id: number) {
-  return courseRepo.delete(id);
+export async function deleteUniversityCourseSpecialization(id: number) {
+  return specializationRepo.delete(id);
 }
 
-export async function toggleUniversityCourseStatus(id: number, isActive: boolean) {
-  const course = await courseRepo.findById(id);
-  if (!course) return null;
+export async function toggleUniversityCourseSpecializationStatus(id: number, isActive: boolean) {
+  const specialization = await specializationRepo.findById(id);
+  if (!specialization) return null;
 
-  await courseRepo.update(id, { is_active: isActive });
-  return await courseRepo.findById(id);
+  await specializationRepo.update(id, { is_active: isActive });
+  return await specializationRepo.findById(id);
 }
 
 function parseFeeTypeValues(input: any): Record<string, number> | null {
@@ -556,19 +511,19 @@ async function buildFeeTypeLookup(): Promise<FeeTypeLookup> {
   return lookup;
 }
 
-function enrichCourseFeeTypeValues(course: any, lookup: FeeTypeLookup) {
-  if (!course) return course;
+function enrichSpecializationFeeTypeValues(specialization: any, lookup: FeeTypeLookup) {
+  if (!specialization) return specialization;
 
-  const rawValues = course.fee_type_values as Record<string, any> | null | undefined;
+  const rawValues = specialization.fee_type_values as Record<string, any> | null | undefined;
   if (!rawValues) {
-    course.fee_type_values = null;
-    return course;
+    specialization.fee_type_values = null;
+    return specialization;
   }
 
   const entries = Object.entries(rawValues);
   if (!entries.length) {
-    course.fee_type_values = null;
-    return course;
+    specialization.fee_type_values = null;
+    return specialization;
   }
 
   const enriched: Record<string, number> = {};
@@ -594,8 +549,8 @@ function enrichCourseFeeTypeValues(course: any, lookup: FeeTypeLookup) {
     enriched[feeKey] = numeric;
   });
 
-  course.fee_type_values = Object.keys(enriched).length ? enriched : null;
-  return course;
+  specialization.fee_type_values = Object.keys(enriched).length ? enriched : null;
+  return specialization;
 }
 
 function resolveFeeTypeMeta(
@@ -660,33 +615,6 @@ function extractSectionsArray(payload: any) {
   }));
 }
 
-function extractBannerPayload(payload: any) {
-  const bannerImageValue = normalizeNullable(payload.course_banner);
-  const brochureValue = normalizeNullable(payload.brochure_file);
-  const videoIdValue = normalizeNullable(payload.video_id);
-  const videoTitleValue = normalizeNullable(payload.video_title);
-
-  const result: Record<string, any> = {};
-
-  if (bannerImageValue !== undefined) {
-    result.banner_image = bannerImageValue;
-  }
-
-  if (brochureValue !== undefined) {
-    result.brochure_file = brochureValue;
-  }
-
-  if (videoIdValue !== undefined) {
-    result.video_id = videoIdValue;
-  }
-
-  if (videoTitleValue !== undefined) {
-    result.video_title = videoTitleValue;
-  }
-
-  return Object.keys(result).length ? result : null;
-}
-
 function normalizeNullable(value: any) {
   // If explicitly null, return null (to allow clearing fields)
   if (value === null) return null;
@@ -704,4 +632,3 @@ function normalizeNullable(value: any) {
 
   return value;
 }
-
