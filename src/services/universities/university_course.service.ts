@@ -220,7 +220,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   const banners = await getCourseBanners(course.id);
   const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
-  (course as any).sections = sectionsData.sections || [];
+  // (course as any).sections = sectionsData.sections || [];
   (course as any).sections_transformed = sectionsData.sections_transformed || {};
   (course as any).university_faqs = await getCourseFaqs(course.id);
   const lookup = await buildFeeTypeLookup();

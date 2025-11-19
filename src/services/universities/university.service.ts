@@ -753,7 +753,7 @@ export const getUniversityBySlug = async (slug: string) => {
     //   acc[s.title.toLowerCase()] = s.props;
     //   return acc;
     // }, {}),   
-    sections: sectionsData.sections || [],
+    // sections: sectionsData.sections || [],
     sections_transformed: sectionsData.sections_transformed || {},
     university_faqs: universityFaqs, // Add university FAQs grouped by category
     course_data: courseData, // Add course data
