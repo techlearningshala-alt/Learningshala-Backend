@@ -520,13 +520,10 @@ async function getUniversitySections(universityId: number) {
     props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
   }));
   
-  // New transformed format: title as key, props flattened
-  const newFormat = sections.map((s: any) => {
+  // New transformed format: merge all sections into a single object
+  const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
     const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
     const title = s.title || "";
-    
-    // Create object with title as the first key
-    const result: Record<string, any> = {};
     
     // Determine the value for the title key
     // Priority: content > first prop value > empty string
@@ -542,8 +539,10 @@ async function getUniversitySections(universityId: number) {
       titleValue = props[firstKey];
     }
     
-    // Set title as the first key with its value
-    result[title] = titleValue;
+    // Set title as a key with its value
+    if (title) {
+      acc[title] = titleValue;
+    }
     
     // Flatten ALL props into the same object (excluding content if it was used for title)
     // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
@@ -552,11 +551,11 @@ async function getUniversitySections(universityId: number) {
       if (key === "content" && contentUsedForTitle) {
         return; // Skip adding content since it's already the title value
       }
-      result[key] = props[key];
+      acc[key] = props[key];
     });
     
-    return result;
-  });
+    return acc;
+  }, {});
   
   // Return both formats separately
   return {
@@ -598,7 +597,7 @@ export const getUniversityById = async (id: number) => {
     approvals, // Add approval objects for website
     banners,
     sections: sectionsData.sections || [],
-    sections_transformed: sectionsData.sections_transformed || [],
+    sections_transformed: sectionsData.sections_transformed || {},
   }};
 };
 
@@ -755,7 +754,7 @@ export const getUniversityBySlug = async (slug: string) => {
     //   return acc;
     // }, {}),   
     sections: sectionsData.sections || [],
-    sections_transformed: sectionsData.sections_transformed || [],
+    sections_transformed: sectionsData.sections_transformed || {},
     university_faqs: universityFaqs, // Add university FAQs grouped by category
     course_data: courseData, // Add course data
   }};

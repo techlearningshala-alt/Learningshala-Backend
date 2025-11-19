@@ -77,13 +77,10 @@ async function getCourseSections(courseId: number) {
     props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
   }));
   
-  // New transformed format: title as key, props flattened
-  const newFormat = sections.map((s: any) => {
+  // New transformed format: merge all sections into a single object
+  const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
     const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
     const title = s.title || "";
-    
-    // Create object with title as the first key
-    const result: Record<string, any> = {};
     
     // Determine the value for the title key
     // Priority: content > first prop value > empty string
@@ -99,8 +96,10 @@ async function getCourseSections(courseId: number) {
       titleValue = props[firstKey];
     }
     
-    // Set title as the first key with its value
-    result[title] = titleValue;
+    // Set title as a key with its value
+    if (title) {
+      acc[title] = titleValue;
+    }
     
     // Flatten ALL props into the same object (excluding content if it was used for title)
     // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
@@ -109,11 +108,11 @@ async function getCourseSections(courseId: number) {
       if (key === "content" && contentUsedForTitle) {
         return; // Skip adding content since it's already the title value
       }
-      result[key] = props[key];
+      acc[key] = props[key];
     });
     
-    return result;
-  });
+    return acc;
+  }, {});
   
   // Return both formats separately
   return {
@@ -129,7 +128,7 @@ export async function getUniversityCourseById(id: number) {
   const sectionsData = await getCourseSections(id);
   (course as any).banners = banners || [];
   (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || {};
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -141,7 +140,7 @@ export async function getUniversityCourseBySlug(slug: string) {
   const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
   (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || {};
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -164,7 +163,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
   (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || {};
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -216,7 +215,7 @@ export async function createUniversityCourse(payload: any) {
       const sectionsData = await getCourseSections(course.id);
       (refreshed as any).banners = banners || [];
       (refreshed as any).sections = sectionsData.sections || [];
-      (refreshed as any).sections_transformed = sectionsData.sections_transformed || [];
+      (refreshed as any).sections_transformed = sectionsData.sections_transformed || {};
     }
     const lookup = await buildFeeTypeLookup();
     return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
@@ -402,7 +401,7 @@ export async function updateUniversityCourse(id: number, payload: any) {
       const sectionsData = await getCourseSections(id);
       (refreshed as any).banners = banners || [];
       (refreshed as any).sections = sectionsData.sections || [];
-      (refreshed as any).sections_transformed = sectionsData.sections_transformed || [];
+      (refreshed as any).sections_transformed = sectionsData.sections_transformed || {};
     }
     return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
   } catch (err) {
