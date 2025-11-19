@@ -67,22 +67,69 @@ export async function listUniversityCourses(
 
 async function getCourseSections(courseId: number) {
   const sections = await UniversityCourseSectionService.getSectionsByCourseId(courseId);
-  return sections.map((s: any) => ({
+  
+  // Old format: keep original structure
+  const oldFormat = sections.map((s: any) => ({
     id: s.id,
     section_key: s.section_key,
     title: s.title,
     component: s.component,
     props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
   }));
+  
+  // New transformed format: title as key, props flattened
+  const newFormat = sections.map((s: any) => {
+    const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const title = s.title || "";
+    
+    // Create object with title as the first key
+    const result: Record<string, any> = {};
+    
+    // Determine the value for the title key
+    // Priority: content > first prop value > empty string
+    let titleValue: any = "";
+    let contentUsedForTitle = false;
+    
+    if (props.content !== undefined && props.content !== null && props.content !== "") {
+      titleValue = props.content;
+      contentUsedForTitle = true;
+    } else if (Object.keys(props).length > 0) {
+      // Use first prop value if no content
+      const firstKey = Object.keys(props)[0];
+      titleValue = props[firstKey];
+    }
+    
+    // Set title as the first key with its value
+    result[title] = titleValue;
+    
+    // Flatten ALL props into the same object (excluding content if it was used for title)
+    // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
+    Object.keys(props).forEach((key) => {
+      // Skip content if it was already used as the title value to avoid duplication
+      if (key === "content" && contentUsedForTitle) {
+        return; // Skip adding content since it's already the title value
+      }
+      result[key] = props[key];
+    });
+    
+    return result;
+  });
+  
+  // Return both formats separately
+  return {
+    sections: oldFormat,
+    sections_transformed: newFormat,
+  };
 }
 
 export async function getUniversityCourseById(id: number) {
   const course = await courseRepo.findById(id);
   if (!course) return null;
   const banners = await getCourseBanners(id);
-  const sections = await getCourseSections(id);
+  const sectionsData = await getCourseSections(id);
   (course as any).banners = banners || [];
-  (course as any).sections = sections || [];
+  (course as any).sections = sectionsData.sections || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -91,14 +138,15 @@ export async function getUniversityCourseBySlug(slug: string) {
   const course = await courseRepo.findBySlug(slug);
   if (!course) return null;
   const banners = await getCourseBanners(course.id);
-  const sections = await getCourseSections(course.id);
+  const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
-  (course as any).sections = sections || [];
+  (course as any).sections = sectionsData.sections || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
 
-export async function getUniversityCourseByUniversitySlugAndCourseSlug(
+export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   universitySlug: string,
   courseSlug: string
 ) {
@@ -113,9 +161,10 @@ export async function getUniversityCourseByUniversitySlugAndCourseSlug(
   const course = await courseRepo.findByUniversityIdAndSlug(university.id, courseSlug);
   if (!course) return null;
   const banners = await getCourseBanners(course.id);
-  const sections = await getCourseSections(course.id);
+  const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
-  (course as any).sections = sections || [];
+  (course as any).sections = sectionsData.sections || [];
+  (course as any).sections_transformed = sectionsData.sections_transformed || [];
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }
@@ -164,9 +213,10 @@ export async function createUniversityCourse(payload: any) {
     const refreshed = await courseRepo.findById(course.id);
     if (refreshed) {
       const banners = await getCourseBanners(course.id);
-      const sections = await getCourseSections(course.id);
+      const sectionsData = await getCourseSections(course.id);
       (refreshed as any).banners = banners || [];
-      (refreshed as any).sections = sections || [];
+      (refreshed as any).sections = sectionsData.sections || [];
+      (refreshed as any).sections_transformed = sectionsData.sections_transformed || [];
     }
     const lookup = await buildFeeTypeLookup();
     return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
@@ -349,9 +399,10 @@ export async function updateUniversityCourse(id: number, payload: any) {
     const refreshed = await courseRepo.findById(id);
     if (refreshed) {
       const banners = await getCourseBanners(id);
-      const sections = await getCourseSections(id);
+      const sectionsData = await getCourseSections(id);
       (refreshed as any).banners = banners || [];
-      (refreshed as any).sections = sections || [];
+      (refreshed as any).sections = sectionsData.sections || [];
+      (refreshed as any).sections_transformed = sectionsData.sections_transformed || [];
     }
     return refreshed ? enrichCourseFeeTypeValues(refreshed, lookup) : refreshed;
   } catch (err) {

@@ -1,6 +1,7 @@
 import pool from "../../config/db";
 import { RowDataPacket } from "mysql2";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
+import UniversitySectionService from "./university_section.service";
 
 export const UniversityService = {
   async addUniversity(body: any, banners: any[] = [], sections: any[] = []) {
@@ -508,6 +509,62 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
     }
 };
 
+async function getUniversitySections(universityId: number) {
+  const sections = await UniversitySectionService.getSectionsByUniversity(universityId);
+  
+  // Old format: keep original structure
+  const oldFormat = sections.map((s: any) => ({
+    id: s.id,
+    title: s.title,
+    component: s.component,
+    props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
+  }));
+  
+  // New transformed format: title as key, props flattened
+  const newFormat = sections.map((s: any) => {
+    const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const title = s.title || "";
+    
+    // Create object with title as the first key
+    const result: Record<string, any> = {};
+    
+    // Determine the value for the title key
+    // Priority: content > first prop value > empty string
+    let titleValue: any = "";
+    let contentUsedForTitle = false;
+    
+    if (props.content !== undefined && props.content !== null && props.content !== "") {
+      titleValue = props.content;
+      contentUsedForTitle = true;
+    } else if (Object.keys(props).length > 0) {
+      // Use first prop value if no content
+      const firstKey = Object.keys(props)[0];
+      titleValue = props[firstKey];
+    }
+    
+    // Set title as the first key with its value
+    result[title] = titleValue;
+    
+    // Flatten ALL props into the same object (excluding content if it was used for title)
+    // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
+    Object.keys(props).forEach((key) => {
+      // Skip content if it was already used as the title value to avoid duplication
+      if (key === "content" && contentUsedForTitle) {
+        return; // Skip adding content since it's already the title value
+      }
+      result[key] = props[key];
+    });
+    
+    return result;
+  });
+  
+  // Return both formats separately
+  return {
+    sections: oldFormat,
+    sections_transformed: newFormat,
+  };
+}
+
 export const getUniversityById = async (id: number) => {
   const [rows]: any = await pool.query(
     `SELECT * FROM universities WHERE id = ?`,
@@ -519,10 +576,7 @@ export const getUniversityById = async (id: number) => {
     `SELECT * FROM university_banners WHERE university_id = ?`,
     [id]
   );
-  const [sections]: any = await pool.query(
-    `SELECT * FROM university_sections WHERE university_id = ?`,
-    [id]
-  );
+  const sectionsData = await getUniversitySections(id);
 
   // Fetch approvals
   let approvals = [];
@@ -543,10 +597,8 @@ export const getUniversityById = async (id: number) => {
     ...rows[0],
     approvals, // Add approval objects for website
     banners,
-    sections: sections.map((s: { props: any; }) => ({
-      ...s,
-      props: JSON.parse(s.props || "{}"),
-    })),
+    sections: sectionsData.sections || [],
+    sections_transformed: sectionsData.sections_transformed || [],
   }};
 };
 
@@ -563,10 +615,7 @@ export const getUniversityBySlug = async (slug: string) => {
     `SELECT * FROM university_banners WHERE university_id = ?`,
     [universityId]
   );
-  const [sections]: any = await pool.query(
-    `SELECT * FROM university_sections WHERE university_id = ?`,
-    [universityId]
-  );
+  const sectionsData = await getUniversitySections(universityId);
 
   // Fetch approvals
   let approvals = [];
@@ -705,10 +754,8 @@ export const getUniversityBySlug = async (slug: string) => {
     //   acc[s.title.toLowerCase()] = s.props;
     //   return acc;
     // }, {}),   
-    sections: sections.map((s: { props: any; }) => ({
-      ...s,
-      props: JSON.parse(s.props || "{}"),
-    })),
+    sections: sectionsData.sections || [],
+    sections_transformed: sectionsData.sections_transformed || [],
     university_faqs: universityFaqs, // Add university FAQs grouped by category
     course_data: courseData, // Add course data
   }};
