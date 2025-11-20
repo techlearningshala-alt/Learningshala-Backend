@@ -15,7 +15,7 @@ router.use(authMiddleware);
 // Specific routes must come before generic parameter routes
 router.get("/", UniversityCourseController.findAll);
 router.get("/:university_slug/:slug", UniversityCourseController.findByUniversityAndSlug);
-router.get("/:slug", UniversityCourseController.findOne);
+// router.get("/:slug", UniversityCourseController.findOne);
 router.post(
   "/",
   upload.any(),
