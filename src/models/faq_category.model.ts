@@ -9,7 +9,7 @@ export interface FaqCategory {
 export interface Faq {
   id: number;
   category_id: number;
-  title: string;        // Question
+  title: string;        
   description: string;  // Answer
   created_at: Date;
   updated_at: Date;
