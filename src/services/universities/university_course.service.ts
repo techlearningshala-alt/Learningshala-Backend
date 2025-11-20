@@ -224,7 +224,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
   (course as any).sections = sectionsData.sections || [];
-  (course as any).sections = sectionsData.sections_transformed || {};
+  (course as any).sections_transformed = sectionsData.sections_transformed || {};
   (course as any).university_faqs = await getCourseFaqs(course.id);
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);

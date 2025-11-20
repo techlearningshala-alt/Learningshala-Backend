@@ -79,6 +79,25 @@ export const findOne = async (req: Request, res: Response) => {
   }
 };
 
+export const findById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      return errorResponse(res, "Valid course ID is required", 400);
+    }
+
+    const course = await getUniversityCourseById(id);
+    if (!course) {
+      return errorResponse(res, "University course not found", 404);
+    }
+
+    return successResponse(res, course, "University course fetched successfully");
+  } catch (error: any) {
+    console.error("❌ Error fetching university course by ID:", error);
+    return errorResponse(res, error.message || "Failed to fetch university course", 500);
+  }
+};
+
 export const findByUniversityAndSlug = async (req: Request, res: Response) => {
   try {
     const universitySlug = typeof req.params.university_slug === "string" 

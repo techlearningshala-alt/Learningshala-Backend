@@ -31,7 +31,8 @@ export class UniversityCourseRepository {
     const [rows]: any = await pool.query(
       `SELECT 
           uc.*,
-          u.university_name
+          u.university_name,
+          u.university_slug
         FROM university_courses uc
         INNER JOIN universities u ON uc.university_id = u.id
         ${whereClause}
@@ -61,7 +62,8 @@ export class UniversityCourseRepository {
     const [rows]: any = await pool.query(
       `SELECT 
           uc.*,
-          u.university_name
+          u.university_name,
+          u.university_slug
         FROM university_courses uc
         INNER JOIN universities u ON uc.university_id = u.id
        WHERE uc.id = ?
@@ -75,7 +77,8 @@ export class UniversityCourseRepository {
     const [rows]: any = await pool.query(
       `SELECT 
           uc.*,
-          u.university_name
+          u.university_name,
+          u.university_slug
         FROM university_courses uc
         INNER JOIN universities u ON uc.university_id = u.id
        WHERE uc.slug = ?
@@ -89,7 +92,8 @@ export class UniversityCourseRepository {
     const [rows]: any = await pool.query(
       `SELECT 
           uc.*,
-          u.university_name
+          u.university_name,
+          u.university_slug
         FROM university_courses uc
         INNER JOIN universities u ON uc.university_id = u.id
        WHERE uc.university_id = ? AND uc.slug = ?
