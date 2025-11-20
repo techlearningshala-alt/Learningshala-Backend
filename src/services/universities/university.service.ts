@@ -1,7 +1,7 @@
 import pool from "../../config/db";
 import { RowDataPacket } from "mysql2";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
-import UniversitySectionService from "./university_section.service";
+import UniversitySectionService, { generateSectionKey } from "./university_section.service";
 
 export const UniversityService = {
   async addUniversity(body: any, banners: any[] = [], sections: any[] = []) {
@@ -178,8 +178,11 @@ await conn.query(sql, params);
       const oldSection = existingSections[index];
       
       if (!oldSection) {
-        // New section, use as-is
-        return newSection;
+        // New section, ensure it has section_key
+        return {
+          ...newSection,
+          section_key: newSection.section_key || generateSectionKey(newSection.title || "")
+        };
       }
 
       // Parse old props
@@ -194,6 +197,7 @@ await conn.query(sql, params);
 
       return {
         ...newSection,
+        section_key: newSection.section_key || oldSection.section_key || generateSectionKey(newSection.title || ""),
         props: mergedProps
       };
     });
@@ -267,10 +271,11 @@ await conn.query(sql, params);
 
     // 🧩 Re-insert merged sections
     for (const s of mergedSections) {
+      const sectionKey = s.section_key || generateSectionKey(s.title || "");
       await conn.query(
-        `INSERT INTO university_sections (university_id, title, component, props)
-         VALUES (?, ?, ?, ?)`,
-        [id, s.title, s.component, JSON.stringify(s.props || {})]
+        `INSERT INTO university_sections (university_id, section_key, title, component, props)
+         VALUES (?, ?, ?, ?, ?)`,
+        [id, sectionKey, s.title, s.component, JSON.stringify(s.props || {})]
       );
     }
 
@@ -515,6 +520,7 @@ async function getUniversitySections(universityId: number) {
   // Old format: keep original structure
   const oldFormat = sections.map((s: any) => ({
     id: s.id,
+    section_key: s.section_key,
     title: s.title,
     component: s.component,
     props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
@@ -523,33 +529,36 @@ async function getUniversitySections(universityId: number) {
   // New transformed format: merge all sections into a single object
   const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
     const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
-    const title = s.title || "";
+    const sectionKey = s.section_key || generateSectionKey(s.title || "");
     
-    // Determine the value for the title key
+    // Determine the value for the section_key
     // Priority: content > first prop value > empty string
     let titleValue: any = "";
+    let titleValueKey: string | null = null;
     let contentUsedForTitle = false;
     
     if (props.content !== undefined && props.content !== null && props.content !== "") {
       titleValue = props.content;
+      titleValueKey = "content";
       contentUsedForTitle = true;
     } else if (Object.keys(props).length > 0) {
       // Use first prop value if no content
       const firstKey = Object.keys(props)[0];
       titleValue = props[firstKey];
+      titleValueKey = firstKey;
     }
     
-    // Set title as a key with its value
-    if (title) {
-      acc[title] = titleValue;
+    // Set section_key as a key with its value
+    if (sectionKey) {
+      acc[sectionKey] = titleValue;
     }
     
-    // Flatten ALL props into the same object (excluding content if it was used for title)
+    // Flatten ALL props into the same object (excluding content/prop if it was used for section_key)
     // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
     Object.keys(props).forEach((key) => {
-      // Skip content if it was already used as the title value to avoid duplication
-      if (key === "content" && contentUsedForTitle) {
-        return; // Skip adding content since it's already the title value
+      // Skip content/prop if it was already used as the section_key value to avoid duplication
+      if ((key === "content" && contentUsedForTitle) || key === titleValueKey) {
+        return; // Skip adding content/prop since it's already the section_key value
       }
       acc[key] = props[key];
     });
@@ -559,8 +568,8 @@ async function getUniversitySections(universityId: number) {
   
   // Return both formats separately
   return {
-    sections: oldFormat,
-    sections_transformed: newFormat,
+    sections_array: oldFormat, // Old format: array of section objects
+    sections: newFormat, // New format: object with section_key as keys
   };
 }
 
@@ -596,8 +605,7 @@ export const getUniversityById = async (id: number) => {
     ...rows[0],
     approvals, // Add approval objects for website
     banners,
-    sections: sectionsData.sections || [],
-    sections_transformed: sectionsData.sections_transformed || {},
+    sections: sectionsData.sections || {},
   }};
 };
 
@@ -749,12 +757,7 @@ export const getUniversityBySlug = async (slug: string) => {
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects
     banners,
-    // ...sections.reduce((acc: any, s: any) => {
-    //   acc[s.title.toLowerCase()] = s.props;
-    //   return acc;
-    // }, {}),   
-    // sections: sectionsData.sections || [],
-    sections_transformed: sectionsData.sections_transformed || {},
+    sections: sectionsData.sections || {},
     university_faqs: universityFaqs, // Add university FAQs grouped by category
     course_data: courseData, // Add course data
   }};

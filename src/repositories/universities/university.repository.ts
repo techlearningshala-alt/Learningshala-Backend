@@ -59,9 +59,15 @@ export const UniversityRepo = {
 
   async createSection(university_id: number, section: any) {
     await pool.query(
-      `INSERT INTO university_sections (university_id, title, component, props)
-       VALUES (?, ?, ?, ?)`,
-      [university_id, section.title, section.component, JSON.stringify(section.props || {})]
+      `INSERT INTO university_sections (university_id, section_key, title, component, props)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        university_id, 
+        section.section_key || null, 
+        section.title, 
+        section.component, 
+        JSON.stringify(section.props || {})
+      ]
     );
   },
 

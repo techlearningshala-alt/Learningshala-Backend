@@ -223,8 +223,8 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   const banners = await getCourseBanners(course.id);
   const sectionsData = await getCourseSections(course.id);
   (course as any).banners = banners || [];
-  // (course as any).sections = sectionsData.sections || [];
-  (course as any).sections_transformed = sectionsData.sections_transformed || {};
+  (course as any).sections = sectionsData.sections || [];
+  (course as any).sections = sectionsData.sections_transformed || {};
   (course as any).university_faqs = await getCourseFaqs(course.id);
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
@@ -257,7 +257,11 @@ export async function createUniversityCourse(payload: any) {
       // Insert sections using transaction connection
       for (const section of validSections) {
         try {
-          const sectionKey = section.section_key || generateSectionKey(section.title);
+          // Use section_key from section if provided (from defaultSections), otherwise generate from title
+          // This ensures default section keys are preserved
+          const sectionKey = (section.section_key && section.section_key.trim()) 
+            ? section.section_key 
+            : generateSectionKey(section.title || "");
           await conn.query(
             `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
             [course.id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
@@ -415,12 +419,21 @@ export async function updateUniversityCourse(id: number, payload: any) {
       // Use extracted sections or default to empty array
       const sectionsToProcess = Array.isArray(sections) ? sections : [];
 
-      // Merge sections - preserve old images for unchanged sections
-      const mergedSections = sectionsToProcess.map((newSection: any, index: number) => {
-        const oldSection = existingSections[index];
+      // Merge sections - preserve old images and section_key from database
+      // Match by section_key first, then by component if section_key doesn't match
+      const mergedSections = sectionsToProcess.map((newSection: any) => {
+        // Try to find matching old section by section_key or component
+        const oldSection = existingSections.find((old: any) => 
+          (newSection.section_key && old.section_key === newSection.section_key) ||
+          old.component === newSection.component
+        );
         
         if (!oldSection) {
-          return newSection;
+          // New section, ensure it has section_key
+          return {
+            ...newSection,
+            section_key: newSection.section_key || generateSectionKey(newSection.title || "")
+          };
         }
 
         const oldProps = typeof oldSection.props === 'string' 
@@ -430,9 +443,19 @@ export async function updateUniversityCourse(id: number, payload: any) {
         const newProps = newSection.props || {};
         const mergedProps = deepMergeImages(oldProps, newProps);
 
+        // Priority: Use database section_key if it exists (preserve existing)
+        // Otherwise use newSection.section_key (from default sections)
+        // Finally generate from title if neither exists
+        // This ensures existing section_keys are preserved, but new ones from default sections are used
+        const finalSectionKey = (oldSection.section_key && oldSection.section_key.trim()) 
+          ? oldSection.section_key 
+          : (newSection.section_key && newSection.section_key.trim())
+            ? newSection.section_key
+            : generateSectionKey(newSection.title || "");
+
         return {
           ...newSection,
-          section_key: newSection.section_key || generateSectionKey(newSection.title),
+          section_key: finalSectionKey,
           props: mergedProps
         };
       });
@@ -448,7 +471,11 @@ export async function updateUniversityCourse(id: number, payload: any) {
       // Insert merged sections using transaction connection
       for (const section of validMergedSections) {
         try {
-          const sectionKey = section.section_key || generateSectionKey(section.title);
+          // Use the section_key from merged section (already set with priority: old > new > generated)
+          // Ensure we use the trimmed section_key if it exists
+          const sectionKey = (section.section_key && section.section_key.trim()) 
+            ? section.section_key 
+            : generateSectionKey(section.title || "");
           await conn.query(
             `INSERT INTO university_course_sections (course_id, section_key, title, component, props) VALUES (?, ?, ?, ?, ?)`,
             [id, sectionKey, section.title.trim(), section.component.trim(), JSON.stringify(section.props || {})]
@@ -656,7 +683,8 @@ function extractSectionsArray(payload: any) {
   }
 
   return payload.sections.map((s: any) => ({
-    section_key: s.section_key || generateSectionKey(s.title),
+    // Preserve section_key from payload if provided, otherwise generate from title
+    section_key: s.section_key || generateSectionKey(s.title || ""),
     title: s.title,
     component: s.component,
     props: s.props || {},
