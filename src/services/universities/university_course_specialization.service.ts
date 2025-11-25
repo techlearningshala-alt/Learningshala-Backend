@@ -86,7 +86,7 @@ async function getSpecializationSections(specializationId: number) {
   // New transformed format: merge all sections into a single object
   const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
     const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
-    const title = s.title || "";
+    const title = s.section_key || "";
     
     // Determine the value for the title key
     // Priority: content > first prop value > empty string
