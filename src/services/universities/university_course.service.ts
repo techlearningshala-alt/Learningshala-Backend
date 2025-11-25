@@ -226,6 +226,65 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   (course as any).sections = sectionsData.sections || [];
   (course as any).sections_transformed = sectionsData.sections_transformed || {};
   (course as any).university_faqs = await getCourseFaqs(course.id);
+  
+  // Fetch specializations for this course
+  let specializationData: Array<{ 
+    name: string; 
+    slug: string; 
+    duration: string | null; 
+    image: string | null; 
+    fees: { semester_fee?: number; full_fees?: number } | null 
+  }> = [];
+  try {
+    const { getUniversityCourseSpecializationOptions } = await import("./university_course_specialization.service");
+    const specializations = await getUniversityCourseSpecializationOptions(course.id);
+    
+    // Format specializations similar to how courses are formatted in university response
+    specializationData = specializations.map((spec: any) => {
+      // Extract semester_fee and full_fees from fee_type_values
+      const feeTypeValues = spec.fee_type_values || {};
+      const fees: { semester_fee?: number; full_fees?: number } = {};
+      
+      // Look for semester_fee or sem_fees
+      if (feeTypeValues.semester_fee !== undefined && feeTypeValues.semester_fee !== null) {
+        const value = Number(feeTypeValues.semester_fee);
+        if (!Number.isNaN(value)) {
+          fees.semester_fee = value;
+        }
+      } else if (feeTypeValues.sem_fees !== undefined && feeTypeValues.sem_fees !== null) {
+        const value = Number(feeTypeValues.sem_fees);
+        if (!Number.isNaN(value)) {
+          fees.semester_fee = value;
+        }
+      }
+      
+      // Look for full_fees or full_fee
+      if (feeTypeValues.full_fees !== undefined && feeTypeValues.full_fees !== null) {
+        const value = Number(feeTypeValues.full_fees);
+        if (!Number.isNaN(value)) {
+          fees.full_fees = value;
+        }
+      } else if (feeTypeValues.full_fee !== undefined && feeTypeValues.full_fee !== null) {
+        const value = Number(feeTypeValues.full_fee);
+        if (!Number.isNaN(value)) {
+          fees.full_fees = value;
+        }
+      }
+      
+      return {
+        name: spec.name,
+        slug: spec.slug,
+        duration: spec.duration,
+        image: spec.course_thumbnail,
+        fees: Object.keys(fees).length > 0 ? fees : null,
+      };
+    });
+  } catch (e) {
+    console.error('Error fetching course specializations:', e);
+  }
+  
+  (course as any).specialization_data = specializationData;
+  
   const lookup = await buildFeeTypeLookup();
   return enrichCourseFeeTypeValues(course, lookup);
 }

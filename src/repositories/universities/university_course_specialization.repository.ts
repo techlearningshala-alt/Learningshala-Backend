@@ -70,13 +70,22 @@ export class UniversityCourseSpecializationRepository {
 
   async findOptionsByCourse(universityCourseId: number) {
     const [rows]: any = await pool.query(
-      `SELECT id, name, slug
+      `SELECT id, name, slug, duration, course_thumbnail, fee_type_values
          FROM university_course_specialization
-        WHERE university_course_id = ?
+        WHERE university_course_id = ? AND is_active = 1
         ORDER BY name ASC`,
       [universityCourseId]
     );
-    return rows as Array<Pick<UniversityCourseSpecialization, "id" | "name" | "slug">>;
+    return rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      duration: row.duration,
+      course_thumbnail: row.course_thumbnail,
+      fee_type_values: row.fee_type_values 
+        ? (typeof row.fee_type_values === 'string' ? JSON.parse(row.fee_type_values) : row.fee_type_values)
+        : null,
+    }));
   }
 
   async findBySlug(slug: string) {
@@ -91,6 +100,21 @@ export class UniversityCourseSpecializationRepository {
     const [rows]: any = await pool.query(
       `SELECT * FROM university_course_specialization WHERE id = ?`,
       [id]
+    );
+    return rows.length ? this.mapRowToModel(rows[0]) : null;
+  }
+
+  async findByCourseIdAndSlug(courseId: number, slug: string) {
+    const [rows]: any = await pool.query(
+      `SELECT ucs.*,
+              uc.slug AS course_slug,
+              u.university_slug AS university_slug
+         FROM university_course_specialization ucs
+         INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+         INNER JOIN universities u ON ucs.university_id = u.id
+        WHERE ucs.university_course_id = ? AND ucs.slug = ?
+        LIMIT 1`,
+      [courseId, slug]
     );
     return rows.length ? this.mapRowToModel(rows[0]) : null;
   }

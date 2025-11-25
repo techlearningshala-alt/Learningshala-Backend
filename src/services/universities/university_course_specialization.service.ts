@@ -1,6 +1,7 @@
 import slugify from "slugify";
 import pool from "../../config/db";
 import specializationRepo from "../../repositories/universities/university_course_specialization.repository";
+import courseRepo from "../../repositories/universities/university_course.repository";
 import feeTypeRepo from "../../repositories/universities/fee_type.repository";
 import {
   CreateUniversityCourseSpecializationDto,
@@ -148,6 +149,40 @@ export async function getUniversityCourseSpecializationBySlug(slug: string) {
   if (!specialization) return null;
   const banners = await getSpecializationBanners(rows[0].id);
   const sectionsData = await getSpecializationSections(rows[0].id);
+  (specialization as any).banners = banners || [];
+  (specialization as any).sections = sectionsData.sections || [];
+  (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
+  const lookup = await buildFeeTypeLookup();
+  return enrichSpecializationFeeTypeValues(specialization, lookup);
+}
+
+export async function getUniversityCourseSpecializationByCourseSlugAndSpecializationSlug(
+  universitySlug: string,
+  courseSlug: string,
+  specializationSlug: string
+) {
+  // First, get the university by slug to find its ID
+  const { getUniversityBySlug } = await import("./university.service");
+  const university = await getUniversityBySlug(universitySlug);
+  
+  if (!university || !university.data?.id) {
+    return null;
+  }
+
+  // Then get the course using university_id and course slug
+  const { getUniversityCourseByUniversitySlugAndCourseSlug } = await import("./university_course.service");
+  const course = await getUniversityCourseByUniversitySlugAndCourseSlug(universitySlug, courseSlug);
+  
+  if (!course || !course.id) {
+    return null;
+  }
+
+  // Then find the specialization using course_id and specialization slug
+  const specialization = await specializationRepo.findByCourseIdAndSlug(course.id, specializationSlug);
+  if (!specialization) return null;
+  
+  const banners = await getSpecializationBanners(specialization.id);
+  const sectionsData = await getSpecializationSections(specialization.id);
   (specialization as any).banners = banners || [];
   (specialization as any).sections = sectionsData.sections || [];
   (specialization as any).sections_transformed = sectionsData.sections_transformed || {};

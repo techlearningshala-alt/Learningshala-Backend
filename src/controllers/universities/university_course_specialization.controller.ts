@@ -4,6 +4,7 @@ import {
   deleteUniversityCourseSpecialization,
   getUniversityCourseSpecializationById,
   getUniversityCourseSpecializationBySlug,
+  getUniversityCourseSpecializationByCourseSlugAndSpecializationSlug,
   listUniversityCourseSpecializations,
   toggleUniversityCourseSpecializationStatus,
   updateUniversityCourseSpecialization,
@@ -62,6 +63,55 @@ export const findOne = async (req: Request, res: Response) => {
     } else {
       specialization = await getUniversityCourseSpecializationBySlug(slugOrId);
     }
+
+    if (!specialization) {
+      return errorResponse(res, "University course specialization not found", 404);
+    }
+
+    return successResponse(
+      res,
+      specialization,
+      "University course specialization fetched successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error fetching university course specialization:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to fetch university course specialization",
+      500
+    );
+  }
+};
+
+export const findByCourseAndSlug = async (req: Request, res: Response) => {
+  try {
+    const universitySlug = typeof req.params.university_slug === "string" 
+      ? req.params.university_slug.trim() 
+      : null;
+    const courseSlug = typeof req.params.course_slug === "string" 
+      ? req.params.course_slug.trim() 
+      : null;
+    const specializationSlug = typeof req.params.slug === "string" 
+      ? req.params.slug.trim() 
+      : null;
+
+    if (!universitySlug || universitySlug.length === 0) {
+      return errorResponse(res, "University slug is required", 400);
+    }
+
+    if (!courseSlug || courseSlug.length === 0) {
+      return errorResponse(res, "Course slug is required", 400);
+    }
+
+    if (!specializationSlug || specializationSlug.length === 0) {
+      return errorResponse(res, "Specialization slug is required", 400);
+    }
+
+    const specialization = await getUniversityCourseSpecializationByCourseSlugAndSpecializationSlug(
+      universitySlug,
+      courseSlug,
+      specializationSlug
+    );
 
     if (!specialization) {
       return errorResponse(res, "University course specialization not found", 404);
