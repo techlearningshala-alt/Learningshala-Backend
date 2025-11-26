@@ -78,14 +78,22 @@ export class UniversitySpecializationRepository {
       `SELECT * FROM university_course_specializations WHERE id = ?`,
       [id]
     );
-    return rows.length ? (rows[0] as UniversitySpecialization) : null;
+    if (!rows.length) return null;
+    const row = rows[0];
+    return {
+      ...row,
+      is_page_created:
+        row.is_page_created === null || row.is_page_created === undefined
+          ? true
+          : Boolean(row.is_page_created),
+    } as UniversitySpecialization;
   }
 
   async create(payload: CreateUniversitySpecializationDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_course_specializations
-        (university_course_id, name, slug, full_fees, sem_fees, duration, image, label, icon)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_course_id, name, slug, full_fees, sem_fees, duration, image, label, icon, is_page_created)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_course_id,
         payload.name,
@@ -96,6 +104,7 @@ export class UniversitySpecializationRepository {
         payload.image ?? null,
         payload.label ?? null,
         payload.icon ?? null,
+        payload.is_page_created !== undefined ? (payload.is_page_created ? 1 : 0) : 1,
       ]
     );
 
@@ -141,6 +150,10 @@ export class UniversitySpecializationRepository {
     if (payload.icon !== undefined) {
       fields.push("icon = ?");
       values.push(payload.icon ?? null);
+    }
+    if (payload.is_page_created !== undefined) {
+      fields.push("is_page_created = ?");
+      values.push(payload.is_page_created ? 1 : 0);
     }
 
     if (!fields.length) {

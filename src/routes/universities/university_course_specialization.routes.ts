@@ -29,6 +29,7 @@ router.put(
   UniversityCourseSpecializationController.update
 );
 router.patch("/:id/toggle-status", UniversityCourseSpecializationController.toggleStatus);
+router.patch("/:id/toggle-page-created", UniversityCourseSpecializationController.togglePageCreated);
 router.delete("/:id", UniversityCourseSpecializationController.remove);
 
 export default router;

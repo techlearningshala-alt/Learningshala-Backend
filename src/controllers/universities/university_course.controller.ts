@@ -7,6 +7,7 @@ import {
   getUniversityCourseByUniversitySlugAndCourseSlug,
   listUniversityCourses,
   toggleUniversityCourseStatus,
+  toggleUniversityCoursePageCreated,
   updateUniversityCourse,
 } from "../../services/universities/university_course.service";
 import { successResponse, errorResponse } from "../../utills/response";
@@ -538,6 +539,25 @@ export const toggleStatus = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error.message || "Failed to toggle course status",
+      400
+    );
+  }
+};
+
+export const togglePageCreated = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_page_created } = req.body;
+    
+    const updated = await toggleUniversityCoursePageCreated(Number(id), Boolean(is_page_created));
+    if (!updated) return errorResponse(res, "University course not found", 404);
+    
+    return successResponse(res, updated, "University course page created status updated successfully");
+  } catch (error: any) {
+    console.error("❌ Error toggling course page created status:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to toggle course page created status",
       400
     );
   }

@@ -491,11 +491,13 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
   // Attach sections
   sections.forEach((s: any) => {
     if (uniMap[s.university_id]) {
+      const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+      const normalizedProps = normalizeNullsToEmptyStrings(rawProps);
       uniMap[s.university_id].sections.push({
         id: s.id,
         title: s.title,
         component: s.component,
-        props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
+        props: normalizedProps,
       });
     }
   });
@@ -514,21 +516,49 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
     }
 };
 
+/**
+ * Recursively normalize null values to empty strings in objects and arrays
+ */
+function normalizeNullsToEmptyStrings(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return "";
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeNullsToEmptyStrings(item));
+  }
+  
+  if (typeof obj === "object") {
+    const normalized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      normalized[key] = normalizeNullsToEmptyStrings(value);
+    }
+    return normalized;
+  }
+  
+  return obj;
+}
+
 async function getUniversitySections(universityId: number) {
   const sections = await UniversitySectionService.getSectionsByUniversity(universityId);
   
   // Old format: keep original structure
-  const oldFormat = sections.map((s: any) => ({
-    id: s.id,
-    section_key: s.section_key,
-    title: s.title,
-    component: s.component,
-    props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
-  }));
+  const oldFormat = sections.map((s: any) => {
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const normalizedProps = normalizeNullsToEmptyStrings(rawProps);
+    return {
+      id: s.id,
+      section_key: s.section_key,
+      title: s.title,
+      component: s.component,
+      props: normalizedProps,
+    };
+  });
   
   // New transformed format: merge all sections into a single object
   const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
-    const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const props = normalizeNullsToEmptyStrings(rawProps);
     const sectionKey = s.section_key || generateSectionKey(s.title || "");
     
     // Determine the value for the section_key

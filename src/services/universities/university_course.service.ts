@@ -66,21 +66,49 @@ export async function listUniversityCourses(
   return result;
 }
 
+/**
+ * Recursively normalize null values to empty strings in objects and arrays
+ */
+function normalizeNullsToEmptyStrings(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return "";
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeNullsToEmptyStrings(item));
+  }
+  
+  if (typeof obj === "object") {
+    const normalized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      normalized[key] = normalizeNullsToEmptyStrings(value);
+    }
+    return normalized;
+  }
+  
+  return obj;
+}
+
 async function getCourseSections(courseId: number) {
   const sections = await UniversityCourseSectionService.getSectionsByCourseId(courseId);
   
   // Old format: keep original structure
-  const oldFormat = sections.map((s: any) => ({
-    id: s.id,
-    section_key: s.section_key,
-    title: s.title,
-    component: s.component,
-    props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
-  }));
+  const oldFormat = sections.map((s: any) => {
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const normalizedProps = normalizeNullsToEmptyStrings(rawProps);
+    return {
+      id: s.id,
+      section_key: s.section_key,
+      title: s.title,
+      component: s.component,
+      props: normalizedProps,
+    };
+  });
   
   // New transformed format: merge all sections into a single object
   const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
-    const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const props = normalizeNullsToEmptyStrings(rawProps);
     const sectionKey = s.section_key || generateSectionKey(s.title || "");
     
     // Determine the value for the section_key
@@ -575,6 +603,14 @@ export async function toggleUniversityCourseStatus(id: number, isActive: boolean
   if (!course) return null;
 
   await courseRepo.update(id, { is_active: isActive });
+  return await courseRepo.findById(id);
+}
+
+export async function toggleUniversityCoursePageCreated(id: number, isPageCreated: boolean) {
+  const course = await courseRepo.findById(id);
+  if (!course) return null;
+
+  await courseRepo.update(id, { is_page_created: isPageCreated });
   return await courseRepo.findById(id);
 }
 

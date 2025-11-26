@@ -14,6 +14,7 @@ export interface UniversitySpecialization {
   image?: string | null;
   label?: string | null;
   icon?: string | null;
+  is_page_created: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -28,6 +29,7 @@ export interface CreateUniversitySpecializationDto {
   image?: string | null;
   label?: string | null;
   icon?: string | null;
+  is_page_created?: boolean;
 }
 
 export interface UpdateUniversitySpecializationDto {
@@ -40,6 +42,7 @@ export interface UpdateUniversitySpecializationDto {
   image?: string | null;
   label?: string | null;
   icon?: string | null;
+  is_page_created?: boolean;
   saveWithDate?: boolean;
 }
 

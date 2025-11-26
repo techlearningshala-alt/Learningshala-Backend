@@ -71,48 +71,79 @@ export async function listUniversityCourseSpecializations(
   return result;
 }
 
+/**
+ * Recursively normalize null values to empty strings in objects and arrays
+ */
+function normalizeNullsToEmptyStrings(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return "";
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => normalizeNullsToEmptyStrings(item));
+  }
+  
+  if (typeof obj === "object") {
+    const normalized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      normalized[key] = normalizeNullsToEmptyStrings(value);
+    }
+    return normalized;
+  }
+  
+  return obj;
+}
+
 async function getSpecializationSections(specializationId: number) {
   const sections = await UniversityCourseSpecializationSectionService.getSectionsBySpecializationId(specializationId);
   
   // Old format: keep original structure
-  const oldFormat = sections.map((s: any) => ({
-    id: s.id,
-    section_key: s.section_key,
-    title: s.title,
-    component: s.component,
-    props: typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {},
-  }));
+  const oldFormat = sections.map((s: any) => {
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const normalizedProps = normalizeNullsToEmptyStrings(rawProps);
+    return {
+      id: s.id,
+      section_key: s.section_key,
+      title: s.title,
+      component: s.component,
+      props: normalizedProps,
+    };
+  });
   
   // New transformed format: merge all sections into a single object
   const newFormat = sections.reduce((acc: Record<string, any>, s: any) => {
-    const props = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
-    const title = s.section_key || "";
+    const rawProps = typeof s.props === "string" ? JSON.parse(s.props || "{}") : s.props || {};
+    const props = normalizeNullsToEmptyStrings(rawProps);
+    const sectionKey = s.section_key || "";
     
-    // Determine the value for the title key
+    // Determine the value for the section_key
     // Priority: content > first prop value > empty string
     let titleValue: any = "";
+    let titleValueKey: string | null = null;
     let contentUsedForTitle = false;
     
     if (props.content !== undefined && props.content !== null && props.content !== "") {
       titleValue = props.content;
+      titleValueKey = "content";
       contentUsedForTitle = true;
     } else if (Object.keys(props).length > 0) {
       // Use first prop value if no content
       const firstKey = Object.keys(props)[0];
       titleValue = props[firstKey];
+      titleValueKey = firstKey;
     }
     
-    // Set title as a key with its value
-    if (title) {
-      acc[title] = titleValue;
+    // Set section_key as a key with its value
+    if (sectionKey) {
+      acc[sectionKey] = titleValue;
     }
     
-    // Flatten ALL props into the same object (excluding content if it was used for title)
+    // Flatten ALL props into the same object (excluding content/prop if it was used for section_key)
     // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
     Object.keys(props).forEach((key) => {
-      // Skip content if it was already used as the title value to avoid duplication
-      if (key === "content" && contentUsedForTitle) {
-        return; // Skip adding content since it's already the title value
+      // Skip content/prop if it was already used as the section_key value to avoid duplication
+      if ((key === "content" && contentUsedForTitle) || key === titleValueKey) {
+        return; // Skip adding content/prop since it's already the section_key value
       }
       acc[key] = props[key];
     });
@@ -476,6 +507,14 @@ export async function toggleUniversityCourseSpecializationStatus(id: number, isA
   if (!specialization) return null;
 
   await specializationRepo.update(id, { is_active: isActive });
+  return await specializationRepo.findById(id);
+}
+
+export async function toggleUniversityCourseSpecializationPageCreated(id: number, isPageCreated: boolean) {
+  const specialization = await specializationRepo.findById(id);
+  if (!specialization) return null;
+
+  await specializationRepo.update(id, { is_page_created: isPageCreated });
   return await specializationRepo.findById(id);
 }
 

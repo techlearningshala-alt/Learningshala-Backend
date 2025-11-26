@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, duration, label, course_thumbnail, author_name, is_active, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -118,6 +118,7 @@ export class UniversityCourseRepository {
         payload.course_thumbnail ?? null,
         payload.author_name ?? null,
         payload.is_active !== undefined ? (payload.is_active ? 1 : 0) : 1,
+        payload.is_page_created !== undefined ? (payload.is_page_created ? 1 : 0) : 1,
         payload.syllabus_file ?? null,
         payload.brochure_file ?? null,
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null,
@@ -166,6 +167,10 @@ export class UniversityCourseRepository {
     if (payload.is_active !== undefined) {
       fields.push("is_active = ?");
       values.push(payload.is_active ? 1 : 0);
+    }
+    if (payload.is_page_created !== undefined) {
+      fields.push("is_page_created = ?");
+      values.push(payload.is_page_created ? 1 : 0);
     }
     if (payload.syllabus_file !== undefined) {
       fields.push("syllabus_file = ?");
@@ -218,6 +223,10 @@ export class UniversityCourseRepository {
         row.is_active === null || row.is_active === undefined
           ? true
           : Boolean(row.is_active),
+      is_page_created:
+        row.is_page_created === null || row.is_page_created === undefined
+          ? true
+          : Boolean(row.is_page_created),
     };
   }
 }

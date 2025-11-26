@@ -7,6 +7,7 @@ import {
   getUniversityCourseSpecializationByCourseSlugAndSpecializationSlug,
   listUniversityCourseSpecializations,
   toggleUniversityCourseSpecializationStatus,
+  toggleUniversityCourseSpecializationPageCreated,
   updateUniversityCourseSpecialization,
 } from "../../services/universities/university_course_specialization.service";
 import { successResponse, errorResponse } from "../../utills/response";
@@ -522,6 +523,32 @@ export const toggleStatus = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error.message || "Failed to toggle university course specialization status",
+      400
+    );
+  }
+};
+
+export const togglePageCreated = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const isPageCreated = req.body.is_page_created === true || req.body.is_page_created === "true" || req.body.is_page_created === 1;
+
+    const specialization = await toggleUniversityCourseSpecializationPageCreated(id, isPageCreated);
+
+    if (!specialization) {
+      return errorResponse(res, "University course specialization not found", 404);
+    }
+
+    return successResponse(
+      res,
+      specialization,
+      "University course specialization page created status toggled successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error toggling university course specialization page created status:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to toggle university course specialization page created status",
       400
     );
   }
