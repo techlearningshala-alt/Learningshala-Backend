@@ -39,7 +39,7 @@ export const EmiPartnerRepo = {
   async getAllEmiPartners(limit: number, offset: number): Promise<EmiPartner[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT * FROM emi_partners 
-       ORDER BY created_at DESC
+       ORDER BY created_at ASC, id ASC
        LIMIT ? OFFSET ?`,
       [limit, offset]
     );

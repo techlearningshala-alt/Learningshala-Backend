@@ -12,7 +12,7 @@ export class UniversityFaqRepository {
 
     // Fetch paginated data
     const [rows] = await pool.query(
-      "SELECT * FROM university_faq_categories ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      "SELECT * FROM university_faq_categories ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?",
       [limit, offset]
     );
 
@@ -101,7 +101,7 @@ export class UniversityFaqRepository {
       countQuery += whereClause;
     }
 
-    query += " ORDER BY f.created_at DESC LIMIT ? OFFSET ?";
+    query += " ORDER BY f.created_at ASC, f.id ASC LIMIT ? OFFSET ?";
     params.push(limit, offset);
 
     const [rows] = await pool.query(query, params);
@@ -116,13 +116,13 @@ export class UniversityFaqRepository {
       `SELECT f.*, c.heading 
      FROM university_faqs f
      LEFT JOIN university_faq_categories c ON f.category_id = c.id
-     ORDER BY f.created_at DESC`,
+     ORDER BY f.created_at ASC, f.id ASC`,
     );
     return { data: rows as UniversityFaq[] };
   }
 
   async findQuestionsByCategory(categoryId: number): Promise<UniversityFaq[]> {
-    const [rows] = await pool.query("SELECT * FROM university_faqs WHERE category_id=? ORDER BY created_at DESC", [categoryId]);
+    const [rows] = await pool.query("SELECT * FROM university_faqs WHERE category_id=? ORDER BY created_at ASC, id ASC", [categoryId]);
     return rows as UniversityFaq[];
   }
 

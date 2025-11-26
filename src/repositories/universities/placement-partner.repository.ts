@@ -41,7 +41,7 @@ export const PlacementPartnerRepo = {
   async getAllPlacementPartners(limit: number, offset: number): Promise<PlacementPartner[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT * FROM placement_partners 
-       ORDER BY created_at DESC
+       ORDER BY created_at ASC, id ASC
        LIMIT ? OFFSET ?`,
       [limit, offset]
     );

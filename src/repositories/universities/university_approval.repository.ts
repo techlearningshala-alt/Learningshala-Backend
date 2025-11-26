@@ -4,7 +4,7 @@ import { UniversityApproval } from "../../models/universities/university_approva
 export class UniversityApprovalRepository {
   async findAll(limit: number, offset: number): Promise<UniversityApproval[]> {
     const [rows] = await pool.query(
-      "SELECT * FROM university_approvals ORDER BY id DESC LIMIT ? OFFSET ?",
+      "SELECT * FROM university_approvals ORDER BY id ASC LIMIT ? OFFSET ?",
       [limit, offset]
     );
     return rows as UniversityApproval[];

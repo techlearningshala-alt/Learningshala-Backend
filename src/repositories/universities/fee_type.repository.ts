@@ -26,7 +26,7 @@ class FeeTypeRepository {
       `SELECT id, title, fee_key, created_at, updated_at
          FROM fee_types
          ${whereClause}
-         ORDER BY updated_at DESC
+         ORDER BY created_at ASC, id ASC
          LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
