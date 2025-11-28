@@ -1,9 +1,11 @@
-import { NextFunction, Request, Response } from "express";
-import * as CourseService from "../../services/courses/course.service";
-import { successResponse, errorResponse } from "../../utills/response";
-import { createCourseSchema, updateCourseSchema } from "../../validators/courses/domain.validator";
+import { Request, Response } from "express";
 import slugify from "slugify";
-import { number } from "zod";
+import * as CourseService from "../../services/courses/course.service";
+import {
+  createCourseSchema,
+  updateCourseSchema,
+} from "../../validators/courses/domain.validator";
+import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
 
@@ -37,35 +39,224 @@ export const getOne = async (req: Request, res: Response) => {
   }
 };
 
-export const create = async (req: Request, res: Response) => {
-  try {
-    let thumbnailUrl: string | undefined;
+const normalizeFilesArray = (files: Request["files"]) => {
+  if (!files) return [];
+  if (Array.isArray(files)) return files;
+  return Object.values(files).flat();
+};
 
-    // Upload to S3 if file exists
-    if (req.file) {
-      const fileName = generateFileName(req.file.originalname);
-      thumbnailUrl = await uploadToS3(
-        req.file.buffer,
-        fileName,
-        "courses",
-        req.file.mimetype
-      );
+const toBoolean = (value: any, defaultValue = true) => {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  const normalized = String(value).trim().toLowerCase();
+  return ["true", "1", "yes", "on"].includes(normalized);
+};
+
+const parseJsonArray = (payload: any) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (typeof payload === "string") {
+    try {
+      const parsed = JSON.parse(payload);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const shouldDeleteFromS3 = (path?: string | null) =>
+  Boolean(path) && !String(path).startsWith("/uploads/");
+
+const sanitizeSectionKey = (value: string) => {
+  if (!value) return `section_${Date.now()}`;
+  return slugify(value, { lower: true, strict: true }).replace(/-/g, "_");
+};
+
+const uploadAsset = async (file: Express.Multer.File, folder: string) => {
+  const fileName = generateFileName(file.originalname);
+  return uploadToS3(file.buffer, fileName, folder, file.mimetype);
+};
+
+const normalizeCoursePayload = (body: any) => {
+  const domainId = Number(body.domain_id);
+  const priority =
+    body.priority !== undefined && body.priority !== ""
+      ? Number(body.priority)
+      : undefined;
+  const durationValue =
+    body.course_duration !== undefined && body.course_duration !== ""
+      ? body.course_duration
+      : body.duration;
+
+  return {
+    domain_id: Number.isNaN(domainId) ? undefined : domainId,
+    name: body.name,
+    slug: body.slug,
+    h1Tag: body.h1Tag,
+    label: body.label,
+    description: body.description ?? null,
+    course_duration: durationValue ?? null,
+    upload_brochure: body.upload_brochure ?? null,
+    author_name: body.author_name ?? null,
+    learning_mode: body.learning_mode ?? null,
+    podcast_embed: body.podcast_embed ?? null,
+    priority: priority ?? 0,
+    thumbnail: body.thumbnail ?? null,
+    is_active: toBoolean(body.is_active, true),
+    menu_visibility: toBoolean(body.menu_visibility, true),
+  };
+};
+
+const prepareBannerPayload = async (
+  rawBanners: any,
+  files: Express.Multer.File[],
+  existingMap: Map<number, any> = new Map()
+) => {
+  if (rawBanners === undefined) return undefined;
+
+  const banners = parseJsonArray(rawBanners);
+  const prepared = [];
+
+  for (let index = 0; index < banners.length; index++) {
+    const banner = banners[index] || {};
+    const bannerId =
+      banner.id !== undefined && banner.id !== null
+        ? Number(banner.id)
+        : null;
+    const existing = bannerId ? existingMap.get(bannerId) : undefined;
+    const fileField = `banner_${index}_banner_image`;
+    const file = files.find((f) => f.fieldname === fileField);
+    let bannerImage = banner.banner_image ?? existing?.banner_image ?? null;
+
+    if (file) {
+      if (shouldDeleteFromS3(existing?.banner_image)) {
+        await deleteFromS3(existing.banner_image);
+      }
+      bannerImage = await uploadAsset(file, "courses/banners");
+    } else if (banner.banner_image === "__REMOVE__") {
+      if (shouldDeleteFromS3(existing?.banner_image)) {
+        await deleteFromS3(existing.banner_image);
+      }
+      bannerImage = null;
     }
 
-    const body = {
-      ...req.body,
-      thumbnail: thumbnailUrl,
-    };
-    console.log(body, "body");
-    body.domain_id = Number(body.domain_id);
-    body.priority = Number(body.priority);
-    body.menu_visibility = Boolean(body.menu_visibility);
-    body.is_active = Boolean(body.is_active);
-    const validatedData: any = createCourseSchema.parse(body);
-    validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
-    validatedData.thumbnail = validatedData.thumbnail || undefined;
+    prepared.push({
+      banner_image: bannerImage,
+      video_id: banner.video_id || null,
+      video_title: banner.video_title || null,
+    });
+  }
 
-    const course = await CourseService.addCourse(validatedData);
+  return prepared;
+};
+
+const prepareSectionPayload = async (
+  rawSections: any,
+  files: Express.Multer.File[],
+  body: any,
+  existingMap: Map<string, any> = new Map()
+) => {
+  if (rawSections === undefined) return undefined;
+
+  const sections = parseJsonArray(rawSections);
+  const prepared = [];
+
+  for (const section of sections) {
+    const key = sanitizeSectionKey(section.section_key || section.title);
+    const existing = existingMap.get(key);
+    const imageField = `${key}_image`;
+    const originalImageField = `${section.section_key}_image`;
+    
+    // Debug: log available files for this section
+    if (section.section_key === "admission_process") {
+      console.log(`[SECTION IMAGE DEBUG] Section: ${section.section_key}, Key: ${key}`);
+      console.log(`[SECTION IMAGE DEBUG] Looking for fieldname: ${imageField} or ${originalImageField}`);
+      console.log(`[SECTION IMAGE DEBUG] Available files:`, files.map(f => f.fieldname));
+      console.log(`[SECTION IMAGE DEBUG] Body keys:`, Object.keys(body || {}).filter(k => k.includes('image')));
+    }
+    
+    // Try to find file by sanitized key first, then by original section_key
+    const file = files.find((f) => f.fieldname === imageField) ||
+                 files.find((f) => f.fieldname === originalImageField);
+    const inlineValue = body?.[imageField] || body?.[originalImageField];
+    let imagePath = existing?.image || null;
+
+    // Priority: new file upload > remove flag > existing string value > keep existing
+    if (file) {
+      // New file uploaded - upload it
+      if (shouldDeleteFromS3(existing?.image)) {
+        await deleteFromS3(existing.image);
+      }
+      imagePath = await uploadAsset(file, "courses/sections");
+      console.log(`[SECTION IMAGE] Uploaded new image for section ${key}: ${imagePath}`);
+    } else if (inlineValue === "__REMOVE__") {
+      // Explicit removal requested
+      if (shouldDeleteFromS3(existing?.image)) {
+        await deleteFromS3(existing.image);
+      }
+      imagePath = null;
+      console.log(`[SECTION IMAGE] Removed image for section ${key}`);
+    } else if (typeof inlineValue === "string" && inlineValue && inlineValue !== "__REMOVE__") {
+      // Existing image path sent as string (preserve it)
+      imagePath = inlineValue;
+      console.log(`[SECTION IMAGE] Preserved existing image for section ${key}: ${imagePath}`);
+    } else if (existing?.image) {
+      // Keep existing image from database
+      imagePath = existing.image;
+      console.log(`[SECTION IMAGE] Keeping existing image for section ${key}: ${imagePath}`);
+    } else {
+      imagePath = null;
+      console.log(`[SECTION IMAGE] No image for section ${key}`);
+    }
+
+    prepared.push({
+      section_key: key,
+      title: section.title || key,
+      description: section.description || "",
+      image: imagePath,
+    });
+  }
+
+  return prepared;
+};
+
+export const create = async (req: Request, res: Response) => {
+  try {
+    const files = normalizeFilesArray(req.files);
+    const body = { ...req.body };
+
+    const thumbnailFile = files.find((file) => file.fieldname === "thumbnail");
+    if (thumbnailFile) {
+      body.thumbnail = await uploadAsset(thumbnailFile, "courses/thumbnails");
+    }
+
+    const ebookFile = files.find((file) => file.fieldname === "ebook_file");
+    if (ebookFile) {
+      body.upload_brochure = await uploadAsset(ebookFile, "courses/ebooks");
+    } else if (body.ebook_file && typeof body.ebook_file === "string") {
+      body.upload_brochure = body.ebook_file;
+    }
+
+    const normalizedPayload = normalizeCoursePayload(body);
+    const validatedData: any = createCourseSchema.parse(normalizedPayload);
+    validatedData.slug =
+      validatedData.slug?.trim() ||
+      slugify(validatedData.name, { lower: true, strict: true });
+    validatedData.description =
+      body.course_intro ?? validatedData.description ?? "";
+    delete validatedData.course_intro;
+
+    const banners = await prepareBannerPayload(body.banners, files);
+    const sections = await prepareSectionPayload(body.sections, files, body);
+
+    const course = await CourseService.addCourse(
+      validatedData,
+      banners ?? [],
+      sections ?? []
+    );
     return successResponse(res, course, "Course created successfully", 201);
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to create course", 400);
@@ -74,54 +265,105 @@ export const create = async (req: Request, res: Response) => {
 
 export const update = async (req: Request, res: Response) => {
   try {
-    const { saveWithDate = "true", existingThumbnail, ...rest } = req.body;
-    const saveDateFlag = saveWithDate === "true";
-    console.log(existingThumbnail, "validated course data");
+    const id = Number(req.params.id);
+    const existingCourse = await CourseService.getCourse(id);
+    if (!existingCourse) {
+      return errorResponse(res, "Course not found", 404);
+    }
 
-    // Get current course to delete old thumbnail from S3
-    const currentCourse = await CourseService.getCourse(Number(req.params.id));
+    const files = normalizeFilesArray(req.files);
+    const {
+      saveWithDate = "true",
+      existingThumbnail,
+      ...rest
+    } = req.body as Record<string, any>;
+    const saveDateFlag = saveWithDate !== "false";
+    const body = { ...rest };
 
-    let thumbnailUrl: string | undefined = existingThumbnail;
-
-    // Upload new file to S3 if provided
-    if (req.file) {
-      const fileName = generateFileName(req.file.originalname);
-      thumbnailUrl = await uploadToS3(
-        req.file.buffer,
-        fileName,
-        "courses",
-        req.file.mimetype
-      );
-
-      // Delete old thumbnail from S3 if it exists and is from S3
-      if (currentCourse?.thumbnail && currentCourse.thumbnail !== existingThumbnail) {
-        await deleteFromS3(currentCourse.thumbnail);
+    let thumbnailPath =
+      existingThumbnail ||
+      existingCourse.thumbnail ||
+      body.thumbnail ||
+      null;
+    const thumbnailFile = files.find((file) => file.fieldname === "thumbnail");
+    if (thumbnailFile) {
+      if (shouldDeleteFromS3(thumbnailPath)) {
+        await deleteFromS3(thumbnailPath);
       }
+      thumbnailPath = await uploadAsset(thumbnailFile, "courses/thumbnails");
+    } else if (body.thumbnail === "__REMOVE__") {
+      if (shouldDeleteFromS3(thumbnailPath)) {
+        await deleteFromS3(thumbnailPath);
+      }
+      thumbnailPath = null;
     }
+    body.thumbnail = thumbnailPath;
 
-    // Convert types properly before validation
-    const parsedData: any = {
-      ...rest,
-      domain_id: rest.domain_id ? Number(rest.domain_id) : null,
-      priority: rest.priority ? Number(rest.priority) : 0,
-      is_active: rest.is_active === "true" || rest.is_active === true || rest.is_active === 1,
-      menu_visibility: rest.menu_visibility === "true" || rest.menu_visibility === true || rest.menu_visibility === 1,
-    };
+    let brochurePath =
+      body.upload_brochure ||
+      body.ebook_file ||
+      existingCourse.upload_brochure ||
+      null;
+    const ebookFile = files.find((file) => file.fieldname === "ebook_file");
+    if (ebookFile) {
+      if (shouldDeleteFromS3(existingCourse.upload_brochure)) {
+        await deleteFromS3(existingCourse.upload_brochure);
+      }
+      brochurePath = await uploadAsset(ebookFile, "courses/ebooks");
+    } else if (body.ebook_file === "__REMOVE__") {
+      if (shouldDeleteFromS3(existingCourse.upload_brochure)) {
+        await deleteFromS3(existingCourse.upload_brochure);
+      }
+      brochurePath = null;
+    }
+    body.upload_brochure = brochurePath;
 
-    // Handle thumbnail (new or existing)
-    parsedData.thumbnail = thumbnailUrl;
-
-    // Validate using Zod schema
-    const validatedData: any = updateCourseSchema.parse(parsedData);
-
-    // Generate slug if name provided
+    const normalizedPayload = normalizeCoursePayload(body);
+    const validatedData: any = updateCourseSchema.parse(normalizedPayload);
     if (validatedData.name) {
-      validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
+      validatedData.slug =
+        validatedData.slug?.trim() ||
+        slugify(validatedData.name, { lower: true, strict: true });
     }
+    if (body.course_intro !== undefined) {
+      validatedData.description = body.course_intro ?? "";
+    }
+    delete validatedData.course_intro;
 
-    // Update in DB
-    const course = await CourseService.updateCourse(Number(req.params.id), validatedData, saveDateFlag);
-    if (!course) return errorResponse(res, "Course not found or nothing to update", 404);
+    const bannersMap = new Map<number, any>(
+      (existingCourse.banners || [])
+        .filter((banner: any) => banner && banner.id !== undefined)
+        .map((banner: any) => [Number(banner.id), banner])
+    );
+    const sectionsMap = new Map<string, any>(
+      (existingCourse.sections || []).map((section: any) => [
+        sanitizeSectionKey(section.section_key || section.title),
+        section,
+      ])
+    );
+
+    const banners = await prepareBannerPayload(
+      body.banners,
+      files,
+      bannersMap
+    );
+    const sections = await prepareSectionPayload(
+      body.sections,
+      files,
+      body,
+      sectionsMap
+    );
+
+    const course = await CourseService.updateCourse(
+      id,
+      validatedData,
+      saveDateFlag,
+      banners,
+      sections
+    );
+    if (!course) {
+      return errorResponse(res, "Course not found or nothing to update", 404);
+    }
 
     return successResponse(res, course, "Course updated successfully");
   } catch (err: any) {
@@ -136,5 +378,44 @@ export const remove = async (req: Request, res: Response) => {
     return successResponse(res, result, "Course deleted successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to delete course", 400);
+  }
+};
+
+export const toggleStatus = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const { is_active } = req.body;
+    const updated = await CourseService.toggleCourseStatus(id, Boolean(is_active));
+    if (!updated) {
+      return errorResponse(res, "Course not found", 404);
+    }
+    return successResponse(res, updated, "Course status updated successfully");
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to update course status", 400);
+  }
+};
+
+export const toggleMenuVisibility = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const { menu_visibility } = req.body;
+    const updated = await CourseService.toggleCourseMenuVisibility(
+      id,
+      Boolean(menu_visibility)
+    );
+    if (!updated) {
+      return errorResponse(res, "Course not found", 404);
+    }
+    return successResponse(
+      res,
+      updated,
+      "Course menu visibility updated successfully"
+    );
+  } catch (err: any) {
+    return errorResponse(
+      res,
+      err.message || "Failed to update course menu visibility",
+      400
+    );
   }
 };

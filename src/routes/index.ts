@@ -22,6 +22,7 @@ import feeTypeRoutes from "./universities/fee_type.routes";
 import universityFaqRoutes from "./university_faq.routes";
 import universityCourseFaqRoutes from "./university_course_faq.routes";
 import universityCourseSpecializationFaqRoutes from "./university_course_specialization_faq.routes";
+import courseFaqRoutes from "./courses/course_faq.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -50,6 +51,7 @@ router.use("/cms/users", userRoutes);
 // ✅ Courses module routes
 router.use("/cms/domains", domainRoutes);
 router.use("/cms/courses", courseRoutes);
+router.use("/cms/courses/faqs", courseFaqRoutes);
 router.use("/cms/specializations", specializationRoutes);
 
 export default router;

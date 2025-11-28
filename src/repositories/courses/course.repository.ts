@@ -1,3 +1,4 @@
+import type { Pool, PoolConnection } from "mysql2/promise";
 import pool from "../../config/db";
 
 export interface Course {
@@ -5,30 +6,45 @@ export interface Course {
   domain_id: number;
   name: string;
   slug: string;
-  thumbnail: string;
-  description: string;
-  priority: string;
-  menu_visibility: string;
-  is_active: string;
-  created_at: Date;
-  updated_at: Date;
+  h1Tag?: string | null;
+  label?: string | null;
+  thumbnail?: string | null;
+  description?: string | null;
+  course_duration?: string | null;
+  upload_brochure?: string | null;
+  author_name?: string | null;
+  learning_mode?: string | null;
+  podcast_embed?: string | null;
+  priority?: number | null;
+  menu_visibility?: boolean;
+  is_active?: boolean;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export default class CourseRepo {
-  // async findAll(page = 1, limit = 10) {
-  //   const offset = (page - 1) * limit;
-  //   const [rows]: any = await pool.query(
-  //     "SELECT SQL_CALC_FOUND_ROWS * FROM courses ORDER BY id DESC LIMIT ? OFFSET ?",
-  //     [limit, offset]
-  //   );
-  //   const [[{ "FOUND_ROWS()": total }]]: any = await pool.query("SELECT FOUND_ROWS()");
-  //   return { data: rows, page, pages: Math.ceil(total / limit), total };
-  // }
+  private getExecutor(conn?: Pool | PoolConnection) {
+    return conn || pool;
+  }
 
-  async findAll(page = 1, limit = 10) {
+  private mapRow(row: any) {
+    if (!row) return row;
+    return {
+      ...row,
+      is_active:
+        row.is_active === null || row.is_active === undefined ? true : Boolean(row.is_active),
+      menu_visibility:
+        row.menu_visibility === null || row.menu_visibility === undefined
+          ? true
+          : Boolean(row.menu_visibility),
+    };
+  }
+
+  async findAll(page = 1, limit = 10, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
     const offset = (page - 1) * limit;
 
-    const [rows]: any = await pool.query(
+    const [rows]: any = await executor.query(
       `
     SELECT 
       c.*, 
@@ -42,62 +58,156 @@ export default class CourseRepo {
       [limit, offset]
     );
 
-    const [countRows] = await pool.query("SELECT COUNT(*) as total FROM courses");
-    const total = (countRows as any)[0].total;
+    const [countRows]: any = await executor.query(
+      "SELECT COUNT(*) as total FROM courses"
+    );
+    const total = countRows[0]?.total ?? 0;
     return {
-      data: rows,
+      data: rows.map((row: any) => this.mapRow(row)),
       page,
       pages: Math.ceil(total / limit),
       total,
     };
   }
 
-  async findAllCourseName() {
-    const [rows]: any = await pool.query("SELECT id, name FROM courses ORDER BY name ASC");
+  async findAllCourseName(conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [rows]: any = await executor.query(
+      "SELECT id, name FROM courses ORDER BY name ASC"
+    );
     return rows;
   }
 
-
-  async findById(id: number) {
-    const [rows]: any = await pool.query("SELECT * FROM courses WHERE id = ?", [id]);
-    return rows.length ? rows[0] : null;
+  async findById(id: number, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [rows]: any = await executor.query("SELECT * FROM courses WHERE id = ?", [
+      id,
+    ]);
+    return rows.length ? this.mapRow(rows[0]) : null;
   }
 
-  async create(item: Partial<Course>) {
-    const [result]: any = await pool.query(
-      "INSERT INTO courses (domain_id, name, slug, thumbnail, description, priority,menu_visibility,is_active ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [item.domain_id, item.name, item.slug, item.thumbnail, item.description, item.priority, item.menu_visibility, item.is_active]
+  async create(item: Partial<Course>, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const menuVisibility =
+      item.menu_visibility === undefined ? true : item.menu_visibility;
+    const isActive =
+      item.is_active === undefined ? true : item.is_active;
+
+    const [result]: any = await executor.query(
+      `INSERT INTO courses 
+        (domain_id, name, slug, h1Tag, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        item.domain_id,
+        item.name,
+        item.slug,
+        item.h1Tag ?? null,
+        item.label ?? null,
+        item.thumbnail ?? null,
+        item.description ?? null,
+        item.course_duration ?? null,
+        item.upload_brochure ?? null,
+        item.author_name ?? null,
+        item.learning_mode ?? null,
+        item.podcast_embed ?? null,
+        item.priority ?? 0,
+        menuVisibility ? 1 : 0,
+        isActive ? 1 : 0,
+      ]
     );
-    const [rows]: any = await pool.query("SELECT * FROM courses WHERE id = ?", [result.insertId]);
-    return rows[0];
+    return this.findById(result.insertId, conn);
   }
 
-  async update(id: number, item: Partial<Course>, saveWithDate = true) {
+  async update(
+    id: number,
+    item: Partial<Course>,
+    saveWithDate = true,
+    conn?: Pool | PoolConnection
+  ) {
+    const executor = this.getExecutor(conn);
     const fields: string[] = [];
     const values: any[] = [];
-    if (item.domain_id !== undefined) { fields.push("domain_id = ?"); values.push(item.domain_id); }
-    if (item.name !== undefined) { fields.push("name = ?"); values.push(item.name); }
-    if (item.slug !== undefined) { fields.push("slug = ?"); values.push(item.slug); }
-    if (item.thumbnail !== undefined) { fields.push("thumbnail = ?"); values.push(item.thumbnail); }
-    if (item.description !== undefined) { fields.push("description = ?"); values.push(item.description); }
-    if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility); }
-    if (item.is_active !== undefined) { fields.push("is_active = ?"); values.push(item.is_active); }
-    if (item.priority !== undefined) { fields.push("priority = ?"); values.push(item.priority); }
+
+    if (item.domain_id !== undefined) {
+      fields.push("domain_id = ?");
+      values.push(item.domain_id);
+    }
+    if (item.name !== undefined) {
+      fields.push("name = ?");
+      values.push(item.name);
+    }
+    if (item.slug !== undefined) {
+      fields.push("slug = ?");
+      values.push(item.slug);
+    }
+    if (item.h1Tag !== undefined) {
+      fields.push("h1Tag = ?");
+      values.push(item.h1Tag ?? null);
+    }
+    if (item.label !== undefined) {
+      fields.push("label = ?");
+      values.push(item.label ?? null);
+    }
+    if (item.thumbnail !== undefined) {
+      fields.push("thumbnail = ?");
+      values.push(item.thumbnail ?? null);
+    }
+    if (item.description !== undefined) {
+      fields.push("description = ?");
+      values.push(item.description ?? null);
+    }
+    if (item.course_duration !== undefined) {
+      fields.push("course_duration = ?");
+      values.push(item.course_duration ?? null);
+    }
+    if (item.upload_brochure !== undefined) {
+      fields.push("upload_brochure = ?");
+      values.push(item.upload_brochure ?? null);
+    }
+    if (item.author_name !== undefined) {
+      fields.push("author_name = ?");
+      values.push(item.author_name ?? null);
+    }
+    if (item.learning_mode !== undefined) {
+      fields.push("learning_mode = ?");
+      values.push(item.learning_mode ?? null);
+    }
+    if (item.podcast_embed !== undefined) {
+      fields.push("podcast_embed = ?");
+      values.push(item.podcast_embed ?? null);
+    }
+    if (item.menu_visibility !== undefined) {
+      fields.push("menu_visibility = ?");
+      values.push(item.menu_visibility ? 1 : 0);
+    }
+    if (item.is_active !== undefined) {
+      fields.push("is_active = ?");
+      values.push(item.is_active ? 1 : 0);
+    }
+    if (item.priority !== undefined) {
+      fields.push("priority = ?");
+      values.push(item.priority ?? 0);
+    }
 
     if (!fields.length) return null;
     if (saveWithDate) fields.push("updated_at = NOW()");
 
     values.push(id);
-    const [result]: any = await pool.query(`UPDATE courses SET ${fields.join(", ")} WHERE id = ?`, values);
+    const [result]: any = await executor.query(
+      `UPDATE courses SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
 
     if (result.affectedRows === 0) return null;
 
-    const [rows]: any = await pool.query("SELECT * FROM courses WHERE id = ?", [id]);
-    return rows[0];
+    return this.findById(id, conn);
   }
 
-  async delete(id: number) {
-    const [result]: any = await pool.query("DELETE FROM courses WHERE id = ?", [id]);
+  async delete(id: number, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [result]: any = await executor.query("DELETE FROM courses WHERE id = ?", [
+      id,
+    ]);
     return result.affectedRows > 0;
   }
 }

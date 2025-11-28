@@ -11,8 +11,13 @@ router.use(authMiddleware);
 router.get("/", CourseController.getAll);
 router.get("/course-name", CourseController.getCourseName);
 router.get("/:id", CourseController.getOne);
-router.post("/",  upload.single("thumbnail"), CourseController.create);
-router.put("/:id", upload.single("thumbnail"), CourseController.update);
-router.delete("/:id",  CourseController.remove);
+router.post("/", upload.any(), CourseController.create);
+router.put("/:id", upload.any(), CourseController.update);
+router.patch("/:id/toggle-status", CourseController.toggleStatus);
+router.patch(
+  "/:id/toggle-menu-visibility",
+  CourseController.toggleMenuVisibility
+);
+router.delete("/:id", CourseController.remove);
 
 export default router;

@@ -3,8 +3,15 @@ export interface Course {
   domain_id: number;       // FK → domains.id
   name: string;
   slug: string;
+  h1Tag?: string | null;
+  label?: string | null;
   thumbnail: string;
   description?: string;
+  course_duration?: string | null;
+  upload_brochure?: string | null;
+  author_name?: string | null;
+  learning_mode?: string | null;
+  podcast_embed?: string | null;
   priority: number;
   menu_visibility: string;
   is_active: string;
