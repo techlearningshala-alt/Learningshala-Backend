@@ -46,7 +46,7 @@ export class UniversityCourseSpecializationRepository {
          INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
          INNER JOIN universities u ON ucs.university_id = u.id
         ${whereClause}
-        ORDER BY ucs.updated_at DESC
+        ORDER BY ucs.created_at ASC, ucs.id ASC
         LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );

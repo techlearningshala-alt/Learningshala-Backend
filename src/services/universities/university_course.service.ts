@@ -171,7 +171,7 @@ async function getCourseFaqs(courseId: number) {
       [courseId]
     );
 
-
+console.log("rows", rows);
     if (!rows || !rows.length) {
       return [];
     }
