@@ -31,11 +31,33 @@ export const getCourseName = async (req: Request, res: Response) => {
 
 export const getOne = async (req: Request, res: Response) => {
   try {
+    console.log(req.query.id,"course");
     const course = await CourseService.getCourse(Number(req.params.id));
     if (!course) return errorResponse(res, "Course not found", 404);
     return successResponse(res, course, "Course fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch course");
+  }
+};
+
+export const getBySlug = async (req: Request, res: Response) => {
+  try {
+    const slug = req.params.slug;
+    if (!slug) return errorResponse(res, "Course slug is required", 400);
+    const course = await CourseService.getCourseBySlug(slug);
+    if (!course) return errorResponse(res, "Course not found", 404);
+    return successResponse(res, course, "Course fetched successfully");
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to fetch course");
+  }
+};
+
+export const getCoursesByDomain = async (req: Request, res: Response) => {
+  try {
+    const result = await CourseService.getCoursesByDomain();
+    return successResponse(res, result, "Courses grouped by domain fetched successfully");
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to fetch courses by domain");
   }
 };
 
@@ -165,14 +187,17 @@ const prepareSectionPayload = async (
   const prepared = [];
 
   for (const section of sections) {
-    const key = sanitizeSectionKey(section.section_key || section.title);
-    const existing = existingMap.get(key);
-    const imageField = `${key}_image`;
+    // Use the provided section_key directly, or generate from title if not provided
+    const sectionKey = section.section_key || sanitizeSectionKey(section.title);
+    // Use sanitized key for lookup purposes (to match existing sections)
+    const lookupKey = sanitizeSectionKey(section.section_key || section.title);
+    const existing = existingMap.get(lookupKey);
+    const imageField = `${lookupKey}_image`;
     const originalImageField = `${section.section_key}_image`;
     
     // Debug: log available files for this section
     if (section.section_key === "admission_process") {
-      console.log(`[SECTION IMAGE DEBUG] Section: ${section.section_key}, Key: ${key}`);
+      console.log(`[SECTION IMAGE DEBUG] Section: ${section.section_key}, LookupKey: ${lookupKey}`);
       console.log(`[SECTION IMAGE DEBUG] Looking for fieldname: ${imageField} or ${originalImageField}`);
       console.log(`[SECTION IMAGE DEBUG] Available files:`, files.map(f => f.fieldname));
       console.log(`[SECTION IMAGE DEBUG] Body keys:`, Object.keys(body || {}).filter(k => k.includes('image')));
@@ -191,30 +216,30 @@ const prepareSectionPayload = async (
         await deleteFromS3(existing.image);
       }
       imagePath = await uploadAsset(file, "courses/sections");
-      console.log(`[SECTION IMAGE] Uploaded new image for section ${key}: ${imagePath}`);
+      console.log(`[SECTION IMAGE] Uploaded new image for section ${sectionKey}: ${imagePath}`);
     } else if (inlineValue === "__REMOVE__") {
       // Explicit removal requested
       if (shouldDeleteFromS3(existing?.image)) {
         await deleteFromS3(existing.image);
       }
       imagePath = null;
-      console.log(`[SECTION IMAGE] Removed image for section ${key}`);
+      console.log(`[SECTION IMAGE] Removed image for section ${sectionKey}`);
     } else if (typeof inlineValue === "string" && inlineValue && inlineValue !== "__REMOVE__") {
       // Existing image path sent as string (preserve it)
       imagePath = inlineValue;
-      console.log(`[SECTION IMAGE] Preserved existing image for section ${key}: ${imagePath}`);
+      console.log(`[SECTION IMAGE] Preserved existing image for section ${sectionKey}: ${imagePath}`);
     } else if (existing?.image) {
       // Keep existing image from database
       imagePath = existing.image;
-      console.log(`[SECTION IMAGE] Keeping existing image for section ${key}: ${imagePath}`);
+      console.log(`[SECTION IMAGE] Keeping existing image for section ${sectionKey}: ${imagePath}`);
     } else {
       imagePath = null;
-      console.log(`[SECTION IMAGE] No image for section ${key}`);
+      console.log(`[SECTION IMAGE] No image for section ${sectionKey}`);
     }
 
     prepared.push({
-      section_key: key,
-      title: section.title || key,
+      section_key: sectionKey, // Use the provided section_key directly (not sanitized)
+      title: section.title || sectionKey,
       description: section.description || "",
       image: imagePath,
     });

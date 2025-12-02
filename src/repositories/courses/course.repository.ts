@@ -78,10 +78,36 @@ export default class CourseRepo {
     return rows;
   }
 
+  async findByDomainGrouped(conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [rows]: any = await executor.query(
+      `SELECT 
+        c.id,
+        c.name,
+        c.thumbnail,
+        c.slug,
+        d.slug AS domain_slug,
+        d.name AS domain_name
+      FROM courses c
+      INNER JOIN domains d ON c.domain_id = d.id
+      WHERE c.is_active = 1 AND c.menu_visibility = 1
+      ORDER BY d.priority ASC, c.priority ASC, c.name ASC`
+    );
+    return rows;
+  }
+
   async findById(id: number, conn?: Pool | PoolConnection) {
     const executor = this.getExecutor(conn);
     const [rows]: any = await executor.query("SELECT * FROM courses WHERE id = ?", [
       id,
+    ]);
+    return rows.length ? this.mapRow(rows[0]) : null;
+  }
+
+  async findBySlug(slug: string, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [rows]: any = await executor.query("SELECT * FROM courses WHERE slug = ?", [
+      slug,
     ]);
     return rows.length ? this.mapRow(rows[0]) : null;
   }

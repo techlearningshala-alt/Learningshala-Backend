@@ -12,6 +12,17 @@ const repo = new CourseRepo();
 const bannerRepo = courseBannerRepo;
 const sectionRepo = courseSectionRepo;
 
+/**
+ * Helper function to convert title to section_key format
+ * Example: "Popular Courses" -> "Popular_Courses"
+ */
+function generateSectionKey(title: string): string {
+  return String(title || "")
+    .trim()
+    .replace(/\s+/g, "_") // Replace spaces with underscores
+    .replace(/[^a-zA-Z0-9_]/g, ""); // Remove special characters except underscores
+}
+
 const attachRelations = async (course: any) => {
   if (!course) return null;
   const [banners, sections] = await Promise.all([
@@ -19,6 +30,7 @@ const attachRelations = async (course: any) => {
     sectionRepo.findByCourseId(course.id),
   ]);
   course.banners = banners || [];
+  // For admin (ID-based) flows we want the raw sections array
   course.sections = sections || [];
   return course;
 };
@@ -28,7 +40,49 @@ export const listCoursesName = () => repo.findAllCourseName();
 
 export const getCourse = async (id: number) => {
   const course = await repo.findById(id);
-  return attachRelations(course);
+  return await attachRelations(course);
+};
+
+/**
+ * Transform course sections into object format (similar to sections_transformed in university course API)
+ * Returns an object where section_key is the key and description is the value,
+ * with other properties (like image) flattened into the same object
+ */
+function transformCourseSections(sections: any[]): Record<string, any> {
+  return sections.reduce((acc: Record<string, any>, s: any) => {
+    const sectionKey = s.section_key || generateSectionKey(s.title || "");
+
+    // Use description as the value for section_key (similar to content in university sections)
+    const descriptionValue = s.description ?? "";
+
+    // Set section_key as a key with description as its value
+    if (sectionKey) {
+      acc[sectionKey] = descriptionValue;
+    }
+
+    // Flatten other properties (like image) into the same object
+    if (s.image !== undefined && s.image !== null && s.image !== "") {
+      acc.image = s.image;
+    }
+
+    return acc;
+  }, {});
+}
+
+export const getCourseBySlug = async (slug: string) => {
+  const course = await repo.findBySlug(slug);
+  if (!course) return null;
+
+  const [banners, sections] = await Promise.all([
+    bannerRepo.findByCourseId(course.id),
+    sectionRepo.findByCourseId(course.id),
+  ]);
+
+  (course as any).banners = banners || [];
+  // For slug-based API we return transformed sections object (like sections_transformed)
+  (course as any).sections = transformCourseSections(sections || []);
+
+  return course;
 };
 
 const runInTransaction = async <T>(
@@ -128,7 +182,7 @@ export const toggleCourseStatus = async (id: number, isActive: boolean) => {
     },
     false
   );
-  return updated ? attachRelations(updated) : null;
+  return updated ? await attachRelations(updated) : null;
 };
 
 export const toggleCourseMenuVisibility = async (
@@ -142,5 +196,29 @@ export const toggleCourseMenuVisibility = async (
     },
     false
   );
-  return updated ? attachRelations(updated) : null;
+  return updated ? await attachRelations(updated) : null;
+};
+
+export const getCoursesByDomain = async () => {
+  const courses = await repo.findByDomainGrouped();
+  
+  // Group courses by domain name
+  const grouped: Record<string, any[]> = {};
+  
+  courses.forEach((course: any) => {
+    const domainName = course.domain_name || "Uncategorized";
+    
+    if (!grouped[domainName]) {
+      grouped[domainName] = [];
+    }
+    
+    grouped[domainName].push({
+      course_name: course.name,
+      course_thumbnail: course.thumbnail || null,
+      course_slug: course.slug,
+      course_id: course.id,
+    });
+  });
+  
+  return grouped;
 };
