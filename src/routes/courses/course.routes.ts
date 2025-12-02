@@ -8,11 +8,12 @@ const router = Router();
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
-router.get("/:id", CourseController.getOne);
+// ✅ IMPORTANT: Specific routes must come BEFORE parameterized routes
 router.get("/", CourseController.getAll);
 router.get("/course-name", CourseController.getCourseName);
 router.get("/by-domain", CourseController.getCoursesByDomain);
 router.get("/:slug", CourseController.getBySlug);
+router.get("/:id", CourseController.getOne);
 router.post("/", upload.any(), CourseController.create);
 router.put("/:id", upload.any(), CourseController.update);
 router.patch("/:id/toggle-status", CourseController.toggleStatus);
