@@ -170,6 +170,9 @@ export const createLeadSchema = z
     percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
     experience: optionalNumericString("Experience", { maxDigits: 2, allowDecimal: true, maxValue: 60 }),
 
+    currently_employed: optionalBooleanLabel(),
+    university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),
+
     utm_source: optionalTrimmedString("UTM source", 150),
     utm_campaign: optionalTrimmedString("UTM campaign", 150),
     utm_adgroup: optionalTrimmedString("UTM ad group", 150),

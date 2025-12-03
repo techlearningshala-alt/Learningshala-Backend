@@ -40,6 +40,8 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
     salary: normalizeString(payload.salary),
     percentage: normalizeString(payload.percentage),
     experience: normalizeString(payload.experience),
+    currently_employed: normalizeString(payload.currently_employed),
+    university_for_placement_salaryhike_promotions: normalizeString(payload.university_for_placement_salaryhike_promotions),
     utm_source: normalizeString(payload.utm_source),
     utm_campaign: normalizeString(payload.utm_campaign),
     utm_adgroup: normalizeString(payload.utm_adgroup),

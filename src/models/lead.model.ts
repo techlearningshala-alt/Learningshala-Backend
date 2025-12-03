@@ -15,6 +15,8 @@ export interface Lead {
   salary: string | null;
   percentage: string | null;
   experience: string | null;
+  currently_employed: string | null;
+  university_for_placement_salaryhike_promotions: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   utm_adgroup: string | null;
@@ -39,6 +41,8 @@ export interface CreateLeadDto {
   salary?: string | null;
   percentage?: string | null;
   experience?: string | null;
+  currently_employed?: string | null;
+  university_for_placement_salaryhike_promotions?: string | null;
   utm_source?: string | null;
   utm_campaign?: string | null;
   utm_adgroup?: string | null;
