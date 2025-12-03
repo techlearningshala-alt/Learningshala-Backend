@@ -21,23 +21,23 @@ export const updateDomainSchema = z.object({
 export const createSpecializationSchema = z.object({
   course_id: z.number().min(1, "Course ID is required"),
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  thumbnail: z.string().optional(),
-  priority: z.number().int().nonnegative().default(999),
-  is_active: z.boolean(),
-  menu_visibility: z.boolean()
-});
-
-// Update Specialization
-export const updateSpecializationSchema = z.object({
-  course_id: z.number().optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
-  thumbnail: z.string().optional(),
-  priority: z.number().int().nonnegative().default(999),
+  slug: z.string().optional(),
+  h1Tag: z.string().min(1, "H1 Tag is required"),
+  label: z.string().optional(),
+  description: z.string().optional().nullable(), // Used for specialization_intro
+  course_duration: z.string().optional().nullable(),
+  upload_brochure: z.string().optional().nullable(),
+  author_name: z.string().optional().nullable(),
+  learning_mode: z.string().optional().nullable(),
+  podcast_embed: z.string().optional().nullable(),
+  thumbnail: z.string().optional().nullable(),
+  priority: z.number().optional(),
   is_active: z.boolean().default(true),
   menu_visibility: z.boolean().default(true)
 });
+
+// Update Specialization
+export const updateSpecializationSchema = createSpecializationSchema.partial();
 
 
 // Create Course

@@ -9,9 +9,12 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", SpecializationController.getAll);
+router.get("/:course_slug/:slug", SpecializationController.getByCourseSlugAndSpecializationSlug);
 router.get("/:id", SpecializationController.getOne);
-router.post("/",  upload.single("thumbnail"), SpecializationController.create);
-router.put("/:id",  upload.single("thumbnail"), SpecializationController.update);
+router.post("/", upload.any(), SpecializationController.create);
+router.put("/:id", upload.any(), SpecializationController.update);
+router.patch("/:id/toggle-status", SpecializationController.toggleStatus);
+router.patch("/:id/toggle-menu-visibility", SpecializationController.toggleMenuVisibility);
 router.delete("/:id", SpecializationController.remove);
 
 export default router;

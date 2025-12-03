@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
-import * as SpecializationService from "../../services/courses/specialization.service";
-import { successResponse, errorResponse } from "../../utills/response";
-import { createSpecializationSchema, updateSpecializationSchema } from "../../validators/courses/domain.validator";
 import slugify from "slugify";
+import * as SpecializationService from "../../services/courses/specialization.service";
+import {
+  createSpecializationSchema,
+  updateSpecializationSchema,
+} from "../../validators/courses/domain.validator";
+import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
 
@@ -27,90 +30,350 @@ export const getOne = async (req: Request, res: Response) => {
   }
 };
 
-export const create = async (req: Request, res: Response) => {
+export const getByCourseSlugAndSpecializationSlug = async (req: Request, res: Response) => {
   try {
-    let thumbnailUrl: string | undefined;
+    const courseSlug = typeof req.params.course_slug === "string" 
+      ? req.params.course_slug.trim() 
+      : null;
+    const specializationSlug = typeof req.params.slug === "string" 
+      ? req.params.slug.trim() 
+      : null;
 
-    // Upload to S3 if file exists
-    if (req.file) {
-      const fileName = generateFileName(req.file.originalname);
-      thumbnailUrl = await uploadToS3(
-        req.file.buffer,
-        fileName,
-        "specializations",
-        req.file.mimetype
-      );
+    if (!courseSlug || courseSlug.length === 0) {
+      return errorResponse(res, "Course slug is required", 400);
     }
 
-    const body = {
-      ...req.body,
-      thumbnail: thumbnailUrl,
-    };
+    if (!specializationSlug || specializationSlug.length === 0) {
+      return errorResponse(res, "Specialization slug is required", 400);
+    }
 
-    const toBoolean = (val: any) => val === "true" || val === true;
+    const specialization = await SpecializationService.getSpecializationByCourseSlugAndSpecializationSlug(
+      courseSlug,
+      specializationSlug
+    );
 
-    body.course_id = Number(body.course_id);
-    body.priority = Number(body.priority);
-    body.menu_visibility = toBoolean(body.menu_visibility);
-    body.is_active = toBoolean(body.is_active);
+    if (!specialization) {
+      return errorResponse(res, "Specialization not found", 404);
+    }
 
-    const validatedData: any = createSpecializationSchema.parse(body);
-    validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
-    validatedData.thumbnail = validatedData.thumbnail || undefined;
+    return successResponse(res, specialization, "Specialization fetched successfully");
+  } catch (err: any) {
+    console.error("❌ Error fetching specialization by slugs:", err);
+    return errorResponse(res, err.message || "Failed to fetch specialization", 400);
+  }
+};
 
-    const specialization = await SpecializationService.addSpecialization(validatedData);
+const normalizeFilesArray = (files: Request["files"]) => {
+  if (!files) return [];
+  if (Array.isArray(files)) return files;
+  return Object.values(files).flat();
+};
+
+const toBoolean = (value: any, defaultValue = true) => {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  const normalized = String(value).trim().toLowerCase();
+  return ["true", "1", "yes", "on"].includes(normalized);
+};
+
+const parseJsonArray = (payload: any) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (typeof payload === "string") {
+    try {
+      const parsed = JSON.parse(payload);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const shouldDeleteFromS3 = (path?: string | null) =>
+  Boolean(path) && !String(path).startsWith("/uploads/");
+
+const sanitizeSectionKey = (value: string) => {
+  if (!value) return `section_${Date.now()}`;
+  return slugify(value, { lower: true, strict: true }).replace(/-/g, "_");
+};
+
+const uploadAsset = async (file: Express.Multer.File, folder: string) => {
+  const fileName = generateFileName(file.originalname);
+  return uploadToS3(file.buffer, fileName, folder, file.mimetype);
+};
+
+const normalizeSpecializationPayload = (body: any) => {
+  const courseId = Number(body.course_id);
+  const priority =
+    body.priority !== undefined && body.priority !== ""
+      ? Number(body.priority)
+      : undefined;
+  const durationValue =
+    body.course_duration !== undefined && body.course_duration !== ""
+      ? body.course_duration
+      : body.duration;
+
+  return {
+    course_id: Number.isNaN(courseId) ? undefined : courseId,
+    name: body.name,
+    slug: body.slug,
+    h1Tag: body.h1Tag,
+    label: body.label,
+    description: body.description ?? null,
+    course_duration: durationValue ?? null,
+    upload_brochure: body.upload_brochure ?? null,
+    author_name: body.author_name ?? null,
+    learning_mode: body.learning_mode ?? null,
+    podcast_embed: body.podcast_embed ?? null,
+    priority: priority ?? 0,
+    thumbnail: body.thumbnail ?? null,
+    is_active: toBoolean(body.is_active, true),
+    menu_visibility: toBoolean(body.menu_visibility, true),
+  };
+};
+
+const prepareBannerPayload = async (
+  rawBanners: any,
+  files: Express.Multer.File[],
+  existingMap: Map<number, any> = new Map()
+) => {
+  if (rawBanners === undefined) return undefined;
+
+  const banners = parseJsonArray(rawBanners);
+  const prepared = [];
+
+  for (let index = 0; index < banners.length; index++) {
+    const banner = banners[index] || {};
+    const bannerId =
+      banner.id !== undefined && banner.id !== null
+        ? Number(banner.id)
+        : null;
+    const existing = bannerId ? existingMap.get(bannerId) : undefined;
+    const fileField = `banner_${index}_banner_image`;
+    const file = files.find((f) => f.fieldname === fileField);
+    let bannerImage = banner.banner_image ?? existing?.banner_image ?? null;
+
+    if (file) {
+      if (shouldDeleteFromS3(existing?.banner_image)) {
+        await deleteFromS3(existing.banner_image);
+      }
+      bannerImage = await uploadAsset(file, "specializations/banners");
+    } else if (banner.banner_image === "__REMOVE__") {
+      if (shouldDeleteFromS3(existing?.banner_image)) {
+        await deleteFromS3(existing.banner_image);
+      }
+      bannerImage = null;
+    }
+
+    prepared.push({
+      banner_image: bannerImage,
+      video_id: banner.video_id || null,
+      video_title: banner.video_title || null,
+    });
+  }
+
+  return prepared;
+};
+
+const prepareSectionPayload = async (
+  rawSections: any,
+  files: Express.Multer.File[],
+  body: any,
+  existingMap: Map<string, any> = new Map()
+) => {
+  if (rawSections === undefined) return undefined;
+
+  const sections = parseJsonArray(rawSections);
+  const prepared = [];
+
+  for (const section of sections) {
+    // Use the provided section_key directly, or generate from title if not provided
+    const sectionKey = section.section_key || sanitizeSectionKey(section.title);
+    // Use sanitized key for lookup purposes (to match existing sections)
+    const lookupKey = sanitizeSectionKey(section.section_key || section.title);
+    const existing = existingMap.get(lookupKey);
+    const imageField = `${lookupKey}_image`;
+    const originalImageField = `${section.section_key}_image`;
+    
+    // Try to find file by sanitized key first, then by original section_key
+    const file = files.find((f) => f.fieldname === imageField) ||
+                 files.find((f) => f.fieldname === originalImageField);
+    const inlineValue = body?.[imageField] || body?.[originalImageField];
+    let imagePath = existing?.image || null;
+
+    // Priority: new file upload > remove flag > existing string value > keep existing
+    if (file) {
+      // New file uploaded - upload it
+      if (shouldDeleteFromS3(existing?.image)) {
+        await deleteFromS3(existing.image);
+      }
+      imagePath = await uploadAsset(file, "specializations/sections");
+    } else if (inlineValue === "__REMOVE__") {
+      // Explicit removal requested
+      if (shouldDeleteFromS3(existing?.image)) {
+        await deleteFromS3(existing.image);
+      }
+      imagePath = null;
+    } else if (typeof inlineValue === "string" && inlineValue && inlineValue !== "__REMOVE__") {
+      // Existing image path sent as string (preserve it)
+      imagePath = inlineValue;
+    } else if (existing?.image) {
+      // Keep existing image from database
+      imagePath = existing.image;
+    } else {
+      imagePath = null;
+    }
+
+    prepared.push({
+      section_key: sectionKey, // Use the provided section_key directly (not sanitized)
+      title: section.title || sectionKey,
+      description: section.description || "",
+      image: imagePath,
+    });
+  }
+
+  return prepared;
+};
+
+export const create = async (req: Request, res: Response) => {
+  try {
+    const files = normalizeFilesArray(req.files);
+    const body = { ...req.body };
+
+    const thumbnailFile = files.find((file) => file.fieldname === "thumbnail");
+    if (thumbnailFile) {
+      body.thumbnail = await uploadAsset(thumbnailFile, "specializations/thumbnails");
+    }
+
+    const ebookFile = files.find((file) => file.fieldname === "ebook_file");
+    if (ebookFile) {
+      body.upload_brochure = await uploadAsset(ebookFile, "specializations/ebooks");
+    } else if (body.ebook_file && typeof body.ebook_file === "string") {
+      body.upload_brochure = body.ebook_file;
+    }
+
+    const normalizedPayload = normalizeSpecializationPayload(body);
+    const validatedData: any = createSpecializationSchema.parse(normalizedPayload);
+    validatedData.slug =
+      validatedData.slug?.trim() ||
+      slugify(validatedData.name, { lower: true, strict: true });
+    validatedData.description =
+      body.specialization_intro ?? validatedData.description ?? "";
+    delete validatedData.specialization_intro;
+
+    const banners = await prepareBannerPayload(body.banners, files);
+    const sections = await prepareSectionPayload(body.sections, files, body);
+
+    const specialization = await SpecializationService.addSpecialization(
+      validatedData,
+      banners ?? [],
+      sections ?? []
+    );
     return successResponse(res, specialization, "Specialization created successfully", 201);
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to create specialization", 400);
   }
 };
 
-
 export const update = async (req: Request, res: Response) => {
   try {
-    const { saveWithDate = "true", existingThumbnail, ...rest } = req.body;
+    const id = Number(req.params.id);
+    const existingSpecialization = await SpecializationService.getSpecialization(id);
+    if (!existingSpecialization) {
+      return errorResponse(res, "Specialization not found", 404);
+    }
 
-    // Get current specialization to delete old thumbnail from S3
-    const currentSpecialization = await SpecializationService.getSpecialization(Number(req.params.id));
-    
-    let thumbnailUrl: string | undefined = existingThumbnail;
+    const files = normalizeFilesArray(req.files);
+    const {
+      saveWithDate = "true",
+      existingThumbnail,
+      ...rest
+    } = req.body as Record<string, any>;
+    const saveDateFlag = saveWithDate !== "false";
+    const body = { ...rest };
 
-    // Upload new file to S3 if provided
-    if (req.file) {
-      const fileName = generateFileName(req.file.originalname);
-      thumbnailUrl = await uploadToS3(
-        req.file.buffer,
-        fileName,
-        "specializations",
-        req.file.mimetype
-      );
-
-      // Delete old thumbnail from S3 if it exists and is from S3
-      if (currentSpecialization?.thumbnail && currentSpecialization.thumbnail !== existingThumbnail) {
-        await deleteFromS3(currentSpecialization.thumbnail);
+    let thumbnailPath =
+      existingThumbnail ||
+      existingSpecialization.thumbnail ||
+      body.thumbnail ||
+      null;
+    const thumbnailFile = files.find((file) => file.fieldname === "thumbnail");
+    if (thumbnailFile) {
+      if (shouldDeleteFromS3(thumbnailPath)) {
+        await deleteFromS3(thumbnailPath);
       }
+      thumbnailPath = await uploadAsset(thumbnailFile, "specializations/thumbnails");
+    } else if (body.thumbnail === "__REMOVE__") {
+      if (shouldDeleteFromS3(thumbnailPath)) {
+        await deleteFromS3(thumbnailPath);
+      }
+      thumbnailPath = null;
     }
+    body.thumbnail = thumbnailPath;
 
-    const parsedData: any = {
-      ...rest,
-      course_id: rest.course_id ? Number(rest.course_id) : null,
-      priority: rest.priority ? Number(rest.priority) : 0,
-      is_active: rest.is_active === "true" || rest.is_active === true || rest.is_active === 1,
-      menu_visibility: rest.menu_visibility === "true" || rest.menu_visibility === true || rest.menu_visibility === 1,
-    };
-    parsedData.thumbnail = thumbnailUrl;
-    const saveDateFlag = saveWithDate === "true";
+    let brochurePath =
+      body.upload_brochure ||
+      body.ebook_file ||
+      existingSpecialization.upload_brochure ||
+      null;
+    const ebookFile = files.find((file) => file.fieldname === "ebook_file");
+    if (ebookFile) {
+      if (shouldDeleteFromS3(existingSpecialization.upload_brochure)) {
+        await deleteFromS3(existingSpecialization.upload_brochure);
+      }
+      brochurePath = await uploadAsset(ebookFile, "specializations/ebooks");
+    } else if (body.ebook_file === "__REMOVE__") {
+      if (shouldDeleteFromS3(existingSpecialization.upload_brochure)) {
+        await deleteFromS3(existingSpecialization.upload_brochure);
+      }
+      brochurePath = null;
+    }
+    body.upload_brochure = brochurePath;
 
-    const validatedData: any = updateSpecializationSchema.parse(parsedData);
-
+    const normalizedPayload = normalizeSpecializationPayload(body);
+    const validatedData: any = updateSpecializationSchema.parse(normalizedPayload);
     if (validatedData.name) {
-      validatedData.slug = slugify(validatedData.name, { lower: true, strict: true });
+      validatedData.slug =
+        validatedData.slug?.trim() ||
+        slugify(validatedData.name, { lower: true, strict: true });
     }
+    if (body.specialization_intro !== undefined) {
+      validatedData.description = body.specialization_intro ?? "";
+    }
+    delete validatedData.specialization_intro;
+
+    const bannersMap = new Map<number, any>(
+      (existingSpecialization.banners || [])
+        .filter((banner: any) => banner && banner.id !== undefined)
+        .map((banner: any) => [Number(banner.id), banner])
+    );
+    const sectionsMap = new Map<string, any>(
+      (existingSpecialization.sections || []).map((section: any) => [
+        sanitizeSectionKey(section.section_key || section.title),
+        section,
+      ])
+    );
+
+    const banners = await prepareBannerPayload(
+      body.banners,
+      files,
+      bannersMap
+    );
+    const sections = await prepareSectionPayload(
+      body.sections,
+      files,
+      body,
+      sectionsMap
+    );
 
     const specialization = await SpecializationService.updateSpecialization(
-      Number(req.params.id),
+      id,
       validatedData,
-      saveDateFlag
+      saveDateFlag,
+      banners,
+      sections
     );
 
     if (!specialization) return errorResponse(res, "Specialization not found or nothing to update", 404);
@@ -122,10 +385,47 @@ export const update = async (req: Request, res: Response) => {
 
 export const remove = async (req: Request, res: Response) => {
   try {
-    console.log(req.params.id,"id")
     const result = await SpecializationService.deleteSpecialization(Number(req.params.id));
     return successResponse(res, result, "Specialization deleted successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to delete specialization", 400);
+  }
+};
+
+export const toggleStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    const updated = await SpecializationService.toggleSpecializationStatus(Number(id), Boolean(is_active));
+    if (!updated) return errorResponse(res, "Specialization not found", 404);
+
+    return successResponse(res, updated, "Specialization status updated successfully");
+  } catch (error: any) {
+    console.error("❌ Error toggling specialization status:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to toggle specialization status",
+      400
+    );
+  }
+};
+
+export const toggleMenuVisibility = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { menu_visibility } = req.body;
+
+    const updated = await SpecializationService.toggleSpecializationMenuVisibility(Number(id), Boolean(menu_visibility));
+    if (!updated) return errorResponse(res, "Specialization not found", 404);
+
+    return successResponse(res, updated, "Specialization menu visibility updated successfully");
+  } catch (error: any) {
+    console.error("❌ Error toggling specialization menu visibility:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to toggle specialization menu visibility",
+      400
+    );
   }
 };
