@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { listLeads, createLead } from "../services/lead.service";
+import { listLeads, createLead, updateLeadByPhoneOrEmail } from "../services/lead.service";
 import { successResponse, errorResponse } from "../utills/response";
 
 export const getLeads = async (req: Request, res: Response) => {
@@ -30,6 +30,20 @@ export const create = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error?.message || "Failed to create lead",
+      error?.statusCode || 400
+    );
+  }
+};
+
+export const update = async (req: Request, res: Response) => {
+  try {
+    const lead = await updateLeadByPhoneOrEmail(req.body);
+    return successResponse(res, lead, "Lead updated successfully");
+  } catch (error: any) {
+    console.error("❌ Error updating lead:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to update lead",
       error?.statusCode || 400
     );
   }

@@ -196,6 +196,53 @@ export const createLeadSchema = z
     }
   });
 
+// ✅ Update schema (name is optional, phone or email required for identification)
+export const updateLeadSchema = z
+  .object({
+    name: optionalTrimmedString("Name", 150),
+    email: optionalEmail,
+    phone: optionalPhone,
+    course: optionalTrimmedString("Course", 150),
+    specialisation: optionalTrimmedString("Specialisation", 150),
+    state: optionalTrimmedString("State", 100),
+    city: optionalTrimmedString("City", 100),
+    lead_source: optionalTrimmedString("Lead source", 150),
+    sub_source: optionalTrimmedString("Sub source", 150),
+    highest_qualification: optionalTrimmedString("Highest qualification", 150),
+
+    preferred_budget: optionalNumericString("Preferred budget", { maxDigits: 10, allowDecimal: true }),
+    emi_required: optionalBooleanLabel(),
+    salary: optionalNumericString("Salary", { maxDigits: 10, allowDecimal: true, maxValue: 10000000 }),
+    percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
+    experience: optionalNumericString("Experience", { maxDigits: 2, allowDecimal: true, maxValue: 60 }),
+
+    currently_employed: optionalBooleanLabel(),
+    university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),
+
+    utm_source: optionalTrimmedString("UTM source", 150),
+    utm_campaign: optionalTrimmedString("UTM campaign", 150),
+    utm_adgroup: optionalTrimmedString("UTM ad group", 150),
+    utm_ads: optionalTrimmedString("UTM ads", 150),
+
+    created_on: optionalDate,
+    website_url: optionalUrl("Website URL"),
+  })
+  .superRefine((data, ctx) => {
+    // For update, we need either phone or email to identify the lead
+    if (!data.email && !data.phone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Either email or phone must be provided to identify the lead",
+        path: ["email"],
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Either email or phone must be provided to identify the lead",
+        path: ["phone"],
+      });
+    }
+  });
+
 // ✅ Query validation schema
 export const listLeadQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),

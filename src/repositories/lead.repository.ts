@@ -140,6 +140,154 @@ class LeadRepository {
 
     return rows.length ? (rows[0] as Lead) : null;
   }
+
+  async findByPhoneOrEmail(phone?: string | null, email?: string | null) {
+    if (!phone && !email) {
+      return null;
+    }
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (phone) {
+      conditions.push("phone = ?");
+      params.push(phone);
+    }
+
+    if (email) {
+      conditions.push("email = ?");
+      params.push(email);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" OR ")}` : "";
+
+    const [rows]: any = await pool.query(
+      `SELECT
+        id,
+        name,
+        email,
+        phone,
+        course,
+        specialisation,
+        state,
+        city,
+        lead_source,
+        sub_source,
+        highest_qualification,
+        preferred_budget,
+        emi_required,
+        salary,
+        percentage,
+        experience,
+        currently_employed,
+        university_for_placement_salaryhike_promotions,
+        utm_source,
+        utm_campaign,
+        utm_adgroup,
+        utm_ads,
+        created_on,
+        website_url
+      FROM leads
+      ${whereClause}
+      LIMIT 1`,
+      params
+    );
+
+    return rows.length ? (rows[0] as Lead) : null;
+  }
+
+  async update(id: number, payload: Partial<CreateLeadDto>) {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    // Build dynamic update query
+    const updateableFields = [
+      "name",
+      "email",
+      "phone",
+      "course",
+      "specialisation",
+      "state",
+      "city",
+      "lead_source",
+      "sub_source",
+      "highest_qualification",
+      "preferred_budget",
+      "emi_required",
+      "salary",
+      "percentage",
+      "experience",
+      "currently_employed",
+      "university_for_placement_salaryhike_promotions",
+      "utm_source",
+      "utm_campaign",
+      "utm_adgroup",
+      "utm_ads",
+      "website_url",
+    ];
+
+    updateableFields.forEach((field) => {
+      if (payload[field as keyof CreateLeadDto] !== undefined) {
+        fields.push(`${field} = ?`);
+        values.push((payload as any)[field] ?? null);
+      }
+    });
+
+    if (payload.created_on !== undefined) {
+      fields.push("created_on = ?");
+      values.push(payload.created_on ?? null);
+    }
+
+    if (fields.length === 0) {
+      return null; // Nothing to update
+    }
+
+    values.push(id);
+
+    const [result]: any = await pool.query(
+      `UPDATE leads SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
+
+    if (result.affectedRows === 0) {
+      return null;
+    }
+
+    // Return updated lead
+    const [rows]: any = await pool.query(
+      `SELECT
+        id,
+        name,
+        email,
+        phone,
+        course,
+        specialisation,
+        state,
+        city,
+        lead_source,
+        sub_source,
+        highest_qualification,
+        preferred_budget,
+        emi_required,
+        salary,
+        percentage,
+        experience,
+        currently_employed,
+        university_for_placement_salaryhike_promotions,
+        utm_source,
+        utm_campaign,
+        utm_adgroup,
+        utm_ads,
+        created_on,
+        website_url
+      FROM leads
+      WHERE id = ?
+      LIMIT 1`,
+      [id]
+    );
+
+    return rows.length ? (rows[0] as Lead) : null;
+  }
 }
 
 export default new LeadRepository();
