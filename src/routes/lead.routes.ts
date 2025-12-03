@@ -6,7 +6,7 @@ import { createLeadSchema } from "../validators/lead.validator";
 
 const router = Router();
 
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 router.get("/", LeadController.getLeads);
 router.post("/", validate(createLeadSchema), LeadController.create);
