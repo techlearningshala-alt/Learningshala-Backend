@@ -9,8 +9,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", LeadController.getLeads);
-router.post("/", validate(createLeadSchema), LeadController.create);
-router.put("/", validate(updateLeadSchema), LeadController.update);
+router.post("/",  LeadController.create);
+router.put("/",  LeadController.update);
 // router.post("/", LeadController.create);
 
 export default router;
