@@ -11,10 +11,56 @@ const normalizeString = (value: unknown): string | null => {
   return trimmed.length ? trimmed : null;
 };
 
+/**
+ * Preserve exact string value as received from payload
+ * This is used for question-based fields to keep exact values like "₹3 Lakh to ₹6 Lakh", "Yes", etc.
+ */
+const preserveExactValue = (value: unknown): string | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  // Convert to string and preserve the exact value without trimming
+  // This preserves special characters, spaces, currency symbols, etc.
+  return String(value);
+};
+
+/**
+ * Maps question-based payload keys to database column names
+ */
+const mapPayloadKeysToDbColumns = (payload: any): any => {
+  const keyMapping: Record<string, string> = {
+    'what_is_your_preferred_budget_for_the_total_course_fee': 'preferred_budget',
+    'would_you_prefer_to_convert_the_course_fee_into_easy_emis': 'emi_required',
+    'what_is_your_current_annual_salary_package': 'salary',
+    'what_was_your_percentage_in_graduation': 'percentage',
+    'how_many_years_of_experience_do_you_have': 'experience',
+    'are_you_looking_for_a_university_that_can_help_you_with_placement_salary_hike_or_promotions': 'university_for_placement_salaryhike_promotions',
+    'are_you_currently_employed': 'currently_employed',
+  };
+
+  const mapped: any = { ...payload };
+
+  // Map question-based keys to database column names
+  Object.keys(keyMapping).forEach((questionKey) => {
+    if (payload[questionKey] !== undefined) {
+      mapped[keyMapping[questionKey]] = payload[questionKey];
+      // Remove the question key if it's different from the mapped key
+      if (questionKey !== keyMapping[questionKey]) {
+        delete mapped[questionKey];
+      }
+    }
+  });
+
+  return mapped;
+};
+
 const normalizeCreatePayload = (payload: any): CreateLeadDto => {
-  const name = normalizeString(payload.name);
-  const email = normalizeString(payload.email);
-  const phone = normalizeString(payload.phone);
+  // First map question-based keys to database column names
+  const mappedPayload = mapPayloadKeysToDbColumns(payload);
+  
+  const name = normalizeString(mappedPayload.name);
+  const email = normalizeString(mappedPayload.email);
+  const phone = normalizeString(mappedPayload.phone);
 
   if (!name) {
     throw new Error("Name is required");
@@ -28,28 +74,28 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
     name,
     email,
     phone,
-    course: normalizeString(payload.course),
-    specialisation: normalizeString(payload.specialisation),
-    state: normalizeString(payload.state),
-    city: normalizeString(payload.city),
-    lead_source: normalizeString(payload.lead_source),
-    sub_source: normalizeString(payload.sub_source),
-    highest_qualification: normalizeString(payload.highest_qualification),
-    preferred_budget: normalizeString(payload.preferred_budget),
-    emi_required: normalizeString(payload.emi_required),
-    salary: normalizeString(payload.salary),
-    percentage: normalizeString(payload.percentage),
-    experience: normalizeString(payload.experience),
-    currently_employed: normalizeString(payload.currently_employed),
-    university_for_placement_salaryhike_promotions: normalizeString(payload.university_for_placement_salaryhike_promotions),
-    utm_source: normalizeString(payload.utm_source),
-    utm_campaign: normalizeString(payload.utm_campaign),
-    utm_adgroup: normalizeString(payload.utm_adgroup),
-    utm_ads: normalizeString(payload.utm_ads),
-    website_url: normalizeString(payload.website_url),
+    course: normalizeString(mappedPayload.course),
+    specialisation: normalizeString(mappedPayload.specialisation),
+    state: normalizeString(mappedPayload.state),
+    city: normalizeString(mappedPayload.city),
+    lead_source: normalizeString(mappedPayload.lead_source),
+    sub_source: normalizeString(mappedPayload.sub_source),
+    highest_qualification: preserveExactValue(mappedPayload.highest_qualification),
+    preferred_budget: preserveExactValue(mappedPayload.preferred_budget),
+    emi_required: preserveExactValue(mappedPayload.emi_required),
+    salary: preserveExactValue(mappedPayload.salary),
+    percentage: preserveExactValue(mappedPayload.percentage),
+    experience: preserveExactValue(mappedPayload.experience),
+    currently_employed: preserveExactValue(mappedPayload.currently_employed),
+    university_for_placement_salaryhike_promotions: preserveExactValue(mappedPayload.university_for_placement_salaryhike_promotions),
+    utm_source: normalizeString(mappedPayload.utm_source),
+    utm_campaign: normalizeString(mappedPayload.utm_campaign),
+    utm_adgroup: normalizeString(mappedPayload.utm_adgroup),
+    utm_ads: normalizeString(mappedPayload.utm_ads),
+    website_url: normalizeString(mappedPayload.website_url),
   };
 
-  const createdOnValue = payload.created_on;
+  const createdOnValue = mappedPayload.created_on;
   if (createdOnValue) {
     const dateValue =
       createdOnValue instanceof Date ? createdOnValue : new Date(createdOnValue);
@@ -77,83 +123,86 @@ export function createLead(payload: any) {
 }
 
 const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
+  // First map question-based keys to database column names
+  const mappedPayload = mapPayloadKeysToDbColumns(payload);
+  
   const normalized: Partial<CreateLeadDto> = {};
 
-  if (payload.name !== undefined) {
-    normalized.name = normalizeString(payload.name);
+  if (mappedPayload.name !== undefined) {
+    normalized.name = normalizeString(mappedPayload.name);
   }
-  if (payload.email !== undefined) {
-    normalized.email = normalizeString(payload.email);
+  if (mappedPayload.email !== undefined) {
+    normalized.email = normalizeString(mappedPayload.email);
   }
-  if (payload.phone !== undefined) {
-    normalized.phone = normalizeString(payload.phone);
+  if (mappedPayload.phone !== undefined) {
+    normalized.phone = normalizeString(mappedPayload.phone);
   }
-  if (payload.course !== undefined) {
-    normalized.course = normalizeString(payload.course);
+  if (mappedPayload.course !== undefined) {
+    normalized.course = normalizeString(mappedPayload.course);
   }
-  if (payload.specialisation !== undefined) {
-    normalized.specialisation = normalizeString(payload.specialisation);
+  if (mappedPayload.specialisation !== undefined) {
+    normalized.specialisation = normalizeString(mappedPayload.specialisation);
   }
-  if (payload.state !== undefined) {
-    normalized.state = normalizeString(payload.state);
+  if (mappedPayload.state !== undefined) {
+    normalized.state = normalizeString(mappedPayload.state);
   }
-  if (payload.city !== undefined) {
-    normalized.city = normalizeString(payload.city);
+  if (mappedPayload.city !== undefined) {
+    normalized.city = normalizeString(mappedPayload.city);
   }
-  if (payload.lead_source !== undefined) {
-    normalized.lead_source = normalizeString(payload.lead_source);
+  if (mappedPayload.lead_source !== undefined) {
+    normalized.lead_source = normalizeString(mappedPayload.lead_source);
   }
-  if (payload.sub_source !== undefined) {
-    normalized.sub_source = normalizeString(payload.sub_source);
+  if (mappedPayload.sub_source !== undefined) {
+    normalized.sub_source = normalizeString(mappedPayload.sub_source);
   }
-  if (payload.highest_qualification !== undefined) {
-    normalized.highest_qualification = normalizeString(payload.highest_qualification);
+  if (mappedPayload.highest_qualification !== undefined) {
+    normalized.highest_qualification = preserveExactValue(mappedPayload.highest_qualification);
   }
-  if (payload.preferred_budget !== undefined) {
-    normalized.preferred_budget = normalizeString(payload.preferred_budget);
+  if (mappedPayload.preferred_budget !== undefined) {
+    normalized.preferred_budget = preserveExactValue(mappedPayload.preferred_budget);
   }
-  if (payload.emi_required !== undefined) {
-    normalized.emi_required = normalizeString(payload.emi_required);
+  if (mappedPayload.emi_required !== undefined) {
+    normalized.emi_required = preserveExactValue(mappedPayload.emi_required);
   }
-  if (payload.salary !== undefined) {
-    normalized.salary = normalizeString(payload.salary);
+  if (mappedPayload.salary !== undefined) {
+    normalized.salary = preserveExactValue(mappedPayload.salary);
   }
-  if (payload.percentage !== undefined) {
-    normalized.percentage = normalizeString(payload.percentage);
+  if (mappedPayload.percentage !== undefined) {
+    normalized.percentage = preserveExactValue(mappedPayload.percentage);
   }
-  if (payload.experience !== undefined) {
-    normalized.experience = normalizeString(payload.experience);
+  if (mappedPayload.experience !== undefined) {
+    normalized.experience = preserveExactValue(mappedPayload.experience);
   }
-  if (payload.currently_employed !== undefined) {
-    normalized.currently_employed = normalizeString(payload.currently_employed);
+  if (mappedPayload.currently_employed !== undefined) {
+    normalized.currently_employed = preserveExactValue(mappedPayload.currently_employed);
   }
-  if (payload.university_for_placement_salaryhike_promotions !== undefined) {
-    normalized.university_for_placement_salaryhike_promotions = normalizeString(
-      payload.university_for_placement_salaryhike_promotions
+  if (mappedPayload.university_for_placement_salaryhike_promotions !== undefined) {
+    normalized.university_for_placement_salaryhike_promotions = preserveExactValue(
+      mappedPayload.university_for_placement_salaryhike_promotions
     );
   }
-  if (payload.utm_source !== undefined) {
-    normalized.utm_source = normalizeString(payload.utm_source);
+  if (mappedPayload.utm_source !== undefined) {
+    normalized.utm_source = normalizeString(mappedPayload.utm_source);
   }
-  if (payload.utm_campaign !== undefined) {
-    normalized.utm_campaign = normalizeString(payload.utm_campaign);
+  if (mappedPayload.utm_campaign !== undefined) {
+    normalized.utm_campaign = normalizeString(mappedPayload.utm_campaign);
   }
-  if (payload.utm_adgroup !== undefined) {
-    normalized.utm_adgroup = normalizeString(payload.utm_adgroup);
+  if (mappedPayload.utm_adgroup !== undefined) {
+    normalized.utm_adgroup = normalizeString(mappedPayload.utm_adgroup);
   }
-  if (payload.utm_ads !== undefined) {
-    normalized.utm_ads = normalizeString(payload.utm_ads);
+  if (mappedPayload.utm_ads !== undefined) {
+    normalized.utm_ads = normalizeString(mappedPayload.utm_ads);
   }
-  if (payload.website_url !== undefined) {
-    normalized.website_url = normalizeString(payload.website_url);
+  if (mappedPayload.website_url !== undefined) {
+    normalized.website_url = normalizeString(mappedPayload.website_url);
   }
 
-  if (payload.created_on !== undefined) {
-    if (payload.created_on) {
+  if (mappedPayload.created_on !== undefined) {
+    if (mappedPayload.created_on) {
       const dateValue =
-        payload.created_on instanceof Date
-          ? payload.created_on
-          : new Date(payload.created_on);
+        mappedPayload.created_on instanceof Date
+          ? mappedPayload.created_on
+          : new Date(mappedPayload.created_on);
       if (!Number.isNaN(dateValue.getTime())) {
         normalized.created_on = dateValue;
       }
