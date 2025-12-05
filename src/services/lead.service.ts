@@ -169,15 +169,16 @@ export async function getLeadByPhone(phone: string) {
   if (!phone) {
     throw new Error("Phone number is required");
   }
-  const normalizedPhone = normalizeString(phone);
-  if (!normalizedPhone) {
+  // Normalize phone: remove all non-numeric characters for consistent matching
+  const normalizedPhone = String(phone).trim().replace(/\D/g, '');
+  if (!normalizedPhone || normalizedPhone.length === 0) {
     throw new Error("Phone number is required");
   }
-  const lead = await leadRepository.findByPhone(normalizedPhone);
-  if (!lead) {
+  const leads = await leadRepository.findByPhone(normalizedPhone);
+  if (!leads || leads.length === 0) {
     throw new Error("Lead not found");
   }
-  return lead;
+  return leads;
 }
 
 export async function updateLeadByPhoneOrEmail(payload: any) {

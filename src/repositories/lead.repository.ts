@@ -141,10 +141,13 @@ class LeadRepository {
     return rows.length ? (rows[0] as Lead) : null;
   }
 
-  async findByPhone(phone: string): Promise<Lead | null> {
+  async findByPhone(phone: string): Promise<Lead[]> {
     if (!phone) {
-      return null;
+      return [];
     }
+    // Normalize phone: remove all non-numeric characters for matching
+    const normalizedPhone = phone.replace(/\D/g, '');
+    
     const [rows]: any = await pool.query(
       `SELECT
         id,
@@ -172,11 +175,11 @@ class LeadRepository {
         created_on,
         website_url
       FROM leads
-      WHERE phone = ?
-      LIMIT 1`,
-      [phone]
+      WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+      ORDER BY created_on DESC, id DESC`,
+      [normalizedPhone]
     );
-    return rows.length ? (rows[0] as Lead) : null;
+    return rows as Lead[];
   }
 
   async findByPhoneOrEmail(phone?: string | null, email?: string | null) {

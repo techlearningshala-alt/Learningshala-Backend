@@ -9,7 +9,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", LeadController.getLeads);
-router.get("/phone", LeadController.getByPhone);
 router.post("/",  LeadController.create);
 router.put("/",  LeadController.update);
 // router.post("/", LeadController.create);

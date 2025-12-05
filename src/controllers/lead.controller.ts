@@ -4,6 +4,13 @@ import { successResponse, errorResponse } from "../utills/response";
 
 export const getLeads = async (req: Request, res: Response) => {
   try {
+    // Check if phone parameter is provided - if so, fetch by phone instead
+    const phone = req.query.phone as string;
+    if (phone) {
+      const leads = await getLeadByPhone(phone);
+      return successResponse(res, leads, "Leads fetched successfully");
+    }
+
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const search =
@@ -17,24 +24,6 @@ export const getLeads = async (req: Request, res: Response) => {
       res,
       error?.message || "Failed to fetch leads",
       error?.statusCode || 500
-    );
-  }
-};
-
-export const getByPhone = async (req: Request, res: Response) => {
-  try {
-    const phone = req.query.phone as string;
-    if (!phone) {
-      return errorResponse(res, "Phone number is required", 400);
-    }
-    const lead = await getLeadByPhone(phone);
-    return successResponse(res, lead, "Lead fetched successfully");
-  } catch (error: any) {
-    console.error("❌ Error fetching lead by phone:", error);
-    return errorResponse(
-      res,
-      error?.message || "Failed to fetch lead",
-      error?.statusCode || 404
     );
   }
 };
