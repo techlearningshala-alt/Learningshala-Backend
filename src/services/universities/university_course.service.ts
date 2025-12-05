@@ -259,6 +259,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
   let specializationData: Array<{ 
     name: string; 
     slug: string; 
+    label: string | null;
     duration: string | null; 
     image: string | null; 
     fees: { semester_fee?: number; full_fees?: number } | null 
@@ -271,7 +272,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
     specializationData = specializations.map((spec: any) => {
       // Extract semester_fee and full_fees from fee_type_values
       const feeTypeValues = spec.fee_type_values || {};
-      const fees: { semester_fee?: number; full_fees?: number } = {};
+      const fees: { semester_fee?: number; full_fee?: number } = {};
       
       // Look for semester_fee or sem_fees
       if (feeTypeValues.semester_fee !== undefined && feeTypeValues.semester_fee !== null) {
@@ -290,18 +291,19 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
       if (feeTypeValues.full_fees !== undefined && feeTypeValues.full_fees !== null) {
         const value = Number(feeTypeValues.full_fees);
         if (!Number.isNaN(value)) {
-          fees.full_fees = value;
+          fees.full_fee = value;
         }
       } else if (feeTypeValues.full_fee !== undefined && feeTypeValues.full_fee !== null) {
         const value = Number(feeTypeValues.full_fee);
         if (!Number.isNaN(value)) {
-          fees.full_fees = value;
+          fees.full_fee = value;
         }
       }
       
       return {
         name: spec.name,
         slug: spec.slug,
+        label: spec.label,
         duration: spec.duration,
         image: spec.course_thumbnail,
         fees: Object.keys(fees).length > 0 ? fees : null,
