@@ -54,6 +54,38 @@ const mapPayloadKeysToDbColumns = (payload: any): any => {
   return mapped;
 };
 
+/**
+ * Maps database column names back to question-based keys for API responses
+ */
+const mapDbColumnsToQuestionKeys = (lead: any): any => {
+  if (!lead) return lead;
+
+  const reverseMapping: Record<string, string> = {
+    'preferred_budget': 'what_is_your_preferred_budget_for_the_total_course_fee',
+    'emi_required': 'would_you_prefer_to_convert_the_course_fee_into_easy_emis',
+    'salary': 'what_is_your_current_annual_salary_package',
+    'percentage': 'what_was_your_percentage_in_graduation',
+    'experience': 'how_many_years_of_experience_do_you_have',
+    'university_for_placement_salaryhike_promotions': 'are_you_looking_for_a_university_that_can_help_you_with_placement_salary_hike_or_promotions',
+    'currently_employed': 'are_you_currently_employed',
+  };
+
+  const mapped: any = { ...lead };
+
+  // Map database column names back to question keys
+  Object.keys(reverseMapping).forEach((dbKey) => {
+    if (lead[dbKey] !== undefined) {
+      mapped[reverseMapping[dbKey]] = lead[dbKey];
+      // Remove the db key if it's different from the question key
+      if (dbKey !== reverseMapping[dbKey]) {
+        delete mapped[dbKey];
+      }
+    }
+  });
+
+  return mapped;
+};
+
 const normalizeCreatePayload = (payload: any): CreateLeadDto => {
   // First map question-based keys to database column names
   const mappedPayload = mapPayloadKeysToDbColumns(payload);
@@ -109,17 +141,22 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
   return normalized;
 };
 
-export function listLeads(
+export async function listLeads(
   page = 1,
   limit = 10,
   options: ListLeadOptions = {}
 ) {
-  return leadRepository.findAll(page, limit, options);
+  const data = await leadRepository.findAll(page, limit, options);
+  return {
+    ...data,
+    data: data.data.map((lead: any) => mapDbColumnsToQuestionKeys(lead)),
+  };
 }
 
-export function createLead(payload: any) {
+export async function createLead(payload: any) {
   const normalized = normalizeCreatePayload(payload);
-  return leadRepository.create(normalized);
+  const lead = await leadRepository.create(normalized);
+  return mapDbColumnsToQuestionKeys(lead);
 }
 
 const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
@@ -227,7 +264,7 @@ export async function getLeadByPhone(phone: string) {
   if (!leads || leads.length === 0) {
     throw new Error("Lead not found");
   }
-  return leads;
+  return leads.map((lead: any) => mapDbColumnsToQuestionKeys(lead));
 }
 
 export async function updateLeadByPhoneOrEmail(payload: any) {
@@ -255,7 +292,7 @@ export async function updateLeadByPhoneOrEmail(payload: any) {
     throw new Error("Failed to update lead");
   }
 
-  return updated;
+  return mapDbColumnsToQuestionKeys(updated);
 }
 
 
