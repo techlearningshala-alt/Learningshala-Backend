@@ -7,10 +7,12 @@ import courseBannerRepo, {
 import courseSectionRepo, {
   CourseSectionInput,
 } from "../../repositories/courses/course_section.repository";
+import SpecializationRepo from "../../repositories/courses/specialization.repository";
 
 const repo = new CourseRepo();
 const bannerRepo = courseBannerRepo;
 const sectionRepo = courseSectionRepo;
+const specializationRepo = new SpecializationRepo();
 
 /**
  * Helper function to convert title to section_key format
@@ -73,14 +75,17 @@ export const getCourseBySlug = async (slug: string) => {
   const course = await repo.findBySlug(slug);
   if (!course) return null;
 
-  const [banners, sections] = await Promise.all([
+  const [banners, sections, specializationData] = await Promise.all([
     bannerRepo.findByCourseId(course.id),
     sectionRepo.findByCourseId(course.id),
+    specializationRepo.findSpecializationDataByCourseId(course.id),
   ]);
 
   (course as any).banners = banners || [];
   // For slug-based API we return transformed sections object (like sections_transformed)
   (course as any).sections = transformCourseSections(sections || []);
+  // Include specialization data with name and duration
+  (course as any).specialization_data = specializationData || [];
 
   return course;
 };

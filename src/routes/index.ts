@@ -23,6 +23,7 @@ import universityFaqRoutes from "./university_faq.routes";
 import universityCourseFaqRoutes from "./university_course_faq.routes";
 import universityCourseSpecializationFaqRoutes from "./university_course_specialization_faq.routes";
 import courseFaqRoutes from "./courses/course_faq.routes";
+import specializationFaqRoutes from "./courses/specialization_faq.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -53,5 +54,6 @@ router.use("/cms/domains", domainRoutes);
 router.use("/cms/courses", courseRoutes);
 router.use("/cms/courses/faqs", courseFaqRoutes);
 router.use("/cms/specializations", specializationRoutes);
+router.use("/cms/specializations/faqs", specializationFaqRoutes);
 
 export default router;

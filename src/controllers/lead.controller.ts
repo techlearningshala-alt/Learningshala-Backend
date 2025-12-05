@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { listLeads, createLead, updateLeadByPhoneOrEmail } from "../services/lead.service";
+import { listLeads, createLead, updateLeadByPhoneOrEmail, getLeadByPhone } from "../services/lead.service";
 import { successResponse, errorResponse } from "../utills/response";
 
 export const getLeads = async (req: Request, res: Response) => {
@@ -17,6 +17,24 @@ export const getLeads = async (req: Request, res: Response) => {
       res,
       error?.message || "Failed to fetch leads",
       error?.statusCode || 500
+    );
+  }
+};
+
+export const getByPhone = async (req: Request, res: Response) => {
+  try {
+    const phone = req.query.phone as string;
+    if (!phone) {
+      return errorResponse(res, "Phone number is required", 400);
+    }
+    const lead = await getLeadByPhone(phone);
+    return successResponse(res, lead, "Lead fetched successfully");
+  } catch (error: any) {
+    console.error("❌ Error fetching lead by phone:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to fetch lead",
+      error?.statusCode || 404
     );
   }
 };

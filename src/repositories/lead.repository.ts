@@ -141,6 +141,44 @@ class LeadRepository {
     return rows.length ? (rows[0] as Lead) : null;
   }
 
+  async findByPhone(phone: string): Promise<Lead | null> {
+    if (!phone) {
+      return null;
+    }
+    const [rows]: any = await pool.query(
+      `SELECT
+        id,
+        name,
+        email,
+        phone,
+        course,
+        specialisation,
+        state,
+        city,
+        lead_source,
+        sub_source,
+        highest_qualification,
+        preferred_budget,
+        emi_required,
+        salary,
+        percentage,
+        experience,
+        currently_employed,
+        university_for_placement_salaryhike_promotions,
+        utm_source,
+        utm_campaign,
+        utm_adgroup,
+        utm_ads,
+        created_on,
+        website_url
+      FROM leads
+      WHERE phone = ?
+      LIMIT 1`,
+      [phone]
+    );
+    return rows.length ? (rows[0] as Lead) : null;
+  }
+
   async findByPhoneOrEmail(phone?: string | null, email?: string | null) {
     if (!phone && !email) {
       return null;

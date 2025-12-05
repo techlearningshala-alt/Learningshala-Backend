@@ -165,6 +165,21 @@ const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
   return normalized;
 };
 
+export async function getLeadByPhone(phone: string) {
+  if (!phone) {
+    throw new Error("Phone number is required");
+  }
+  const normalizedPhone = normalizeString(phone);
+  if (!normalizedPhone) {
+    throw new Error("Phone number is required");
+  }
+  const lead = await leadRepository.findByPhone(normalizedPhone);
+  if (!lead) {
+    throw new Error("Lead not found");
+  }
+  return lead;
+}
+
 export async function updateLeadByPhoneOrEmail(payload: any) {
   const phone = payload.phone ? normalizeString(payload.phone) : null;
   const email = payload.email ? normalizeString(payload.email) : null;

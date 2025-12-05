@@ -108,6 +108,18 @@ export default class SpecializationRepo {
     return this.findById(id, conn);
   }
 
+  async findSpecializationDataByCourseId(courseId: number, conn?: Pool | PoolConnection) {
+    const executor = this.getExecutor(conn);
+    const [rows]: any = await executor.query(
+      `SELECT name, course_duration AS duration
+       FROM specializations
+       WHERE course_id = ? AND is_active = 1 AND menu_visibility = 1
+       ORDER BY priority ASC, id ASC`,
+      [courseId]
+    );
+    return rows || [];
+  }
+
   async findByCourseSlugAndSpecializationSlug(
     courseSlug: string,
     specializationSlug: string,
