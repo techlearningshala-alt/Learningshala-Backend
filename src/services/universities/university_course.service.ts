@@ -45,6 +45,9 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
     slug,
     h1Tag: payload.h1Tag ? String(payload.h1Tag).trim() : null,
     duration: payload.duration ?? null,
+    emi_duration: payload.emi_duration !== undefined && payload.emi_duration !== null && payload.emi_duration !== "" 
+      ? Number(payload.emi_duration) 
+      : null,
     label: payload.label ?? null,
     course_thumbnail: payload.course_thumbnail ?? null,
     author_name: payload.author_name ?? null,
@@ -415,12 +418,17 @@ export async function updateUniversityCourse(id: number, payload: any) {
       normalized.h1Tag = payload.h1Tag ? String(payload.h1Tag).trim() : null;
     }
 
-    if (payload.duration !== undefined) {
-      normalized.duration = payload.duration ?? null;
-    }
-    if (payload.label !== undefined) {
-      normalized.label = payload.label ?? null;
-    }
+        if (payload.duration !== undefined) {
+          normalized.duration = payload.duration ?? null;
+        }
+        if (payload.emi_duration !== undefined) {
+          normalized.emi_duration = payload.emi_duration !== null && payload.emi_duration !== "" 
+            ? Number(payload.emi_duration) 
+            : null;
+        }
+        if (payload.label !== undefined) {
+          normalized.label = payload.label ?? null;
+        }
     if (payload.course_thumbnail !== undefined) {
       normalized.course_thumbnail = payload.course_thumbnail ?? null;
     }

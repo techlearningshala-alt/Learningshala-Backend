@@ -46,7 +46,7 @@ export class UniversityCourseSpecializationRepository {
          INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
          INNER JOIN universities u ON ucs.university_id = u.id
         ${whereClause}
-        ORDER BY ucs.created_at ASC, ucs.id ASC
+        ORDER BY ucs.created_at DESC, ucs.id DESC
         LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
@@ -140,8 +140,8 @@ export class UniversityCourseSpecializationRepository {
   async create(payload: CreateUniversityCourseSpecializationDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_course_specialization
-        (university_id, university_course_id, name, slug, h1Tag, duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, university_course_id, name, slug, h1Tag, duration, emi_duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.university_course_id,
@@ -149,6 +149,7 @@ export class UniversityCourseSpecializationRepository {
         payload.slug,
         payload.h1Tag ?? null,
         payload.duration ?? null,
+        payload.emi_duration ?? null,
         payload.label ?? null,
         payload.course_thumbnail ?? null,
         payload.author_name ?? null,
@@ -190,6 +191,10 @@ export class UniversityCourseSpecializationRepository {
     if (payload.duration !== undefined) {
       fields.push("duration = ?");
       values.push(payload.duration ?? null);
+    }
+    if (payload.emi_duration !== undefined) {
+      fields.push("emi_duration = ?");
+      values.push(payload.emi_duration ?? null);
     }
     if (payload.label !== undefined) {
       fields.push("label = ?");
