@@ -31,10 +31,22 @@ export const getCourseName = async (req: Request, res: Response) => {
 
 export const getOne = async (req: Request, res: Response) => {
   try {
-    console.log(req.query.id,"course");
-    const course = await CourseService.getCourse(Number(req.params.id));
-    if (!course) return errorResponse(res, "Course not found", 404);
-    return successResponse(res, course, "Course fetched successfully");
+    const param = req.params.id;
+    if (!param) return errorResponse(res, "Course ID or slug is required", 400);
+    
+    // Check if parameter is numeric (ID) or string (slug)
+    const numericId = Number(param);
+    if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
+      // It's a numeric ID
+      const course = await CourseService.getCourse(numericId);
+      if (!course) return errorResponse(res, "Course not found", 404);
+      return successResponse(res, course, "Course fetched successfully");
+    } else {
+      // It's a slug, use slug-based lookup
+      const course = await CourseService.getCourseBySlug(param);
+      if (!course) return errorResponse(res, "Course not found", 404);
+      return successResponse(res, course, "Course fetched successfully");
+    }
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch course");
   }
