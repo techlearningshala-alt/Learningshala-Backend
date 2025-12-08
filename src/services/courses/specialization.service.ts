@@ -158,6 +158,58 @@ export const toggleSpecializationMenuVisibility = async (id: number, isVisible: 
   return updated ? await attachRelations(updated) : null;
 };
 
+async function getSpecializationFaqs(specializationId: number) {
+  try {
+    const [rows]: any = await pool.query(
+      `SELECT f.id,
+              f.title,
+              f.description,
+              f.category_id,
+              c.heading AS category_heading
+       FROM specialization_faqs f
+       LEFT JOIN course_faq_categories c ON f.category_id = c.id
+       WHERE f.specialization_id = ?
+       ORDER BY 
+         CASE WHEN c.heading IS NULL THEN 1 ELSE 0 END,
+         c.heading,
+         f.created_at DESC`,
+      [specializationId]
+    );
+
+    if (!rows || !rows.length) {
+      return [];
+    }
+
+    const grouped = rows.reduce((acc: Record<string, any>, faq: any) => {
+      const categoryId = faq.category_id || 0;
+      const heading = faq.category_heading || "Uncategorized";
+      const slug = heading.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+
+      if (!acc[categoryId]) {
+        acc[categoryId] = {
+          category: heading,
+          cat_id: slug || `category-${categoryId || "uncategorized"}`,
+          items: [],
+        };
+      }
+
+      acc[categoryId].items.push({
+        id: faq.id,
+        question: faq.title,
+        answer: faq.description,
+        category_id: faq.category_id,
+      });
+
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  } catch (error) {
+    console.error(`❌ [SPECIALIZATION FAQ] Error fetching specialization FAQs for specialization_id ${specializationId}:`, error);
+    return [];
+  }
+}
+
 export const getSpecializationByCourseSlugAndSpecializationSlug = async (
   courseSlug: string,
   specializationSlug: string
@@ -168,14 +220,17 @@ export const getSpecializationByCourseSlugAndSpecializationSlug = async (
   );
   if (!specialization) return null;
 
-  const [banners, sections] = await Promise.all([
+  const [banners, sections, faqs] = await Promise.all([
     bannerRepo.findBySpecializationId(specialization.id),
     sectionRepo.findBySpecializationId(specialization.id),
+    getSpecializationFaqs(specialization.id),
   ]);
 
   (specialization as any).banners = banners || [];
   // For slug-based API we return transformed sections object (like course API)
   (specialization as any).sections = transformSpecializationSections(sections || []);
+  // Include FAQ data grouped by category
+  (specialization as any).faq_data = faqs || [];
 
   return specialization;
 };
