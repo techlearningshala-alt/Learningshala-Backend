@@ -70,7 +70,7 @@ export class UniversityCourseSpecializationRepository {
 
   async findOptionsByCourse(universityCourseId: number) {
     const [rows]: any = await pool.query(
-      `SELECT id, name, slug, label, duration, course_thumbnail, fee_type_values
+      `SELECT id, name, slug, label, emi_duration, duration, course_thumbnail, fee_type_values
          FROM university_course_specialization
         WHERE university_course_id = ? AND is_active = 1
         ORDER BY name ASC`,
@@ -81,6 +81,7 @@ export class UniversityCourseSpecializationRepository {
       name: row.name,
       slug: row.slug,
       label: row.label,
+      emi_duration: row.emi_duration,
       duration: row.duration,
       course_thumbnail: row.course_thumbnail,
       fee_type_values: row.fee_type_values 

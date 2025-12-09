@@ -263,6 +263,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
     name: string; 
     slug: string; 
     label: string | null;
+    emi_duration: number | null;
     duration: string | null; 
     image: string | null; 
     fees: { semester_fee?: number; full_fees?: number } | null 
@@ -307,6 +308,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
         name: spec.name,
         slug: spec.slug,
         label: spec.label,
+        emi_duration: spec.emi_duration,
         duration: spec.duration,
         image: spec.course_thumbnail,
         fees: Object.keys(fees).length > 0 ? fees : null,
