@@ -4,8 +4,8 @@ import { successResponse, errorResponse } from "../utills/response";
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password, role } = req.body;
-    const user = await AuthService.register(name, email, password, role);
+    const { name, email, password, role, phone, course, state, city, otp } = req.body;
+    const user = await AuthService.register(name, email, password, role, phone, course, state, city, otp);
     return successResponse(res, { id: user.id, name: user.name, email: user.email, role: user.role }, "Registered", 201);
   } catch (err: any) {
     return errorResponse(res, err.message || "Registration failed", 400);

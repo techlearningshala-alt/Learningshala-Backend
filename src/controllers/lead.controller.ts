@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { listLeads, createLead, updateLeadByPhoneOrEmail, getLeadByPhone } from "../services/lead.service";
+import { listLeads, createLead, updateLeadByPhone, getLeadByPhone } from "../services/lead.service";
 import { successResponse, errorResponse } from "../utills/response";
 
 export const getLeads = async (req: Request, res: Response) => {
@@ -44,7 +44,7 @@ export const create = async (req: Request, res: Response) => {
 
 export const update = async (req: Request, res: Response) => {
   try {
-    const lead = await updateLeadByPhoneOrEmail(req.body);
+    const lead = await updateLeadByPhone(req.body);
     return successResponse(res, lead, "Lead updated successfully");
   } catch (error: any) {
     console.error("❌ Error updating lead:", error);

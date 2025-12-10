@@ -267,20 +267,28 @@ export async function getLeadByPhone(phone: string) {
   return leads.map((lead: any) => mapDbColumnsToQuestionKeys(lead));
 }
 
-export async function updateLeadByPhoneOrEmail(payload: any) {
+export async function updateLeadByPhone(payload: any) {
   const phone = payload.phone ? normalizeString(payload.phone) : null;
-  const email = payload.email ? normalizeString(payload.email) : null;
 
-  if (!phone && !email) {
-    throw new Error("Either phone or email must be provided to identify the lead");
+  if (!phone) {
+    throw new Error("Phone number is required to identify the lead");
   }
 
-  // Find the lead by phone or email
-  const existingLead = await leadRepository.findByPhoneOrEmail(phone, email);
-
-  if (!existingLead) {
-    throw new Error("Lead not found with the provided phone or email");
+  // Normalize phone: remove all non-numeric characters for consistent matching
+  const normalizedPhone = String(phone).trim().replace(/\D/g, '');
+  if (!normalizedPhone || normalizedPhone.length === 0) {
+    throw new Error("Phone number is required");
   }
+
+  // Find the lead by phone
+  const existingLeads = await leadRepository.findByPhone(normalizedPhone);
+
+  if (!existingLeads || existingLeads.length === 0) {
+    throw new Error("Lead not found with the provided phone number");
+  }
+
+  // Use the first (most recent) lead if multiple exist
+  const existingLead = existingLeads[0];
 
   // Normalize the update payload
   const normalized = normalizeUpdatePayload(payload);

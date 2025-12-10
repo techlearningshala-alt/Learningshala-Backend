@@ -15,12 +15,32 @@ const REFRESH_EXPIRES: any = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 
 class AuthService {
-  async register(name: string, email: string, password: string, role = "user") {
+  async register(
+    name: string, 
+    email: string, 
+    password: string, 
+    role = "user",
+    phone?: string | null,
+    course?: string | null,
+    state?: string | null,
+    city?: string | null,
+    otp?: number | null
+  ) {
     const existing = await UserRepo.findByEmail(email);
     if (existing) throw new Error("Email already registered");
 
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    return UserRepo.create({ name, email, password: hashed, role });
+    return UserRepo.create({ 
+      name, 
+      email, 
+      password: hashed, 
+      role,
+      phone,
+      course,
+      state,
+      city,
+      otp
+    });
   }
 
   async login(email: string, password: string) {

@@ -25,6 +25,8 @@ import universityCourseSpecializationFaqRoutes from "./university_course_special
 import courseFaqRoutes from "./courses/course_faq.routes";
 import specializationFaqRoutes from "./courses/specialization_faq.routes";
 import courseImageRoutes from "./courses/course_image.routes";
+import stateRoutes from "./location/state.routes";
+import cityRoutes from "./location/city.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -57,5 +59,9 @@ router.use("/cms/courses/faqs", courseFaqRoutes);
 router.use("/cms/course-images", courseImageRoutes);
 router.use("/cms/specializations", specializationRoutes);
 router.use("/cms/specializations/faqs", specializationFaqRoutes);
+
+// ✅ Location module routes (States & Cities)
+router.use("/cms/states", stateRoutes);
+router.use("/cms/cities", cityRoutes);
 
 export default router;
