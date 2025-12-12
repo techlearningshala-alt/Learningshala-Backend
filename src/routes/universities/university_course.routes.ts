@@ -14,6 +14,9 @@ router.use(authMiddleware);
 
 // Specific routes must come before generic parameter routes
 router.get("/", UniversityCourseController.findAll);
+router.get("/search", UniversityCourseController.search); // Search endpoint (must come before /:id)
+router.get("/suggestions", UniversityCourseController.suggestions); // Autocomplete suggestions
+router.get("/spell-check", UniversityCourseController.spellCheck); // Spell correction
 router.get("/id/:id", UniversityCourseController.findById);
 router.get("/:university_slug/:slug", UniversityCourseController.findByUniversityAndSlug);
 router.post(

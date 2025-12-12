@@ -8,6 +8,13 @@ import {
 import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
+import { 
+  indexCourse, 
+  deleteCourseFromIndex, 
+  searchCourses,
+  getCourseSuggestions,
+  getCourseSpellSuggestions
+} from "../../services/elasticsearch/course.search.service";
 
 export const getAll = async (req: Request, res: Response) => {
   try {
@@ -294,6 +301,14 @@ export const create = async (req: Request, res: Response) => {
       banners ?? [],
       sections ?? []
     );
+    
+    // 🔍 Index course in Elasticsearch (async, don't wait)
+    try {
+      await indexCourse(course);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
+    
     return successResponse(res, course, "Course created successfully", 201);
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to create course", 400);
@@ -402,6 +417,13 @@ export const update = async (req: Request, res: Response) => {
       return errorResponse(res, "Course not found or nothing to update", 404);
     }
 
+    // 🔍 Index course in Elasticsearch (async, don't wait)
+    try {
+      await indexCourse(course);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
+
     return successResponse(res, course, "Course updated successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to update course", 400);
@@ -411,7 +433,16 @@ export const update = async (req: Request, res: Response) => {
 
 export const remove = async (req: Request, res: Response) => {
   try {
-    const result = await CourseService.deleteCourse(Number(req.params.id));
+    const courseId = Number(req.params.id);
+    const result = await CourseService.deleteCourse(courseId);
+    
+    // 🔍 Remove from Elasticsearch index (async, don't wait)
+    try {
+      await deleteCourseFromIndex(courseId);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch delete error (non-blocking):', esError);
+    }
+    
     return successResponse(res, result, "Course deleted successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to delete course", 400);
@@ -454,5 +485,62 @@ export const toggleMenuVisibility = async (req: Request, res: Response) => {
       err.message || "Failed to update course menu visibility",
       400
     );
+  }
+};
+
+export const search = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const is_active = req.query.is_active !== undefined ? req.query.is_active === 'true' : undefined;
+    const domain_id = req.query.domain_id ? parseInt(req.query.domain_id as string) : undefined;
+
+    const result = await searchCourses(query, {
+      page,
+      limit,
+      filters: {
+        is_active,
+        domain_id
+      }
+    });
+
+    return successResponse(res, result, "Courses searched successfully");
+  } catch (err: any) {
+    console.error('❌ Search error:', err);
+    return errorResponse(res, err.message || "Failed to search courses", 400);
+  }
+};
+
+export const suggestions = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, [], "Suggestions fetched successfully");
+    }
+
+    const suggestions = await getCourseSuggestions(query, limit);
+    return successResponse(res, suggestions, "Suggestions fetched successfully");
+  } catch (err: any) {
+    console.error('❌ Suggestions error:', err);
+    return errorResponse(res, err.message || "Failed to get suggestions", 400);
+  }
+};
+
+export const spellCheck = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, null, "Spell check completed");
+    }
+
+    const suggestion = await getCourseSpellSuggestions(query);
+    return successResponse(res, suggestion, "Spell check completed");
+  } catch (err: any) {
+    console.error('❌ Spell check error:', err);
+    return errorResponse(res, err.message || "Failed to check spelling", 400);
   }
 };

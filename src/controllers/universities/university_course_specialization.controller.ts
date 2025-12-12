@@ -14,6 +14,13 @@ import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
 import { processSectionImages, handleSectionImageRemoval } from "../../utills/sectionImageHandler";
+import { 
+  indexUniversityCourseSpecialization, 
+  deleteUniversityCourseSpecializationFromIndex, 
+  searchUniversityCourseSpecializations,
+  getUniversityCourseSpecializationSuggestions,
+  getUniversityCourseSpecializationSpellSuggestions
+} from "../../services/elasticsearch/university-course-specialization.search.service";
 
 export const findAll = async (req: Request, res: Response) => {
   try {
@@ -258,6 +265,14 @@ export const create = async (req: Request, res: Response) => {
     body.sections = sections;
 
     const specialization = await createUniversityCourseSpecialization(body);
+    
+    // 🔍 Index university course specialization in Elasticsearch (async, don't wait)
+    try {
+      await indexUniversityCourseSpecialization(specialization);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
+    
     return successResponse(
       res,
       specialization,
@@ -487,6 +502,13 @@ export const update = async (req: Request, res: Response) => {
 
     const specialization = await updateUniversityCourseSpecialization(id, body);
 
+    // 🔍 Index university course specialization in Elasticsearch (async, don't wait)
+    try {
+      await indexUniversityCourseSpecialization(specialization);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
+
     return successResponse(
       res,
       specialization,
@@ -563,6 +585,13 @@ export const remove = async (req: Request, res: Response) => {
       return errorResponse(res, "University course specialization not found", 404);
     }
 
+    // 🔍 Remove from Elasticsearch index (async, don't wait)
+    try {
+      await deleteUniversityCourseSpecializationFromIndex(id);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch delete error (non-blocking):', esError);
+    }
+
     return successResponse(
       res,
       null,
@@ -575,5 +604,60 @@ export const remove = async (req: Request, res: Response) => {
       error.message || "Failed to delete university course specialization",
       400
     );
+  }
+};
+
+export const search = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const university_course_id = req.query.university_course_id ? parseInt(req.query.university_course_id as string) : undefined;
+
+    const result = await searchUniversityCourseSpecializations(query, {
+      page,
+      limit,
+      filters: {
+        university_course_id
+      }
+    });
+
+    return successResponse(res, result, "University course specializations searched successfully");
+  } catch (err: any) {
+    console.error('❌ Search error:', err);
+    return errorResponse(res, err.message || "Failed to search university course specializations", 400);
+  }
+};
+
+export const suggestions = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, [], "Suggestions fetched successfully");
+    }
+
+    const suggestions = await getUniversityCourseSpecializationSuggestions(query, limit);
+    return successResponse(res, suggestions, "Suggestions fetched successfully");
+  } catch (err: any) {
+    console.error('❌ Suggestions error:', err);
+    return errorResponse(res, err.message || "Failed to get suggestions", 400);
+  }
+};
+
+export const spellCheck = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, null, "Spell check completed");
+    }
+
+    const suggestion = await getUniversityCourseSpecializationSpellSuggestions(query);
+    return successResponse(res, suggestion, "Spell check completed");
+  } catch (err: any) {
+    console.error('❌ Spell check error:', err);
+    return errorResponse(res, err.message || "Failed to check spelling", 400);
   }
 };

@@ -12,6 +12,9 @@ router.use(authMiddleware);
 router.get("/", CourseController.getAll);
 router.get("/course-name", CourseController.getCourseName);
 router.get("/by-domain", CourseController.getCoursesByDomain);
+router.get("/search", CourseController.search); // Search endpoint (must come before /:id)
+router.get("/suggestions", CourseController.suggestions); // Autocomplete suggestions
+router.get("/spell-check", CourseController.spellCheck); // Spell correction
 // Put numeric ID route before slug route to handle /courses/38 correctly
 router.get("/:id", CourseController.getOne);
 router.get("/:slug", CourseController.getBySlug);

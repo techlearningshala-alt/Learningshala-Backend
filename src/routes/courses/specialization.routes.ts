@@ -9,6 +9,9 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", SpecializationController.getAll);
+router.get("/search", SpecializationController.search); // Search endpoint (must come before /:id)
+router.get("/suggestions", SpecializationController.suggestions); // Autocomplete suggestions
+router.get("/spell-check", SpecializationController.spellCheck); // Spell correction
 router.get("/:course_slug/:slug", SpecializationController.getByCourseSlugAndSpecializationSlug);
 router.get("/:id", SpecializationController.getOne);
 router.post("/", upload.any(), SpecializationController.create);

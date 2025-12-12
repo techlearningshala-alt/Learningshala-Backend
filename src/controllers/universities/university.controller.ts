@@ -10,6 +10,14 @@ import { uploadToS3, deleteFromS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
 import { processSectionImages, handleSectionImageRemoval } from "../../utills/sectionImageHandler";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
+import { 
+  indexUniversity, 
+  deleteUniversityFromIndex, 
+  searchUniversities,
+  getUniversitySuggestions,
+  getSpellSuggestions
+} from "../../services/elasticsearch/university.search.service";
+import pool from "../../config/db";
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -102,6 +110,25 @@ export const create = async (req: Request, res: Response) => {
 
     // ✅ Save university
     const university = await UniversityService.UniversityService.addUniversity(body, banners, sections);
+
+    // 🔍 Index university in Elasticsearch (async, don't wait)
+    try {
+      const [bannersData]: any = await pool.query(
+        `SELECT * FROM university_banners WHERE university_id = ?`,
+        [university.id]
+      );
+      const [sectionsData]: any = await pool.query(
+        `SELECT * FROM university_sections WHERE university_id = ?`,
+        [university.id]
+      );
+      await indexUniversity({
+        ...university,
+        banners: bannersData,
+        sections: sectionsData
+      });
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
 
     return successResponse(res, university, "University created successfully", 201);
   } catch (err: any) {
@@ -274,6 +301,25 @@ console.log(files,"filesbefore")
 
     if (!updated) return errorResponse(res, "University not found", 404);
 
+    // 🔍 Index university in Elasticsearch (async, don't wait)
+    try {
+      const [bannersData]: any = await pool.query(
+        `SELECT * FROM university_banners WHERE university_id = ?`,
+        [Number(id)]
+      );
+      const [sectionsData]: any = await pool.query(
+        `SELECT * FROM university_sections WHERE university_id = ?`,
+        [Number(id)]
+      );
+      await indexUniversity({
+        ...updated,
+        banners: bannersData,
+        sections: sectionsData
+      });
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
+    }
+
     return successResponse(res, updated, "University updated successfully");
   } catch (err: any) {
     console.error("❌ University update error:", err);
@@ -292,6 +338,63 @@ export const findAll = async (req: Request, res: Response) => {
   }
 };
 
+export const search = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const is_active = req.query.is_active !== undefined ? req.query.is_active === 'true' : undefined;
+    const approval_id = req.query.approval_id ? parseInt(req.query.approval_id as string) : undefined;
+
+    const result = await searchUniversities(query, {
+      page,
+      limit,
+      filters: {
+        is_active,
+        approval_id
+      }
+    });
+
+    return successResponse(res, result, "Universities searched successfully");
+  } catch (err: any) {
+    console.error('❌ Search error:', err);
+    return errorResponse(res, err.message || "Failed to search universities", 400);
+  }
+};
+
+export const suggestions = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, [], "Suggestions fetched successfully");
+    }
+
+    const suggestions = await getUniversitySuggestions(query, limit);
+    return successResponse(res, suggestions, "Suggestions fetched successfully");
+  } catch (err: any) {
+    console.error('❌ Suggestions error:', err);
+    return errorResponse(res, err.message || "Failed to get suggestions", 400);
+  }
+};
+
+export const spellCheck = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+
+    if (!query || query.trim().length === 0) {
+      return successResponse(res, null, "Spell check completed");
+    }
+
+    const suggestion = await getSpellSuggestions(query);
+    return successResponse(res, suggestion, "Spell check completed");
+  } catch (err: any) {
+    console.error('❌ Spell check error:', err);
+    return errorResponse(res, err.message || "Failed to check spelling", 400);
+  }
+};
+
 export const findOne = async (req: Request, res: Response) => {
   try {
     const university = await UniversityService.getUniversityBySlug(req.params.university_slug);
@@ -304,8 +407,17 @@ export const findOne = async (req: Request, res: Response) => {
 
 export const remove = async (req: Request, res: Response) => {
   try {
-    const deleted = await UniversityService.deleteUniversity(Number(req.params.id));
+    const universityId = Number(req.params.id);
+    const deleted = await UniversityService.deleteUniversity(universityId);
     if (!deleted) return errorResponse(res, "University not found", 404);
+    
+    // 🔍 Remove from Elasticsearch index (async, don't wait)
+    try {
+      await deleteUniversityFromIndex(universityId);
+    } catch (esError) {
+      console.error('⚠️ Elasticsearch delete error (non-blocking):', esError);
+    }
+    
     return successResponse(res, null, "University deleted successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to delete university", 400);

@@ -32,6 +32,9 @@ router.put(
 );
 router.get("/list", UniversityController.fetchList);
 
+router.get("/search", UniversityController.search); // Search endpoint (must come before /:university_slug)
+router.get("/suggestions", UniversityController.suggestions); // Autocomplete suggestions
+router.get("/spell-check", UniversityController.spellCheck); // Spell correction
 router.get("/", UniversityController.findAll);
 router.get("/:university_slug", UniversityController.findOne);
 router.patch("/:id/toggle-status", UniversityController.toggleStatus);

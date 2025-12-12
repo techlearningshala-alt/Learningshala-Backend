@@ -6,6 +6,8 @@ export const getLeads = async (req: Request, res: Response) => {
   try {
     // Check if phone parameter is provided - if so, fetch by phone instead
     const phone = req.query.phone as string;
+    console.log(phone,"phone")
+    console.log(typeof phone,"typeof phone")
     if (phone) {
       const leads = await getLeadByPhone(phone);
       return successResponse(res, leads, "Leads fetched successfully");
