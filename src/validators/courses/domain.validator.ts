@@ -55,6 +55,8 @@ export const createCourseSchema = z.object({
   podcast_embed: z.string().optional().nullable(),
   thumbnail: z.string().optional().nullable(),
   priority: z.number().optional(),
+  placement_partner_ids: z.array(z.number().int()).optional(),
+  emi_partner_ids: z.array(z.number().int()).optional(),
   is_active: z.boolean().default(true),
   menu_visibility: z.boolean().default(true)
 });
@@ -74,6 +76,8 @@ export const updateCourseSchema = z.object({
   podcast_embed: z.string().optional().nullable(),
   thumbnail: z.string().optional().nullable(),
   priority: z.number().optional(),
+  placement_partner_ids: z.array(z.number().int()).optional(),
+  emi_partner_ids: z.array(z.number().int()).optional(),
   is_active: z.boolean().default(true),
   menu_visibility: z.boolean().default(true)
 });

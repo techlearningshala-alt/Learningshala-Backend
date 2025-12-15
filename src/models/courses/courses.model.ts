@@ -15,6 +15,8 @@ export interface Course {
   priority: number;
   menu_visibility: string;
   is_active: string;
+  placement_partner_ids?: number[] | null;
+  emi_partner_ids?: number[] | null;
   created_at: Date;
   updated_at: Date;
 }

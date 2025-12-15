@@ -1,6 +1,15 @@
 import type { Pool, PoolConnection } from "mysql2/promise";
 import pool from "../../config/db";
 
+const safeParseJsonArray = (value: any): number[] => {
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    return Array.isArray(parsed) ? parsed.map((v) => Number(v)).filter((n) => !Number.isNaN(n)) : [];
+  } catch {
+    return [];
+  }
+};
+
 export interface Course {
   id: number;
   domain_id: number;
@@ -18,6 +27,8 @@ export interface Course {
   priority?: number | null;
   menu_visibility?: boolean;
   is_active?: boolean;
+  placement_partner_ids?: number[] | null;
+  emi_partner_ids?: number[] | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -29,8 +40,22 @@ export default class CourseRepo {
 
   private mapRow(row: any) {
     if (!row) return row;
+    const placementIds =
+      row.placement_partner_ids && typeof row.placement_partner_ids === "string"
+        ? safeParseJsonArray(row.placement_partner_ids)
+        : Array.isArray(row.placement_partner_ids)
+        ? row.placement_partner_ids
+        : [];
+    const emiIds =
+      row.emi_partner_ids && typeof row.emi_partner_ids === "string"
+        ? safeParseJsonArray(row.emi_partner_ids)
+        : Array.isArray(row.emi_partner_ids)
+        ? row.emi_partner_ids
+        : [];
     return {
       ...row,
+      placement_partner_ids: placementIds,
+      emi_partner_ids: emiIds,
       is_active:
         row.is_active === null || row.is_active === undefined ? true : Boolean(row.is_active),
       menu_visibility:
@@ -121,8 +146,8 @@ export default class CourseRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO courses 
-        (domain_id, name, slug, h1Tag, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (domain_id, name, slug, h1Tag, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,
@@ -139,6 +164,8 @@ export default class CourseRepo {
         item.priority ?? 0,
         menuVisibility ? 1 : 0,
         isActive ? 1 : 0,
+        item.placement_partner_ids ? JSON.stringify(item.placement_partner_ids) : null,
+        item.emi_partner_ids ? JSON.stringify(item.emi_partner_ids) : null,
       ]
     );
     return this.findById(result.insertId, conn);
@@ -201,6 +228,20 @@ export default class CourseRepo {
     if (item.podcast_embed !== undefined) {
       fields.push("podcast_embed = ?");
       values.push(item.podcast_embed ?? null);
+    }
+    if (item.placement_partner_ids !== undefined) {
+      fields.push("placement_partner_ids = ?");
+      values.push(
+        item.placement_partner_ids === null
+          ? null
+          : JSON.stringify(item.placement_partner_ids)
+      );
+    }
+    if (item.emi_partner_ids !== undefined) {
+      fields.push("emi_partner_ids = ?");
+      values.push(
+        item.emi_partner_ids === null ? null : JSON.stringify(item.emi_partner_ids)
+      );
     }
     if (item.menu_visibility !== undefined) {
       fields.push("menu_visibility = ?");

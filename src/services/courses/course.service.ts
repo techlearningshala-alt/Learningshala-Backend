@@ -142,6 +142,42 @@ export const getCourseBySlug = async (slug: string) => {
   // Include FAQ data grouped by category
   (course as any).faq_data = faqs || [];
 
+  // Attach placement and EMI partners (like university by slug API)
+  try {
+    const placementIds: number[] = Array.isArray((course as any).placement_partner_ids)
+      ? (course as any).placement_partner_ids
+      : [];
+    const emiIds: number[] = Array.isArray((course as any).emi_partner_ids)
+      ? (course as any).emi_partner_ids
+      : [];
+
+    let placementPartners: any[] = [];
+    let emiPartners: any[] = [];
+
+    if (placementIds.length > 0) {
+      const [rows]: any = await pool.query(
+        `SELECT id, name, logo FROM placement_partners WHERE id IN (?)`,
+        [placementIds]
+      );
+      placementPartners = rows || [];
+    }
+
+    if (emiIds.length > 0) {
+      const [rows]: any = await pool.query(
+        `SELECT id, name, logo FROM emi_partners WHERE id IN (?)`,
+        [emiIds]
+      );
+      emiPartners = rows || [];
+    }
+
+    (course as any).placement_partners = placementPartners;
+    (course as any).emi_partners = emiPartners;
+  } catch (error) {
+    console.error("❌ [COURSE] Error fetching placement/EMI partners for course slug:", slug, error);
+    (course as any).placement_partners = [];
+    (course as any).emi_partners = [];
+  }
+
   return course;
 };
 
