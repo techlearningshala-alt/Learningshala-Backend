@@ -373,23 +373,3 @@ export async function deleteSpecializationFromIndex(specializationId: number) {
   }
 }
 
-/**
- * Re-index all specializations from database
- */
-export async function reindexAllSpecializations(fetchFromDb: () => Promise<any[]>) {
-  try {
-    console.log('🔄 Starting re-indexing of all specializations...');
-    
-    const specializations = await fetchFromDb();
-    
-    for (const specialization of specializations) {
-      await indexSpecialization(specialization);
-    }
-    
-    console.log(`✅ Re-indexed ${specializations.length} specializations`);
-  } catch (error) {
-    console.error('❌ Error re-indexing specializations:', error);
-    throw error;
-  }
-}
-
