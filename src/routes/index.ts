@@ -28,6 +28,7 @@ import courseImageRoutes from "./courses/course_image.routes";
 import stateRoutes from "./location/state.routes";
 import cityRoutes from "./location/city.routes";
 import searchRoutes from "./search.routes";
+import websiteLeadRoutes from "./website_lead.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -67,5 +68,8 @@ router.use("/cms/cities", cityRoutes);
 
 // ✅ Unified Search route (must come after all other routes to avoid conflicts)
 router.use("/cms/search", searchRoutes);
+
+// ✅ Public website leads capture
+router.use("/website/leads", websiteLeadRoutes);
 
 export default router;

@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS `website_leads` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(255) DEFAULT NULL,
+  `phone` VARCHAR(20) DEFAULT NULL,
+  `course` VARCHAR(255) DEFAULT NULL,
+  `specialization` VARCHAR(255) DEFAULT NULL,
+  `state` VARCHAR(100) DEFAULT NULL,
+  `city` VARCHAR(100) DEFAULT NULL,
+  `lead_source` VARCHAR(150) DEFAULT NULL,
+  `sub_source` VARCHAR(150) DEFAULT NULL,
+  `utm_source` VARCHAR(255) DEFAULT NULL,
+  `utm_campaign` VARCHAR(255) DEFAULT NULL,
+  `utm_adgroup` VARCHAR(255) DEFAULT NULL,
+  `utm_ads` VARCHAR(255) DEFAULT NULL,
+  `website_url` VARCHAR(2048) DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_website_leads_phone` (`phone`),
+  INDEX `idx_website_leads_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
