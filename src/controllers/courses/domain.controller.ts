@@ -38,7 +38,7 @@ export const update = async (req: Request, res: Response) => {
     console.log(updated,"updated")
     if (!updated) return errorResponse(res, "Domain not found", 404);
 
-    return successResponse(res, null, "Domain updated successfully");
+    return successResponse(res, updated, "Domain updated successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Update failed", 400);
   }

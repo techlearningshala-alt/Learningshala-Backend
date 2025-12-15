@@ -38,14 +38,19 @@ export default class DomainRepo {
     if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility); }
     if (item.slug !== undefined) { fields.push("slug = ?"); values.push(item.slug); }
     if (saveWithDate) fields.push("updated_at = NOW()");
-    if (!fields.length) return false;
+    if (!fields.length) return null;
 
     values.push(id);
     const [result]: any = await pool.query(
       `UPDATE domains SET ${fields.join(", ")} WHERE id = ?`,
       values
     );
-    return result.affectedRows > 0;
+    
+    if (result.affectedRows > 0) {
+      // Return the updated domain
+      return this.findById(id);
+    }
+    return null;
   }
 
   async delete(id: number) {
