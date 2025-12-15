@@ -27,6 +27,7 @@ import specializationFaqRoutes from "./courses/specialization_faq.routes";
 import courseImageRoutes from "./courses/course_image.routes";
 import stateRoutes from "./location/state.routes";
 import cityRoutes from "./location/city.routes";
+import searchRoutes from "./search.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -63,5 +64,8 @@ router.use("/cms/specializations/faqs", specializationFaqRoutes);
 // ✅ Location module routes (States & Cities)
 router.use("/cms/states", stateRoutes);
 router.use("/cms/cities", cityRoutes);
+
+// ✅ Unified Search route (must come after all other routes to avoid conflicts)
+router.use("/cms/search", searchRoutes);
 
 export default router;

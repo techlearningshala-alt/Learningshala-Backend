@@ -500,24 +500,3 @@ export async function deleteUniversityFromIndex(universityId: number) {
   }
 }
 
-/**
- * Re-index all universities from database
- * Useful for initial setup or when rebuilding the index
- */
-export async function reindexAllUniversities(fetchFromDb: () => Promise<any[]>) {
-  try {
-    console.log('🔄 Starting re-indexing of all universities...');
-    
-    const universities = await fetchFromDb();
-    
-    for (const university of universities) {
-      await indexUniversity(university);
-    }
-    
-    console.log(`✅ Re-indexed ${universities.length} universities`);
-  } catch (error) {
-    console.error('❌ Error re-indexing universities:', error);
-    throw error;
-  }
-}
-

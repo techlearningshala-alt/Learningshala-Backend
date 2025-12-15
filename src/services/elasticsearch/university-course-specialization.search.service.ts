@@ -347,23 +347,3 @@ export async function deleteUniversityCourseSpecializationFromIndex(specializati
   }
 }
 
-/**
- * Re-index all university course specializations from database
- */
-export async function reindexAllUniversityCourseSpecializations(fetchFromDb: () => Promise<any[]>) {
-  try {
-    console.log('🔄 Starting re-indexing of all university course specializations...');
-    
-    const specializations = await fetchFromDb();
-    
-    for (const specialization of specializations) {
-      await indexUniversityCourseSpecialization(specialization);
-    }
-    
-    console.log(`✅ Re-indexed ${specializations.length} university course specializations`);
-  } catch (error) {
-    console.error('❌ Error re-indexing university course specializations:', error);
-    throw error;
-  }
-}
-
