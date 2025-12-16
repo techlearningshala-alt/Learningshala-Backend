@@ -11,6 +11,15 @@ const normalizePhone = (val?: string | null) => {
 };
 
 export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLead> {
+  // Normalize OTP - if provided, validate it's 6 digits, otherwise use default
+  let otpValue = "123456"; // Default OTP
+  if (payload.otp) {
+    const cleanedOtp = String(payload.otp).trim().replace(/\D/g, "");
+    if (cleanedOtp.length === 6) {
+      otpValue = cleanedOtp;
+    }
+  }
+
   const normalized: WebsiteLead = {
     name: payload.name.trim(),
     email: normalizeString(payload.email),
@@ -26,8 +35,13 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     utm_adgroup: normalizeString(payload.utm_adgroup),
     utm_ads: normalizeString(payload.utm_ads),
     website_url: normalizeString(payload.website_url),
+    otp: otpValue,
   };
 
   return WebsiteLeadRepository.create(normalized);
+}
+
+export async function verifyWebsiteLeadOtp(id: number, otp: string): Promise<boolean> {
+  return WebsiteLeadRepository.verifyOtp(id, otp);
 }
 

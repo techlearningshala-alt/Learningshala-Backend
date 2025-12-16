@@ -14,6 +14,7 @@ export interface WebsiteLead {
   utm_adgroup?: string | null;
   utm_ads?: string | null;
   website_url?: string | null;
+  otp?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }

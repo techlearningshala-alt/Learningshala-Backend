@@ -8,9 +8,9 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url
+        website_url, otp
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const params = [
@@ -28,6 +28,7 @@ export const WebsiteLeadRepository = {
       payload.utm_adgroup ?? null,
       payload.utm_ads ?? null,
       payload.website_url ?? null,
+      payload.otp ?? "123456",
     ];
 
     const [result]: any = await pool.query(sql, params);
@@ -36,6 +37,12 @@ export const WebsiteLeadRepository = {
       id: result.insertId,
       ...payload,
     };
+  },
+
+  async verifyOtp(id: number, otp: string): Promise<boolean> {
+    const sql = `SELECT id FROM website_leads WHERE id = ? AND otp = ?`;
+    const [rows]: any = await pool.query(sql, [id, otp.trim()]);
+    return rows.length > 0;
   },
 };
 

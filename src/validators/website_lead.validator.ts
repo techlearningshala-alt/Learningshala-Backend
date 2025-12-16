@@ -37,6 +37,13 @@ const optionalUrl = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+const optionalOtp = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, "OTP must be exactly 6 digits")
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 export const createWebsiteLeadSchema = z
   .object({
     name: requiredName,
@@ -53,6 +60,7 @@ export const createWebsiteLeadSchema = z
     utm_adgroup: optionalTrimmed("UTM adgroup", 255),
     utm_ads: optionalTrimmed("UTM ads", 255),
     website_url: optionalUrl,
+    otp: optionalOtp,
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {
@@ -69,3 +77,6 @@ export const createWebsiteLeadSchema = z
     }
   });
 
+export const verifyOtpSchema = z.object({
+  otp: z.string().trim().regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
+});
