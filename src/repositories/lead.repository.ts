@@ -3,6 +3,8 @@ import { CreateLeadDto, Lead } from "../models/lead.model";
 
 export interface ListLeadOptions {
   search?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 class LeadRepository {
@@ -17,6 +19,16 @@ class LeadRepository {
         "(name LIKE ? OR email LIKE ? OR phone LIKE ? OR course LIKE ? OR specialisation LIKE ?)"
       );
       params.push(like, like, like, like, like);
+    }
+
+    if (options.fromDate) {
+      where.push("DATE(created_on) >= ?");
+      params.push(options.fromDate);
+    }
+
+    if (options.toDate) {
+      where.push("DATE(created_on) <= ?");
+      params.push(options.toDate);
     }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";

@@ -17,8 +17,12 @@ export const getLeads = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const search =
       typeof req.query.search === "string" ? req.query.search.trim() : undefined;
+    const fromDate =
+      typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
+    const toDate =
+      typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
 
-    const data = await listLeads(page, limit, { search });
+    const data = await listLeads(page, limit, { search, fromDate, toDate });
     return successResponse(res, data, "Leads fetched successfully");
   } catch (error: any) {
     console.error("❌ Error fetching leads:", error);
