@@ -70,6 +70,6 @@ router.use("/cms/cities", cityRoutes);
 router.use("/cms/search", searchRoutes);
 
 // ✅ Public website leads capture
-router.use("/website/leads", websiteLeadRoutes);
+router.use("/cms/website/leads", websiteLeadRoutes);
 
 export default router;
