@@ -9,7 +9,7 @@ const router = Router();
 router.post("/", validate(createWebsiteLeadSchema), WebsiteLeadController.create);
 
 // Public endpoint to verify OTP by lead ID (unauthenticated)
-router.post("/:id/verify-otp", validate(verifyOtpSchema), WebsiteLeadController.verifyOtp);
+router.post("/cms/:id/verify-otp", validate(verifyOtpSchema), WebsiteLeadController.verifyOtp);
 
 export default router;
 
