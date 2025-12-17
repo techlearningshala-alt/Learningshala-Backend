@@ -121,178 +121,159 @@ export async function unifiedSearch(
       })
     ]);
 
-    // Combine all results with their type and score for sorting
-    const allResultsWithScore: Array<{ item: any; type: string; score: number }> = [];
+    // Combine all results into a single array
+    const allResults: any[] = [];
     
-    // Add universities with type, and extract their courses and specializations
+    // Add universities with type in _source, and extract their courses and specializations
     if (Array.isArray(universitiesResult)) {
       universitiesResult.forEach((item: any) => {
-        const universitySlug = item._source?.slug || item._source?.university_slug || null;
+        const universitySlug = item._source?.slug || item._source?.university_slug || '';
         
         // Add the university itself
-        allResultsWithScore.push({
-          item: {
-            ...item,
-            _source: {
-              ...item._source,
-              university_slug: universitySlug
-            }
+        allResults.push({
+          _index: item._index || 'universities',
+          _id: item._id,
+          _score: item._score || 0,
+          _source: {
+            name: item._source?.name || item._source?.university_name || '',
+            slug: universitySlug,
+            search_keywords: item._source?.search_keywords || '',
+            type: 'university',
+            status: item._source?.status || (item._source?.is_active ? 1 : 0),
+            university_slug: universitySlug,
+            course_slug: null
           },
-          type: 'university',
-          score: item._score || 0
+          highlight: item.highlight || {}
         });
         
         // Extract courses from university's _source.courses
         const courses = item._source?.courses || [];
         courses.forEach((course: any) => {
-          const courseSlug = course.slug || null;
-          if (courseSlug) { // Only add if course has a slug
-            allResultsWithScore.push({
-              item: {
-                _source: {
-                  id: course.id || null,
-                  name: course.name || '',
-                  slug: courseSlug,
-                  university_slug: universitySlug,
-                  university_course_slug: courseSlug
-                },
-                _score: item._score * 0.9 // Slightly lower score than university
-              },
+          allResults.push({
+            _index: 'university_courses',
+            _id: course.id?.toString() || `course_${course.id}`,
+            _score: (item._score || 0) * 0.9, // Slightly lower score than university
+            _source: {
+              name: course.name || '',
+              slug: course.slug || '',
+              search_keywords: '',
               type: 'university_course',
-              score: item._score * 0.9
+              status: 1,
+              university_slug: universitySlug,
+              course_slug: course.slug || null
+            },
+            highlight: {}
+          });
+          
+          // Extract specializations from each course
+          const specializations = course.specializations || [];
+          specializations.forEach((spec: any) => {
+            allResults.push({
+              _index: 'university_course_specializations',
+              _id: spec.id?.toString() || `spec_${spec.id}`,
+              _score: (item._score || 0) * 0.8, // Even lower score than course
+              _source: {
+                name: spec.name || '',
+                slug: spec.slug || '',
+                search_keywords: '',
+                type: 'university_course_specialization',
+                status: 1,
+                university_slug: universitySlug,
+                course_slug: course.slug || null
+              },
+              highlight: {}
             });
-            
-            // Extract specializations from each course
-            const specializations = course.specializations || [];
-            specializations.forEach((spec: any) => {
-              const specSlug = spec.slug || null;
-              if (specSlug) { // Only add if specialization has a slug
-                allResultsWithScore.push({
-                  item: {
-                    _source: {
-                      id: spec.id || null,
-                      name: spec.name || '',
-                      slug: specSlug,
-                      university_slug: universitySlug,
-                      university_course_slug: courseSlug,
-                      course_specialization_slug: specSlug
-                    },
-                    _score: item._score * 0.8 // Even lower score than course
-                  },
-                  type: 'university_course_specialization',
-                  score: item._score * 0.8
-                });
-              }
-            });
-          }
+          });
         });
       });
     }
     
-    // Add courses with type
+    // Add courses with type in _source
     if (Array.isArray(coursesResult)) {
       coursesResult.forEach((item: any) => {
-        allResultsWithScore.push({
-          item,
-          type: 'course',
-          score: item._score || 0
+        allResults.push({
+          _index: item._index || 'courses',
+          _id: item._id,
+          _score: item._score || 0,
+          _source: {
+            name: item._source?.name || '',
+            slug: item._source?.slug || '',
+            search_keywords: item._source?.search_keywords || '',
+            type: 'course',
+            status: item._source?.status || (item._source?.is_active ? 1 : 0),
+            university_slug: null,
+            course_slug: null
+          },
+          highlight: item.highlight || {}
         });
       });
     }
     
-    // Add university courses with type
+    // Add university courses with type in _source
     if (Array.isArray(universityCoursesResult)) {
       universityCoursesResult.forEach((item: any) => {
-        allResultsWithScore.push({
-          item,
-          type: 'university_course',
-          score: item._score || 0
+        allResults.push({
+          _index: item._index || 'university_courses',
+          _id: item._id,
+          _score: item._score || 0,
+          _source: {
+            name: item._source?.name || '',
+            slug: item._source?.slug || '',
+            search_keywords: item._source?.search_keywords || '',
+            type: 'university_course',
+            status: item._source?.status || (item._source?.is_active ? 1 : 0),
+            university_slug: item._source?.university_slug || null,
+            course_slug: item._source?.course_slug || null
+          },
+          highlight: item.highlight || {}
         });
       });
     }
     
-    // Add specializations with type
+    // Add specializations with type in _source
     if (Array.isArray(specializationsResult)) {
       specializationsResult.forEach((item: any) => {
-        allResultsWithScore.push({
-          item,
-          type: 'specialization',
-          score: item._score || 0
+        allResults.push({
+          _index: item._index || 'specializations',
+          _id: item._id,
+          _score: item._score || 0,
+          _source: {
+            name: item._source?.name || '',
+            slug: item._source?.slug || '',
+            search_keywords: item._source?.search_keywords || '',
+            type: 'specialization',
+            status: item._source?.status || (item._source?.is_active ? 1 : 0),
+            university_slug: null,
+            course_slug: null
+          },
+          highlight: item.highlight || {}
         });
       });
     }
     
-    // Add university course specializations with type
+    // Add university course specializations with type in _source
     if (Array.isArray(universityCourseSpecializationsResult)) {
       universityCourseSpecializationsResult.forEach((item: any) => {
-        allResultsWithScore.push({
-          item,
-          type: 'university_course_specialization',
-          score: item._score || 0
+        allResults.push({
+          _index: item._index || 'university_course_specializations',
+          _id: item._id,
+          _score: item._score || 0,
+          _source: {
+            name: item._source?.name || '',
+            slug: item._source?.slug || '',
+            search_keywords: item._source?.search_keywords || '',
+            type: 'university_course_specialization',
+            status: item._source?.status || (item._source?.is_active ? 1 : 0),
+            university_slug: item._source?.university_slug || null,
+            course_slug: item._source?.course_slug || null
+          },
+          highlight: item.highlight || {}
         });
       });
     }
 
-    // Normalize query for exact match comparison (lowercase, trim)
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    // Helper function to check if name exactly matches query (case-insensitive)
-    const isExactMatch = (name: string): boolean => {
-      if (!name) return false;
-      const normalizedName = name.toLowerCase().trim();
-      return normalizedName === normalizedQuery;
-    };
-
-    // Sort: exact matches first, then by score
-    allResultsWithScore.sort((a, b) => {
-      const nameA = a.item._source?.name || a.item._source?.university_name || '';
-      const nameB = b.item._source?.name || b.item._source?.university_name || '';
-      
-      const exactMatchA = isExactMatch(nameA);
-      const exactMatchB = isExactMatch(nameB);
-      
-      // If one is exact match and other is not, exact match comes first
-      if (exactMatchA && !exactMatchB) return -1;
-      if (!exactMatchA && exactMatchB) return 1;
-      
-      // If both are exact matches or both are partial, sort by score
-      return b.score - a.score;
-    });
-
-    // Transform to final format with id, name, slug, type, and hierarchy slugs
-    const allResults = allResultsWithScore.map(({ item, type }) => {
-      const baseSlug = item._source?.slug || item._source?.university_slug || null;
-      
-      // Set hierarchy slugs based on type
-      // For results extracted from universities, these are already set in _source
-      // For direct search results, they may be null
-      let universitySlug: string | null = null;
-      let universityCourseSlug: string | null = null;
-      let courseSpecializationSlug: string | null = null;
-      
-      if (type === 'university') {
-        universitySlug = baseSlug;
-      } else if (type === 'university_course') {
-        // Check if university_slug was set when extracting from university, otherwise null
-        universitySlug = item._source?.university_slug || null;
-        universityCourseSlug = baseSlug; // The course slug itself
-      } else if (type === 'university_course_specialization') {
-        // Check if these were set when extracting from university course
-        universitySlug = item._source?.university_slug || null;
-        universityCourseSlug = item._source?.university_course_slug || null; // Parent course slug
-        courseSpecializationSlug = baseSlug; // The specialization slug itself
-      }
-      
-      return {
-        id: item._source?.id || null,
-        name: item._source?.name || item._source?.university_name || '',
-        slug: baseSlug,
-        type: type,
-        university_slug: universitySlug,
-        university_course_slug: universityCourseSlug,
-        course_specialization_slug: courseSpecializationSlug
-      };
-    });
+    // Sort by score (highest first)
+    allResults.sort((a, b) => (b._score || 0) - (a._score || 0));
 
     // Calculate total results
     const total = allResults.length;
