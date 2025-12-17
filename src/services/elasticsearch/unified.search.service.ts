@@ -121,15 +121,49 @@ export async function unifiedSearch(
       })
     ]);
 
-    // Combine all results into a single array with type identifier
-    const allResults: any[] = [];
+    // Combine all results with their type and score for sorting
+    const allResultsWithScore: Array<{ item: any; type: string; score: number }> = [];
     
-    // Add universities with type
+    // Add universities with type, and extract their courses and specializations
     if (Array.isArray(universitiesResult)) {
       universitiesResult.forEach((item: any) => {
-        allResults.push({
-          ...item,
-          type: 'university'
+        // Add the university itself
+        allResultsWithScore.push({
+          item,
+          type: 'university',
+          score: item._score || 0
+        });
+        
+        // Extract courses from university's _source.courses
+        const courses = item._source?.courses || [];
+        courses.forEach((course: any) => {
+          allResultsWithScore.push({
+            item: {
+              _source: {
+                name: course.name,
+                slug: course.slug
+              },
+              _score: item._score * 0.9 // Slightly lower score than university
+            },
+            type: 'university_course',
+            score: item._score * 0.9
+          });
+          
+          // Extract specializations from each course
+          const specializations = course.specializations || [];
+          specializations.forEach((spec: any) => {
+            allResultsWithScore.push({
+              item: {
+                _source: {
+                  name: spec.name,
+                  slug: spec.slug
+                },
+                _score: item._score * 0.8 // Even lower score than course
+              },
+              type: 'university_course_specialization',
+              score: item._score * 0.8
+            });
+          });
         });
       });
     }
@@ -137,9 +171,10 @@ export async function unifiedSearch(
     // Add courses with type
     if (Array.isArray(coursesResult)) {
       coursesResult.forEach((item: any) => {
-        allResults.push({
-          ...item,
-          type: 'course'
+        allResultsWithScore.push({
+          item,
+          type: 'course',
+          score: item._score || 0
         });
       });
     }
@@ -147,9 +182,10 @@ export async function unifiedSearch(
     // Add university courses with type
     if (Array.isArray(universityCoursesResult)) {
       universityCoursesResult.forEach((item: any) => {
-        allResults.push({
-          ...item,
-          type: 'university_course'
+        allResultsWithScore.push({
+          item,
+          type: 'university_course',
+          score: item._score || 0
         });
       });
     }
@@ -157,9 +193,10 @@ export async function unifiedSearch(
     // Add specializations with type
     if (Array.isArray(specializationsResult)) {
       specializationsResult.forEach((item: any) => {
-        allResults.push({
-          ...item,
-          type: 'specialization'
+        allResultsWithScore.push({
+          item,
+          type: 'specialization',
+          score: item._score || 0
         });
       });
     }
@@ -167,19 +204,23 @@ export async function unifiedSearch(
     // Add university course specializations with type
     if (Array.isArray(universityCourseSpecializationsResult)) {
       universityCourseSpecializationsResult.forEach((item: any) => {
-        allResults.push({
-          ...item,
-          type: 'university_course_specialization'
+        allResultsWithScore.push({
+          item,
+          type: 'university_course_specialization',
+          score: item._score || 0
         });
       });
     }
 
-    // Sort by score (highest first) if scores are available
-    allResults.sort((a, b) => {
-      const scoreA = a._score || 0;
-      const scoreB = b._score || 0;
-      return scoreB - scoreA;
-    });
+    // Sort by score (highest first)
+    allResultsWithScore.sort((a, b) => b.score - a.score);
+
+    // Transform to final format with only name, slug, and type
+    const allResults = allResultsWithScore.map(({ item, type }) => ({
+      name: item._source?.name || item._source?.university_name || '',
+      slug: item._source?.slug || item._source?.university_slug || '',
+      type: type
+    }));
 
     // Calculate total results
     const total = allResults.length;
