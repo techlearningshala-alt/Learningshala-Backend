@@ -1,5 +1,5 @@
 import { WebsiteLead } from "../models/website_lead.model";
-import { WebsiteLeadRepository } from "../repositories/website_lead.repository";
+import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/website_lead.repository";
 
 const normalizeString = (val?: string | null) =>
   typeof val === "string" ? val.trim() || null : val ?? null;
@@ -39,6 +39,14 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   };
 
   return WebsiteLeadRepository.create(normalized);
+}
+
+export async function listWebsiteLeads(
+  page = 1,
+  limit = 10,
+  options: ListWebsiteLeadOptions = {}
+) {
+  return WebsiteLeadRepository.findAll(page, limit, options);
 }
 
 export async function verifyWebsiteLeadOtp(id: number, otp: string): Promise<boolean> {

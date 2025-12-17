@@ -62,7 +62,15 @@ export const search = async (req: Request, res: Response) => {
 
     const result = await unifiedSearch(query, options);
 
-    return successResponse(res, result, "Search completed successfully");
+    // Return array directly in data field, with total and took at top level
+    return res.status(200).json({
+      statusCode: 200,
+      success: true,
+      message: "Search completed successfully",
+      data: result.data,
+      total: result.total,
+      took: result.took
+    });
   } catch (err: any) {
     console.error('❌ Unified search error:', err);
     return errorResponse(res, err.message || "Failed to perform search", 400);

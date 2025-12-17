@@ -32,11 +32,7 @@ export interface UnifiedSearchOptions {
 }
 
 export interface UnifiedSearchResult {
-  universities: any[];
-  courses: any[];
-  university_courses: any[];
-  specializations: any[];
-  university_course_specializations: any[];
+  data: any[];
   total: number;
   took: number;
 }
@@ -125,20 +121,71 @@ export async function unifiedSearch(
       })
     ]);
 
+    // Combine all results into a single array with type identifier
+    const allResults: any[] = [];
+    
+    // Add universities with type
+    if (Array.isArray(universitiesResult)) {
+      universitiesResult.forEach((item: any) => {
+        allResults.push({
+          ...item,
+          type: 'university'
+        });
+      });
+    }
+    
+    // Add courses with type
+    if (Array.isArray(coursesResult)) {
+      coursesResult.forEach((item: any) => {
+        allResults.push({
+          ...item,
+          type: 'course'
+        });
+      });
+    }
+    
+    // Add university courses with type
+    if (Array.isArray(universityCoursesResult)) {
+      universityCoursesResult.forEach((item: any) => {
+        allResults.push({
+          ...item,
+          type: 'university_course'
+        });
+      });
+    }
+    
+    // Add specializations with type
+    if (Array.isArray(specializationsResult)) {
+      specializationsResult.forEach((item: any) => {
+        allResults.push({
+          ...item,
+          type: 'specialization'
+        });
+      });
+    }
+    
+    // Add university course specializations with type
+    if (Array.isArray(universityCourseSpecializationsResult)) {
+      universityCourseSpecializationsResult.forEach((item: any) => {
+        allResults.push({
+          ...item,
+          type: 'university_course_specialization'
+        });
+      });
+    }
+
+    // Sort by score (highest first) if scores are available
+    allResults.sort((a, b) => {
+      const scoreA = a._score || 0;
+      const scoreB = b._score || 0;
+      return scoreB - scoreA;
+    });
+
     // Calculate total results
-    const total = 
-      (Array.isArray(universitiesResult) ? universitiesResult.length : 0) +
-      (Array.isArray(coursesResult) ? coursesResult.length : 0) +
-      (Array.isArray(universityCoursesResult) ? universityCoursesResult.length : 0) +
-      (Array.isArray(specializationsResult) ? specializationsResult.length : 0) +
-      (Array.isArray(universityCourseSpecializationsResult) ? universityCourseSpecializationsResult.length : 0);
+    const total = allResults.length;
 
     return {
-      universities: Array.isArray(universitiesResult) ? universitiesResult : [],
-      courses: Array.isArray(coursesResult) ? coursesResult : [],
-      university_courses: Array.isArray(universityCoursesResult) ? universityCoursesResult : [],
-      specializations: Array.isArray(specializationsResult) ? specializationsResult : [],
-      university_course_specializations: Array.isArray(universityCourseSpecializationsResult) ? universityCourseSpecializationsResult : [],
+      data: allResults,
       total,
       took: 0 // Could calculate actual time if needed
     };
