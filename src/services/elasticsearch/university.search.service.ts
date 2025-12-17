@@ -127,8 +127,33 @@ export async function searchUniversities(query: string, options: {
     const mustQueries: any[] = [];
     const shouldQueries: any[] = [];
 
-    // Text search query
+    // Text search query with partial word matching
     if (query && query.trim()) {
+      const trimmedQuery = query.trim().toLowerCase();
+      
+      // For short queries (1-2 characters), prioritize prefix matching
+      if (trimmedQuery.length <= 2) {
+        shouldQueries.push(
+          {
+            prefix: {
+              'university_name.keyword': {
+                value: trimmedQuery,
+                boost: 5.0 // Highest priority for prefix matches
+              }
+            }
+          },
+          {
+            match_phrase_prefix: {
+              university_name: {
+                query: trimmedQuery,
+                boost: 4.0
+              }
+            }
+          }
+        );
+      }
+      
+      // Standard match queries (works for full words and partial)
       shouldQueries.push(
         {
           match: {
@@ -136,6 +161,22 @@ export async function searchUniversities(query: string, options: {
               query: query,
               fuzziness: 'AUTO', // Allows typos (auto determines fuzziness)
               boost: 3 // Higher priority for name matches
+            }
+          }
+        },
+        {
+          match_phrase_prefix: {
+            university_name: {
+              query: query,
+              boost: 2.5 // Partial word matching
+            }
+          }
+        },
+        {
+          wildcard: {
+            'university_name.keyword': {
+              value: `*${trimmedQuery}*`,
+              boost: 2.0 // Contains matching
             }
           }
         },
