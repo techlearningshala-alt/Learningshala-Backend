@@ -5,7 +5,9 @@ import { createWebsiteLead, verifyWebsiteLeadOtp } from "../services/website_lea
 export const create = async (req: Request, res: Response) => {
   try {
     const lead = await createWebsiteLead(req.body);
-    return successResponse(res, lead, "Website lead created successfully", 201);
+    // Exclude OTP from response for security
+    const { otp, ...leadWithoutOtp } = lead;
+    return successResponse(res, leadWithoutOtp, "Website lead created successfully", 201);
   } catch (error: any) {
     console.error("❌ Error creating website lead:", error);
     return errorResponse(
