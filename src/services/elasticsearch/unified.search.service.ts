@@ -140,6 +140,7 @@ export async function unifiedSearch(
           allResultsWithScore.push({
             item: {
               _source: {
+                id: course.id || null,
                 name: course.name,
                 slug: course.slug
               },
@@ -155,6 +156,7 @@ export async function unifiedSearch(
             allResultsWithScore.push({
               item: {
                 _source: {
+                  id: spec.id || null,
                   name: spec.name,
                   slug: spec.slug
                 },
@@ -212,11 +214,35 @@ export async function unifiedSearch(
       });
     }
 
-    // Sort by score (highest first)
-    allResultsWithScore.sort((a, b) => b.score - a.score);
+    // Normalize query for exact match comparison (lowercase, trim)
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Helper function to check if name exactly matches query (case-insensitive)
+    const isExactMatch = (name: string): boolean => {
+      if (!name) return false;
+      const normalizedName = name.toLowerCase().trim();
+      return normalizedName === normalizedQuery;
+    };
 
-    // Transform to final format with only name, slug, and type
+    // Sort: exact matches first, then by score
+    allResultsWithScore.sort((a, b) => {
+      const nameA = a.item._source?.name || a.item._source?.university_name || '';
+      const nameB = b.item._source?.name || b.item._source?.university_name || '';
+      
+      const exactMatchA = isExactMatch(nameA);
+      const exactMatchB = isExactMatch(nameB);
+      
+      // If one is exact match and other is not, exact match comes first
+      if (exactMatchA && !exactMatchB) return -1;
+      if (!exactMatchA && exactMatchB) return 1;
+      
+      // If both are exact matches or both are partial, sort by score
+      return b.score - a.score;
+    });
+
+    // Transform to final format with id, name, slug, and type
     const allResults = allResultsWithScore.map(({ item, type }) => ({
+      id: item._source?.id || null,
       name: item._source?.name || item._source?.university_name || '',
       slug: item._source?.slug || item._source?.university_slug || '',
       type: type
