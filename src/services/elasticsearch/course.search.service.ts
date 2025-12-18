@@ -161,11 +161,10 @@ export async function searchCourses(query: string, options: {
           }
         },
         {
-          // Exact phrase match for better precision
           match_phrase: {
             name: {
               query: query,
-              boost: 15
+              boost: 50 // Significantly increased boost for main courses
             }
           }
         },

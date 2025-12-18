@@ -121,15 +121,39 @@ export async function unifiedSearch(
       })
     ]);
 
-    // Combine all results into a single array
-    const allResults: any[] = [];
+    // --- New Simplified Logic ---
     
-    // Add results from all indices
-    if (Array.isArray(universitiesResult)) allResults.push(...universitiesResult);
-    if (Array.isArray(coursesResult)) allResults.push(...coursesResult);
-    if (Array.isArray(universityCoursesResult)) allResults.push(...universityCoursesResult);
-    if (Array.isArray(specializationsResult)) allResults.push(...specializationsResult);
-    if (Array.isArray(universityCourseSpecializationsResult)) allResults.push(...universityCourseSpecializationsResult);
+    // 1. Keep all results from main indices (universities, courses, specializations)
+    // these are the "source of truth" general entities.
+    const universities = Array.isArray(universitiesResult) ? universitiesResult : [];
+    const generalCourses = Array.isArray(coursesResult) ? coursesResult : [];
+    const generalSpecializations = Array.isArray(specializationsResult) ? specializationsResult : [];
+
+    // 2. Filter University Courses (Child records)
+    // ONLY show these if the search matched the UNIVERSITY name.
+    // If it only matched the course name, it's a duplicate of the general course.
+    const filteredUniversityCourses = (Array.isArray(universityCoursesResult) ? universityCoursesResult : [])
+      .filter(uc => {
+        // If "university_name" is highlighted, it means the user is searching for a university
+        return uc.highlight && uc.highlight.university_name;
+      });
+
+    // 3. Filter University Course Specializations (Grandchild records)
+    // ONLY show these if the search matched the UNIVERSITY name.
+    const filteredUniversityCourseSpecializations = (Array.isArray(universityCourseSpecializationsResult) ? universityCourseSpecializationsResult : [])
+      .filter(ucs => {
+        // Only keep if the search term matched the university context
+        return ucs.highlight && ucs.highlight.university_name;
+      });
+
+    // Combine results
+    const allResults: any[] = [
+      ...universities,
+      ...generalCourses,
+      ...filteredUniversityCourses,
+      ...generalSpecializations,
+      ...filteredUniversityCourseSpecializations
+    ];
 
     // Sort by score (highest first)
     allResults.sort((a, b) => (b._score || 0) - (a._score || 0));

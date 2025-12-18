@@ -201,7 +201,7 @@ export async function searchUniversityCourseSpecializations(query: string, optio
             university_name: {
               query: query,
               fuzziness: 'AUTO',
-              boost: 0.3 // Low boost
+              boost: 2.0 // Increased boost to ensure university searches pull in specializations
             }
           }
         },
@@ -256,7 +256,10 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           'full_fees',
           'sem_fees',
           'university_slug',
-          'course_slug'
+          'course_slug',
+          'university_name',
+          'course_name',
+          'label'
         ],
         highlight: {
           fields: {
@@ -265,6 +268,14 @@ export async function searchUniversityCourseSpecializations(query: string, optio
               number_of_fragments: 1
             },
             label: {
+              fragment_size: 150,
+              number_of_fragments: 1
+            },
+            university_name: {
+              fragment_size: 150,
+              number_of_fragments: 1
+            },
+            course_name: {
               fragment_size: 150,
               number_of_fragments: 1
             }
@@ -293,7 +304,10 @@ export async function searchUniversityCourseSpecializations(query: string, optio
         type: 'specialization',
         status: hit._source.is_active ? 1 : 0,
         university_slug: hit._source.university_slug || null,
-        course_slug: hit._source.course_slug || null
+        course_slug: hit._source.course_slug || null,
+        university_name: hit._source.university_name || null,
+        course_name: hit._source.course_name || null,
+        label: hit._source.label || null
       },
       highlight: hit.highlight || {}
     }));

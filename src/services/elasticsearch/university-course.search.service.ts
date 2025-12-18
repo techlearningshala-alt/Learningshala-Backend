@@ -268,7 +268,9 @@ export async function searchUniversityCourses(query: string, options: {
           'course_thumbnail',
           'duration',
           'is_active',
-          'university_slug'
+          'university_slug',
+          'university_name',
+          'h1Tag'
         ],
         highlight: {
           fields: {
@@ -281,6 +283,10 @@ export async function searchUniversityCourses(query: string, options: {
               number_of_fragments: 1
             },
             author_name: {
+              fragment_size: 150,
+              number_of_fragments: 1
+            },
+            university_name: {
               fragment_size: 150,
               number_of_fragments: 1
             }
@@ -310,7 +316,9 @@ export async function searchUniversityCourses(query: string, options: {
         type: 'course',
         status: hit._source.is_active ? 1 : 0,
         university_slug: hit._source.university_slug || null,
-        course_slug: hit._source.slug || null
+        course_slug: hit._source.slug || null,
+        university_name: hit._source.university_name || null,
+        h1Tag: hit._source.h1Tag || null
       },
       highlight: hit.highlight || {}
     }));
