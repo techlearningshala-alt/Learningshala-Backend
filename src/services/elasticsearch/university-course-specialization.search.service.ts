@@ -39,7 +39,21 @@ export async function createUniversityCourseSpecializationIndex() {
           full_fees: { type: 'float' },
           sem_fees: { type: 'float' },
           duration: { type: 'text' },
+          university_name: { 
+            type: 'text',
+            fields: {
+              keyword: { type: 'keyword' }
+            }
+          },
+          course_name: { 
+            type: 'text',
+            fields: {
+              keyword: { type: 'keyword' }
+            }
+          },
           is_page_created: { type: 'boolean' },
+          university_slug: { type: 'keyword' },
+          course_slug: { type: 'keyword' },
           created_at: { type: 'date' },
           updated_at: { type: 'date' }
         }
@@ -76,7 +90,11 @@ export async function indexUniversityCourseSpecialization(specialization: any) {
         full_fees: specialization.full_fees || null,
         sem_fees: specialization.sem_fees || null,
         duration: specialization.duration || null,
+        university_name: specialization.university_name || null,
+        course_name: specialization.course_name || null,
         is_page_created: Boolean(specialization.is_page_created),
+        university_slug: specialization.university_slug || null,
+        course_slug: specialization.course_slug || null,
         created_at: specialization.created_at,
         updated_at: specialization.updated_at || new Date()
       }
@@ -134,14 +152,22 @@ export async function searchUniversityCourseSpecializations(query: string, optio
         );
       }
       
-      // Standard match queries (works for full words and partial)
+      // Standard match queries
       shouldQueries.push(
         {
           match: {
             name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 3
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 10
+            }
+          }
+        },
+        {
+          match_phrase: {
+            name: {
+              query: query,
+              boost: 15
             }
           }
         },
@@ -167,6 +193,24 @@ export async function searchUniversityCourseSpecializations(query: string, optio
               query: query,
               fuzziness: 'AUTO',
               boost: 2
+            }
+          }
+        },
+        {
+          match: {
+            university_name: {
+              query: query,
+              fuzziness: 'AUTO',
+              boost: 0.3 // Low boost
+            }
+          }
+        },
+        {
+          match: {
+            course_name: {
+              query: query,
+              fuzziness: 'AUTO',
+              boost: 0.5 // Lower boost than specialization name
             }
           }
         }
@@ -210,7 +254,9 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           'image',
           'duration',
           'full_fees',
-          'sem_fees'
+          'sem_fees',
+          'university_slug',
+          'course_slug'
         ],
         highlight: {
           fields: {
@@ -225,11 +271,7 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           },
           pre_tags: ['<mark>'],
           post_tags: ['</mark>']
-        },
-        sort: [
-          { created_at: { order: 'desc' } },
-          { id: { order: 'desc' } }
-        ]
+        }
       }
     });
 
@@ -247,7 +289,11 @@ export async function searchUniversityCourseSpecializations(query: string, optio
         image: hit._source.image || null,
         duration: hit._source.duration || null,
         full_fees: hit._source.full_fees || null,
-        sem_fees: hit._source.sem_fees || null
+        sem_fees: hit._source.sem_fees || null,
+        type: 'specialization',
+        status: hit._source.is_active ? 1 : 0,
+        university_slug: hit._source.university_slug || null,
+        course_slug: hit._source.course_slug || null
       },
       highlight: hit.highlight || {}
     }));

@@ -273,7 +273,10 @@ export async function searchSpecializations(query: string, options: {
         slug: hit._source.slug,
         thumbnail: hit._source.thumbnail || null,
         course_duration: hit._source.course_duration || null,
-        status: hit._source.is_active ? 1 : 0
+        type: 'specialization',
+        status: hit._source.is_active ? 1 : 0,
+        university_slug: null,
+        course_slug: null
       },
       highlight: hit.highlight || {}
     }));

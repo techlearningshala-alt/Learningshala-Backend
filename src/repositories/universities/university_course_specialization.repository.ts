@@ -100,7 +100,16 @@ export class UniversityCourseSpecializationRepository {
 
   async findById(id: number) {
     const [rows]: any = await pool.query(
-      `SELECT * FROM university_course_specialization WHERE id = ?`,
+      `SELECT ucs.*,
+              uc.name AS course_name,
+              u.university_name AS university_name,
+              uc.slug AS course_slug,
+              u.university_slug AS university_slug
+         FROM university_course_specialization ucs
+         INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+         INNER JOIN universities u ON ucs.university_id = u.id
+        WHERE ucs.id = ?
+        LIMIT 1`,
       [id]
     );
     return rows.length ? this.mapRowToModel(rows[0]) : null;

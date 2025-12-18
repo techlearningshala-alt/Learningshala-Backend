@@ -42,10 +42,17 @@ export async function createUniversityCourseIndex() {
           duration: { type: 'text' },
           emi_duration: { type: 'integer' },
           author_name: { type: 'text' },
+          university_name: { 
+            type: 'text',
+            fields: {
+              keyword: { type: 'keyword' }
+            }
+          },
           is_active: { type: 'boolean' },
           is_page_created: { type: 'boolean' },
           syllabus_file: { type: 'keyword' },
           brochure_file: { type: 'keyword' },
+          university_slug: { type: 'keyword' },
           created_at: { type: 'date' },
           updated_at: { type: 'date' }
         }
@@ -82,10 +89,12 @@ export async function indexUniversityCourse(course: any) {
         duration: course.duration || null,
         emi_duration: course.emi_duration || null,
         author_name: course.author_name || null,
+        university_name: course.university_name || null,
         is_active: Boolean(course.is_active),
         is_page_created: Boolean(course.is_page_created),
         syllabus_file: course.syllabus_file || null,
         brochure_file: course.brochure_file || null,
+        university_slug: course.university_slug || null,
         created_at: course.created_at,
         updated_at: course.updated_at || new Date()
       }
@@ -147,14 +156,22 @@ export async function searchUniversityCourses(query: string, options: {
         );
       }
       
-      // Standard match queries (works for full words and partial)
+      // Standard match queries
       shouldQueries.push(
         {
           match: {
             name: {
               query: query,
-              fuzziness: 'AUTO', // Allows typos (auto determines fuzziness)
-              boost: 3 // Higher priority for name matches
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 10
+            }
+          }
+        },
+        {
+          match_phrase: {
+            name: {
+              query: query,
+              boost: 15
             }
           }
         },
@@ -189,6 +206,15 @@ export async function searchUniversityCourses(query: string, options: {
               query: query,
               fuzziness: 'AUTO',
               boost: 1
+            }
+          }
+        },
+        {
+          match: {
+            university_name: {
+              query: query,
+              fuzziness: 'AUTO',
+              boost: 0.5 // Very low boost so it doesn't pull in unrelated courses too strongly
             }
           }
         }
@@ -241,7 +267,8 @@ export async function searchUniversityCourses(query: string, options: {
           'slug',
           'course_thumbnail',
           'duration',
-          'is_active'
+          'is_active',
+          'university_slug'
         ],
         highlight: {
           fields: {
@@ -260,11 +287,7 @@ export async function searchUniversityCourses(query: string, options: {
           },
           pre_tags: ['<mark>'],
           post_tags: ['</mark>']
-        },
-        sort: [
-          { created_at: { order: 'desc' } },
-          { id: { order: 'desc' } }
-        ]
+        }
       }
     });
 
@@ -284,7 +307,10 @@ export async function searchUniversityCourses(query: string, options: {
         slug: hit._source.slug,
         thumbnail: hit._source.course_thumbnail || null,
         duration: hit._source.duration || null,
-        status: hit._source.is_active ? 1 : 0
+        type: 'course',
+        status: hit._source.is_active ? 1 : 0,
+        university_slug: hit._source.university_slug || null,
+        course_slug: hit._source.slug || null
       },
       highlight: hit.highlight || {}
     }));

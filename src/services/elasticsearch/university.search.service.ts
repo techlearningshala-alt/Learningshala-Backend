@@ -2,8 +2,6 @@ import esClient from '../../config/elasticsearch';
 
 // Index name for universities
 const INDEX_NAME = 'universities';
-const UNIVERSITY_COURSES_INDEX = 'university_courses';
-const UNIVERSITY_COURSE_SPECIALIZATIONS_INDEX = 'university_course_specializations';
 
 /**
  * Elasticsearch Service for Universities
@@ -225,12 +223,7 @@ export async function searchUniversities(query: string, options: {
 
     if (shouldQueries.length > 0) {
       searchQuery.bool.should = shouldQueries;
-      searchQuery.bool.minimum_should_match = 1; // At least one should match
-    }
-
-    // If no query and no filters, return all
-    if (mustQueries.length === 0 && shouldQueries.length === 0) {
-      searchQuery.match_all = {};
+      searchQuery.bool.minimum_should_match = 1;
     }
 
     // Execute search with _source filtering and highlighting
@@ -265,127 +258,14 @@ export async function searchUniversities(query: string, options: {
           },
           pre_tags: ['<mark>'],
           post_tags: ['</mark>']
-        },
-        sort: [
-          { created_at: { order: 'desc' } },
-          { id: { order: 'desc' } }
-        ]
+        }
       }
     });
 
     // Extract results (v8 API - response structure is direct, not nested in body)
     const hits = response.hits.hits;
 
-    // Get university IDs to fetch courses
-    const universityIds = hits.map((hit: any) => hit._source.id);
-
-    // Fetch courses for all universities from Elasticsearch
-    let coursesByUniversity: Map<number, any[]> = new Map();
-    if (universityIds.length > 0) {
-      try {
-        const coursesResponse = await esClient.search({
-          index: UNIVERSITY_COURSES_INDEX,
-          body: {
-            query: {
-              bool: {
-                must: [
-                  {
-                    terms: {
-                      university_id: universityIds
-                    }
-                  },
-                  {
-                    term: {
-                      is_active: true
-                    }
-                  }
-                ]
-              }
-            },
-            size: 1000, // Get up to 1000 courses
-            _source: ['id', 'university_id', 'name', 'slug', 'course_thumbnail', 'duration']
-          }
-        });
-
-        const courseHits = coursesResponse.hits.hits;
-        
-        // Get course IDs to fetch specializations
-        const courseIds = courseHits.map((courseHit: any) => courseHit._source.id);
-        
-        // Fetch specializations for all courses from Elasticsearch
-        let specializationsByCourse: Map<number, any[]> = new Map();
-        if (courseIds.length > 0) {
-          try {
-            const specializationsResponse = await esClient.search({
-              index: UNIVERSITY_COURSE_SPECIALIZATIONS_INDEX,
-              body: {
-                query: {
-                  bool: {
-                    must: [
-                      {
-                        terms: {
-                          university_course_id: courseIds
-                        }
-                      }
-                    ]
-                  }
-                },
-                size: 2000, // Get up to 2000 specializations
-                _source: ['id', 'university_course_id', 'name', 'slug', 'image', 'duration', 'full_fees', 'sem_fees']
-              }
-            });
-
-            const specializationHits = specializationsResponse.hits.hits;
-            
-            // Group specializations by university_course_id
-            specializationHits.forEach((specHit: any) => {
-              const courseId = specHit._source.university_course_id;
-              if (courseId) {
-                if (!specializationsByCourse.has(courseId)) {
-                  specializationsByCourse.set(courseId, []);
-                }
-                specializationsByCourse.get(courseId)!.push({
-                  id: specHit._source.id,
-                  name: specHit._source.name,
-                  slug: specHit._source.slug,
-                  image: specHit._source.image || null,
-                  duration: specHit._source.duration || null,
-                  full_fees: specHit._source.full_fees || null,
-                  sem_fees: specHit._source.sem_fees || null
-                });
-              }
-            });
-          } catch (specializationsError) {
-            console.error('⚠️ Error fetching specializations for courses (non-blocking):', specializationsError);
-            // Continue without specializations if there's an error
-          }
-        }
-        
-        // Group courses by university_id and attach specializations
-        courseHits.forEach((courseHit: any) => {
-          const universityId = courseHit._source.university_id;
-          if (universityId) {
-            if (!coursesByUniversity.has(universityId)) {
-              coursesByUniversity.set(universityId, []);
-            }
-            const courseId = courseHit._source.id;
-            coursesByUniversity.get(universityId)!.push({
-              id: courseId,
-              name: courseHit._source.name,
-              slug: courseHit._source.slug,
-              thumbnail: courseHit._source.course_thumbnail || null,
-              duration: courseHit._source.duration || null,
-              specializations: specializationsByCourse.get(courseId) || []
-            });
-          }
-        });
-      } catch (coursesError) {
-        console.error('⚠️ Error fetching courses for universities (non-blocking):', coursesError);
-        // Continue without courses if there's an error
-      }
-    }
-
-    // Return raw Elasticsearch format - array of hits with _index, _id, _score, _source, highlight, courses
+    // Return raw Elasticsearch format - array of hits with _index, _id, _score, _source, highlight
     // Map field names to match standard format (name, slug, logo, location, status)
     return hits.map((hit: any) => ({
       _index: hit._index,
@@ -397,8 +277,10 @@ export async function searchUniversities(query: string, options: {
         slug: hit._source.university_slug,
         logo: hit._source.university_logo || null,
         location: hit._source.university_location || null,
+        type: 'university',
         status: hit._source.is_active ? 1 : 0,
-        courses: coursesByUniversity.get(hit._source.id) || []
+        university_slug: hit._source.university_slug,
+        course_slug: null
       },
       highlight: hit.highlight || {}
     }));

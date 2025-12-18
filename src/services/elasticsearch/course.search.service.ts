@@ -149,14 +149,23 @@ export async function searchCourses(query: string, options: {
         );
       }
       
-      // Standard match queries (works for full words and partial)
+      // Standard match queries
       shouldQueries.push(
         {
           match: {
             name: {
               query: query,
-              fuzziness: 'AUTO', // Allows typos (auto determines fuzziness)
-              boost: 3 // Higher priority for name matches
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO', // No fuzziness for short words like BBA/MBA
+              boost: 10 // High priority for name matches
+            }
+          }
+        },
+        {
+          // Exact phrase match for better precision
+          match_phrase: {
+            name: {
+              query: query,
+              boost: 15
             }
           }
         },
@@ -221,12 +230,7 @@ export async function searchCourses(query: string, options: {
 
     if (shouldQueries.length > 0) {
       searchQuery.bool.should = shouldQueries;
-      searchQuery.bool.minimum_should_match = 1; // At least one should match
-    }
-
-    // If no query and no filters, return all
-    if (mustQueries.length === 0 && shouldQueries.length === 0) {
-      searchQuery.match_all = {};
+      searchQuery.bool.minimum_should_match = 1;
     }
 
     // Execute search with _source filtering and highlighting
@@ -263,11 +267,7 @@ export async function searchCourses(query: string, options: {
           },
           pre_tags: ['<mark>'],
           post_tags: ['</mark>']
-        },
-        sort: [
-          { created_at: { order: 'desc' } },
-          { id: { order: 'desc' } }
-        ]
+        }
       }
     });
 
@@ -287,8 +287,11 @@ export async function searchCourses(query: string, options: {
         thumbnail: hit._source.thumbnail || null,
         description: hit._source.description || null,
         course_duration: hit._source.course_duration || null,
+        type: 'course',
         status: hit._source.is_active ? 1 : 0,
-        domain_id: hit._source.domain_id || null
+        domain_id: hit._source.domain_id || null,
+        university_slug: null,
+        course_slug: null
       },
       highlight: hit.highlight || {}
     }));
