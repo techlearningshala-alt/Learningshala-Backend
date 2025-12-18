@@ -174,23 +174,32 @@ export async function searchUniversityCourses(query: string, options: {
               boost: 15
             }
           }
-        },
-        {
-          match_phrase_prefix: {
-            name: {
-              query: query,
-              boost: 2.5 // Partial word matching
+        }
+      );
+
+      // Only add partial matching for longer queries
+      if (trimmedQuery.length > 2) {
+        shouldQueries.push(
+          {
+            match_phrase_prefix: {
+              name: {
+                query: query,
+                boost: 2.5
+              }
+            }
+          },
+          {
+            wildcard: {
+              'name.keyword': {
+                value: `*${trimmedQuery}*`,
+                boost: 0.5
+              }
             }
           }
-        },
-        {
-          wildcard: {
-            'name.keyword': {
-              value: `*${trimmedQuery}*`,
-              boost: 2.0 // Contains matching
-            }
-          }
-        },
+        );
+      }
+      
+      shouldQueries.push(
         {
           match: {
             h1Tag: {

@@ -157,27 +157,44 @@ export async function searchUniversities(query: string, options: {
           match: {
             university_name: {
               query: query,
-              fuzziness: 'AUTO', // Allows typos (auto determines fuzziness)
-              boost: 3 // Higher priority for name matches
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 5
             }
           }
         },
         {
-          match_phrase_prefix: {
+          match_phrase: {
             university_name: {
               query: query,
-              boost: 2.5 // Partial word matching
+              boost: 10
             }
           }
-        },
-        {
-          wildcard: {
-            'university_name.keyword': {
-              value: `*${trimmedQuery}*`,
-              boost: 2.0 // Contains matching
+        }
+      );
+
+      // Only add partial matching for longer queries to avoid noise for short words like "MBA"
+      if (trimmedQuery.length > 2) {
+        shouldQueries.push(
+          {
+            match_phrase_prefix: {
+              university_name: {
+                query: query,
+                boost: 1.5
+              }
+            }
+          },
+          {
+            wildcard: {
+              'university_name.keyword': {
+                value: `*${trimmedQuery}*`,
+                boost: 0.5
+              }
             }
           }
-        },
+        );
+      }
+      
+      shouldQueries.push(
         {
           match: {
             university_location: {

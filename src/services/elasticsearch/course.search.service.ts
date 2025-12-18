@@ -156,7 +156,7 @@ export async function searchCourses(query: string, options: {
             name: {
               query: query,
               fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO', // No fuzziness for short words like BBA/MBA
-              boost: 10 // High priority for name matches
+              boost: 20 // High priority for name matches
             }
           }
         },
@@ -164,26 +164,35 @@ export async function searchCourses(query: string, options: {
           match_phrase: {
             name: {
               query: query,
-              boost: 50 // Significantly increased boost for main courses
+              boost: 100 // VERY high priority for main course name match
             }
           }
-        },
-        {
-          match_phrase_prefix: {
-            name: {
-              query: query,
-              boost: 2.5 // Partial word matching
+        }
+      );
+
+      // Only add partial matching for longer queries to avoid noise
+      if (trimmedQuery.length > 2) {
+        shouldQueries.push(
+          {
+            match_phrase_prefix: {
+              name: {
+                query: query,
+                boost: 2.5 // Partial word matching
+              }
+            }
+          },
+          {
+            wildcard: {
+              'name.keyword': {
+                value: `*${trimmedQuery}*`,
+                boost: 0.5 // Lowered boost for contains matching
+              }
             }
           }
-        },
-        {
-          wildcard: {
-            'name.keyword': {
-              value: `*${trimmedQuery}*`,
-              boost: 2.0 // Contains matching
-            }
-          }
-        },
+        );
+      }
+      
+      shouldQueries.push(
         {
           match: {
             description: {
