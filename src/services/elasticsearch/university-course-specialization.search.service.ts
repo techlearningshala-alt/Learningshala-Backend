@@ -159,7 +159,7 @@ export async function searchUniversityCourseSpecializations(query: string, optio
             name: {
               query: query,
               fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
-              boost: 10
+              boost: 20
             }
           }
         },
@@ -167,41 +167,15 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           match_phrase: {
             name: {
               query: query,
-              boost: 15
+              boost: 100
             }
           }
-        }
-      );
-
-      // Only add partial matching for longer queries
-      if (trimmedQuery.length > 2) {
-        shouldQueries.push(
-          {
-            match_phrase_prefix: {
-              name: {
-                query: query,
-                boost: 2.5
-              }
-            }
-          },
-          {
-            wildcard: {
-              'name.keyword': {
-                value: `*${trimmedQuery}*`,
-                boost: 0.5
-              }
-            }
-          }
-        );
-      }
-      
-      shouldQueries.push(
+        },
         {
-          match: {
-            label: {
+          match_phrase_prefix: {
+            name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 2
+              boost: 5
             }
           }
         },
@@ -209,8 +183,8 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           match: {
             university_name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 2.0 // Increased boost to ensure university searches pull in specializations
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 2.0
             }
           }
         },
@@ -218,8 +192,8 @@ export async function searchUniversityCourseSpecializations(query: string, optio
           match: {
             course_name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 0.5 // Lower boost than specialization name
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 1.0
             }
           }
         }

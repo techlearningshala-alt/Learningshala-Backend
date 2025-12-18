@@ -150,7 +150,7 @@ export async function searchSpecializations(query: string, options: {
             name: {
               query: query,
               fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
-              boost: 10
+              boost: 20
             }
           }
         },
@@ -158,50 +158,15 @@ export async function searchSpecializations(query: string, options: {
           match_phrase: {
             name: {
               query: query,
-              boost: 20
-            }
-          }
-        }
-      );
-
-      // Only add partial matching for longer queries
-      if (trimmedQuery.length > 2) {
-        shouldQueries.push(
-          {
-            match_phrase_prefix: {
-              name: {
-                query: query,
-                boost: 2.5 // Partial word matching
-              }
-            }
-          },
-          {
-            wildcard: {
-              'name.keyword': {
-                value: `*${trimmedQuery}*`,
-                boost: 0.5 // Contains matching
-              }
-            }
-          }
-        );
-      }
-      
-      shouldQueries.push(
-        {
-          match: {
-            description: {
-              query: query,
-              fuzziness: 'AUTO',
-              boost: 2
+              boost: 100
             }
           }
         },
         {
-          match: {
-            author_name: {
+          match_phrase_prefix: {
+            name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 1
+              boost: 5
             }
           }
         }

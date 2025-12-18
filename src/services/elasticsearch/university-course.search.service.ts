@@ -163,7 +163,7 @@ export async function searchUniversityCourses(query: string, options: {
             name: {
               query: query,
               fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
-              boost: 10
+              boost: 20
             }
           }
         },
@@ -171,50 +171,15 @@ export async function searchUniversityCourses(query: string, options: {
           match_phrase: {
             name: {
               query: query,
-              boost: 15
-            }
-          }
-        }
-      );
-
-      // Only add partial matching for longer queries
-      if (trimmedQuery.length > 2) {
-        shouldQueries.push(
-          {
-            match_phrase_prefix: {
-              name: {
-                query: query,
-                boost: 2.5
-              }
-            }
-          },
-          {
-            wildcard: {
-              'name.keyword': {
-                value: `*${trimmedQuery}*`,
-                boost: 0.5
-              }
-            }
-          }
-        );
-      }
-      
-      shouldQueries.push(
-        {
-          match: {
-            h1Tag: {
-              query: query,
-              fuzziness: 'AUTO',
-              boost: 2
+              boost: 100
             }
           }
         },
         {
-          match: {
-            author_name: {
+          match_phrase_prefix: {
+            name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 1
+              boost: 5
             }
           }
         },
@@ -222,8 +187,8 @@ export async function searchUniversityCourses(query: string, options: {
           match: {
             university_name: {
               query: query,
-              fuzziness: 'AUTO',
-              boost: 0.5 // Very low boost so it doesn't pull in unrelated courses too strongly
+              fuzziness: trimmedQuery.length <= 3 ? 0 : 'AUTO',
+              boost: 1.0
             }
           }
         }
