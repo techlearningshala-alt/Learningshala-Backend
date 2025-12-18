@@ -25,6 +25,7 @@ import universityCourseSpecializationFaqRoutes from "./university_course_special
 import courseFaqRoutes from "./courses/course_faq.routes";
 import specializationFaqRoutes from "./courses/specialization_faq.routes";
 import courseImageRoutes from "./courses/course_image.routes";
+import specializationImageRoutes from "./courses/specialization_image.routes";
 import stateRoutes from "./location/state.routes";
 import cityRoutes from "./location/city.routes";
 import searchRoutes from "./search.routes";
@@ -59,6 +60,7 @@ router.use("/cms/domains", domainRoutes);
 router.use("/cms/courses", courseRoutes);
 router.use("/cms/courses/faqs", courseFaqRoutes);
 router.use("/cms/course-images", courseImageRoutes);
+router.use("/cms/specialization-images", specializationImageRoutes);
 router.use("/cms/specializations", specializationRoutes);
 router.use("/cms/specializations/faqs", specializationFaqRoutes);
 

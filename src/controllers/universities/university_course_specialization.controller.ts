@@ -153,15 +153,20 @@ export const create = async (req: Request, res: Response) => {
         }, {})
       : files;
 
+    // Handle course_thumbnail - can be a file upload or a string path (from dropdown)
     if (filesObj?.course_thumbnail?.[0]) {
+      // File upload (legacy support)
       const file = filesObj.course_thumbnail[0];
       const fileName = generateFileName(file.originalname);
       body.course_thumbnail = await uploadToS3(
         file.buffer,
         fileName,
-        "universities/course-specializations/thumbnails",
+        "universities/courses/thumbnails",
         file.mimetype
       );
+    } else if (body.course_thumbnail && typeof body.course_thumbnail === 'string' && body.course_thumbnail.trim()) {
+      // String path from dropdown selection - use as is
+      body.course_thumbnail = body.course_thumbnail.trim();
     }
 
     if (filesObj?.syllabus_file?.[0]) {
@@ -309,20 +314,24 @@ export const update = async (req: Request, res: Response) => {
         }, {})
       : files;
 
+    // Handle course_thumbnail - can be a file upload or a string path (from dropdown)
     if (filesObj?.course_thumbnail?.[0]) {
+      // File upload (legacy support)
       const file = filesObj.course_thumbnail[0];
       const fileName = generateFileName(file.originalname);
       const newThumbnail = await uploadToS3(
         file.buffer,
         fileName,
-        "universities/course-specializations/thumbnails",
+        "universities/courses/thumbnails",
         file.mimetype
       );
       body.course_thumbnail = newThumbnail;
 
+      // Delete old thumbnail if it exists and is different
       if (
         existing.course_thumbnail &&
         typeof existing.course_thumbnail === "string" &&
+        existing.course_thumbnail !== newThumbnail &&
         !existing.course_thumbnail.startsWith("/uploads/")
       ) {
         deleteFromS3(existing.course_thumbnail).catch((err) =>
@@ -334,6 +343,7 @@ export const update = async (req: Request, res: Response) => {
       body.course_thumbnail === "null" ||
       body.course_thumbnail === "__REMOVE__"
     ) {
+      // Remove thumbnail
       body.course_thumbnail = null;
       if (
         existing.course_thumbnail &&
@@ -343,6 +353,19 @@ export const update = async (req: Request, res: Response) => {
         deleteFromS3(existing.course_thumbnail).catch((err) =>
           console.error("Error deleting previous specialization thumbnail:", err)
         );
+      }
+    } else if (body.course_thumbnail && typeof body.course_thumbnail === 'string' && body.course_thumbnail.trim()) {
+      // String path from dropdown selection - use as is
+      body.course_thumbnail = body.course_thumbnail.trim();
+      // Only delete old thumbnail if it's different from the new one
+      if (
+        existing.course_thumbnail &&
+        typeof existing.course_thumbnail === "string" &&
+        existing.course_thumbnail !== body.course_thumbnail &&
+        !existing.course_thumbnail.startsWith("/uploads/")
+      ) {
+        // Don't delete - the old thumbnail might be used by other specializations
+        // Only delete if it's a file that was just uploaded (handled above)
       }
     }
 

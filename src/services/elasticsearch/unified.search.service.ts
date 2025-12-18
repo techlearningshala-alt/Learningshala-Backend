@@ -159,8 +159,8 @@ export async function unifiedSearch(
               search_keywords: '',
               type: 'university_course',
               status: 1,
-              university_slug: universitySlug,
-              course_slug: course.slug || null
+            //   university_slug: universitySlug,
+            //   course_slug: course.slug || null
             },
             highlight: {}
           });
@@ -222,8 +222,8 @@ export async function unifiedSearch(
             search_keywords: item._source?.search_keywords || '',
             type: 'university_course',
             status: item._source?.status || (item._source?.is_active ? 1 : 0),
-            university_slug: item._source?.university_slug || null,
-            course_slug: item._source?.course_slug || null
+            // university_slug: item._source?.university_slug || null,
+            // course_slug: item._source?.course_slug || null
           },
           highlight: item.highlight || {}
         });
