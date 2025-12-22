@@ -135,6 +135,8 @@ let sql = `
   SET 
     university_name = ?, 
     university_slug = ?, 
+    meta_title = ?,
+    meta_description = ?,
     university_logo = ?, 
     university_location = ?, 
     university_brochure = ?, 
@@ -148,6 +150,8 @@ let sql = `
 const params = [
   updateData.university_name,
   updateData.university_slug,
+  updateData.meta_title || null,
+  updateData.meta_description || null,
   universityLogo,
   updateData.university_location || null,
   universityBrochure,

@@ -16,6 +16,8 @@ export interface Course {
   name: string;
   slug: string;
   h1Tag?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
   label?: string | null;
   thumbnail?: string | null;
   description?: string | null;
@@ -146,13 +148,15 @@ export default class CourseRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO courses 
-        (domain_id, name, slug, h1Tag, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,
         item.slug,
         item.h1Tag ?? null,
+        item.meta_title ?? null,
+        item.meta_description ?? null,
         item.label ?? null,
         item.thumbnail ?? null,
         item.description ?? null,
@@ -196,6 +200,14 @@ export default class CourseRepo {
     if (item.h1Tag !== undefined) {
       fields.push("h1Tag = ?");
       values.push(item.h1Tag ?? null);
+    }
+    if (item.meta_title !== undefined) {
+      fields.push("meta_title = ?");
+      values.push(item.meta_title ?? null);
+    }
+    if (item.meta_description !== undefined) {
+      fields.push("meta_description = ?");
+      values.push(item.meta_description ?? null);
     }
     if (item.label !== undefined) {
       fields.push("label = ?");
@@ -257,7 +269,12 @@ export default class CourseRepo {
     }
 
     if (!fields.length) return null;
-    if (saveWithDate) fields.push("updated_at = NOW()");
+    if (saveWithDate) {
+      fields.push("updated_at = NOW()");
+    } else {
+      // Prevent MySQL's ON UPDATE CURRENT_TIMESTAMP from auto-updating
+      fields.push("updated_at = updated_at");
+    }
 
     values.push(id);
     const [result]: any = await executor.query(

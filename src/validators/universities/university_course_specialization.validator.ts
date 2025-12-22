@@ -17,6 +17,8 @@ export const createUniversityCourseSpecializationSchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1).optional(),
   h1Tag: z.string().optional(),
+  meta_title: z.string().max(60, "Meta title must be 60 characters or less").optional().nullable(),
+  meta_description: z.string().max(160, "Meta description must be 160 characters or less").optional().nullable(),
   duration: z.string().optional(),
   label: z.string().optional(),
   course_thumbnail: z.string().optional(),

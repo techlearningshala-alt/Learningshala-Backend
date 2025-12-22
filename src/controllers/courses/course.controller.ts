@@ -153,6 +153,8 @@ const normalizeCoursePayload = (body: any) => {
     name: body.name,
     slug: body.slug,
     h1Tag: body.h1Tag,
+    meta_title: body.meta_title ?? null,
+    meta_description: body.meta_description ?? null,
     label: body.label,
     description: body.description ?? null,
     course_duration: durationValue ?? null,

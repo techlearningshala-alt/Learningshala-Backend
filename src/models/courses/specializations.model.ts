@@ -4,6 +4,8 @@ export interface Specialization {
   name: string;
   slug: string;
   h1Tag?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
   label?: string | null;
   thumbnail?: string | null;
   description?: string | null; // Used for specialization_intro

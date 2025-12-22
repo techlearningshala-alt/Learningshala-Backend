@@ -106,13 +106,15 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, duration, emi_duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
         payload.slug,
         payload.h1Tag ?? null,
+        payload.meta_title ?? null,
+        payload.meta_description ?? null,
         payload.duration ?? null,
         payload.emi_duration ?? null,
         payload.label ?? null,
@@ -148,6 +150,14 @@ export class UniversityCourseRepository {
     if (payload.h1Tag !== undefined) {
       fields.push("h1Tag = ?");
       values.push(payload.h1Tag ?? null);
+    }
+    if (payload.meta_title !== undefined) {
+      fields.push("meta_title = ?");
+      values.push(payload.meta_title ?? null);
+    }
+    if (payload.meta_description !== undefined) {
+      fields.push("meta_description = ?");
+      values.push(payload.meta_description ?? null);
     }
     if (payload.duration !== undefined) {
       fields.push("duration = ?");
@@ -198,6 +208,9 @@ export class UniversityCourseRepository {
 
     if (payload.saveWithDate === undefined || payload.saveWithDate) {
       fields.push("updated_at = NOW()");
+    } else {
+      // Prevent MySQL's ON UPDATE CURRENT_TIMESTAMP from auto-updating
+      fields.push("updated_at = updated_at");
     }
 
     values.push(id);

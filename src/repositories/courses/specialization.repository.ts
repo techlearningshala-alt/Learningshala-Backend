@@ -53,13 +53,15 @@ export default class SpecializationRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO specializations 
-        (course_id, name, slug, h1Tag, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.course_id,
         item.name,
         item.slug,
         item.h1Tag ?? null,
+        item.meta_title ?? null,
+        item.meta_description ?? null,
         item.label ?? null,
         item.thumbnail ?? null,
         item.description ?? null,
@@ -85,6 +87,8 @@ export default class SpecializationRepo {
     if (item.name !== undefined) { fields.push("name = ?"); values.push(item.name); }
     if (item.slug !== undefined) { fields.push("slug = ?"); values.push(item.slug); }
     if (item.h1Tag !== undefined) { fields.push("h1Tag = ?"); values.push(item.h1Tag ?? null); }
+    if (item.meta_title !== undefined) { fields.push("meta_title = ?"); values.push(item.meta_title ?? null); }
+    if (item.meta_description !== undefined) { fields.push("meta_description = ?"); values.push(item.meta_description ?? null); }
     if (item.label !== undefined) { fields.push("label = ?"); values.push(item.label ?? null); }
     if (item.thumbnail !== undefined) { fields.push("thumbnail = ?"); values.push(item.thumbnail ?? null); }
     if (item.description !== undefined) { fields.push("description = ?"); values.push(item.description ?? null); }
@@ -98,7 +102,12 @@ export default class SpecializationRepo {
     if (item.priority !== undefined) { fields.push("priority = ?"); values.push(item.priority ?? 0); }
 
     if (!fields.length) return null;
-    if (saveWithDate) fields.push("updated_at = NOW()");
+    if (saveWithDate) {
+      fields.push("updated_at = NOW()");
+    } else {
+      // Prevent MySQL's ON UPDATE CURRENT_TIMESTAMP from auto-updating
+      fields.push("updated_at = updated_at");
+    }
 
     values.push(id);
     const [result]: any = await executor.query(`UPDATE specializations SET ${fields.join(", ")} WHERE id = ?`, values);

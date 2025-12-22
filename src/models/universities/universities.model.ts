@@ -2,6 +2,8 @@ export interface University {
   id: number;
   university_name: string;
   university_slug: string;
+  meta_title?: string | null;
+  meta_description?: string | null;
   university_logo?: string;
   university_location?: string;
   university_brochure?: string;
