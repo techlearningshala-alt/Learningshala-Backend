@@ -26,6 +26,7 @@ export async function createSpecializationIndex() {
         properties: {
           id: { type: 'integer' },
           course_id: { type: 'integer' },
+          course_slug: { type: 'keyword' },
           name: { 
             type: 'text',
             fields: {
@@ -72,6 +73,7 @@ export async function indexSpecialization(specialization: any) {
       body: {
         id: specialization.id,
         course_id: specialization.course_id || null,
+        course_slug: specialization.course_slug || null,
         name: specialization.name,
         slug: specialization.slug,
         thumbnail: specialization.thumbnail || null,
@@ -211,6 +213,7 @@ export async function searchSpecializations(query: string, options: {
         _source: [
           'id',
           'course_id',
+          'course_slug',
           'name',
           'slug',
           'thumbnail',
@@ -258,7 +261,7 @@ export async function searchSpecializations(query: string, options: {
         type: 'specialization',
         status: hit._source.is_active ? 1 : 0,
         university_slug: null,
-        course_slug: null
+        course_slug: hit._source.course_slug || null
       },
       highlight: hit.highlight || {}
     }));

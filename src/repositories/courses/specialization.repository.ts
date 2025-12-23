@@ -40,7 +40,14 @@ export default class SpecializationRepo {
 
   async findById(id: number, conn?: Pool | PoolConnection) {
     const executor = this.getExecutor(conn);
-    const [rows]: any = await executor.query("SELECT * FROM specializations WHERE id = ?", [id]);
+    const [rows]: any = await executor.query(
+      `SELECT s.*, c.slug AS course_slug
+       FROM specializations s
+       LEFT JOIN courses c ON s.course_id = c.id
+       WHERE s.id = ?`,
+      [id]
+    );
+    console.log("rows", rows);
     return rows.length ? this.mapRow(rows[0]) : null;
   }
 
