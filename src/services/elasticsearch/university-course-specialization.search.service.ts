@@ -284,7 +284,7 @@ export async function searchUniversityCourseSpecializations(query: string, optio
         duration: hit._source.duration || null,
         full_fees: hit._source.full_fees || null,
         sem_fees: hit._source.sem_fees || null,
-        type: 'specialization',
+        type: 'university_course_specializations',
         status: hit._source.is_active ? 1 : 0,
         university_slug: hit._source.university_slug || null,
         course_slug: hit._source.course_slug || null,

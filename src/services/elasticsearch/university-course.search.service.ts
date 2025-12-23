@@ -287,7 +287,7 @@ export async function searchUniversityCourses(query: string, options: {
         slug: hit._source.slug,
         thumbnail: hit._source.course_thumbnail || null,
         duration: hit._source.duration || null,
-        type: 'course',
+        type: 'university_course',
         status: hit._source.is_active ? 1 : 0,
         university_slug: hit._source.university_slug || null,
         course_slug: hit._source.slug || null,
