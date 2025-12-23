@@ -146,6 +146,9 @@ export async function searchSpecializations(query: string, options: {
       }
       
       // Standard match queries (works for full words and partial)
+      // Higher boost for longer queries to prioritize exact phrase matches
+      const phraseBoost = trimmedQuery.length > 5 ? 200 : 100;
+      
       shouldQueries.push(
         {
           match: {
@@ -160,7 +163,7 @@ export async function searchSpecializations(query: string, options: {
           match_phrase: {
             name: {
               query: query,
-              boost: 100
+              boost: phraseBoost // Higher boost for longer exact phrase matches
             }
           }
         },
@@ -239,6 +242,7 @@ export async function searchSpecializations(query: string, options: {
           post_tags: ['</mark>']
         },
         sort: [
+          { _score: { order: 'desc' } },
           { created_at: { order: 'desc' } },
           { id: { order: 'desc' } }
         ]
