@@ -219,21 +219,11 @@ export async function searchSpecializations(query: string, options: {
           'course_slug',
           'name',
           'slug',
-          'thumbnail',
-          'course_duration',
-          'is_active'
+          'thumbnail'
         ],
         highlight: {
           fields: {
             name: {
-              fragment_size: 150,
-              number_of_fragments: 1
-            },
-            description: {
-              fragment_size: 150,
-              number_of_fragments: 1
-            },
-            author_name: {
               fragment_size: 150,
               number_of_fragments: 1
             }
@@ -261,9 +251,7 @@ export async function searchSpecializations(query: string, options: {
         name: hit._source.name,
         slug: hit._source.slug,
         thumbnail: hit._source.thumbnail || null,
-        course_duration: hit._source.course_duration || null,
         type: 'specialization',
-        status: hit._source.is_active ? 1 : 0,
         university_slug: null,
         course_slug: hit._source.course_slug || null
       },

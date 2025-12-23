@@ -218,23 +218,11 @@ export async function searchCourses(query: string, options: {
           'id',
           'name',
           'slug',
-          'thumbnail',
-          'description',
-          'course_duration',
-          'is_active',
-          'domain_id'
+          'thumbnail'
         ],
         highlight: {
           fields: {
             name: {
-              fragment_size: 150,
-              number_of_fragments: 1
-            },
-            description: {
-              fragment_size: 150,
-              number_of_fragments: 1
-            },
-            author_name: {
               fragment_size: 150,
               number_of_fragments: 1
             }
@@ -259,11 +247,7 @@ export async function searchCourses(query: string, options: {
         name: hit._source.name,
         slug: hit._source.slug,
         thumbnail: hit._source.thumbnail || null,
-        description: hit._source.description || null,
-        course_duration: hit._source.course_duration || null,
         type: 'course',
-        status: hit._source.is_active ? 1 : 0,
-        domain_id: hit._source.domain_id || null,
         university_slug: null,
         course_slug: null
       },
