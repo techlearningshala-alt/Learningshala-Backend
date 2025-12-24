@@ -49,7 +49,7 @@ function extractStudentRating(sections: any[]): number | null {
     }
 
     // Calculate average rating
-    const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+    const average = ratings.reduce((sum: any, rating: any) => sum + rating, 0) / ratings.length;
     return Math.round(average * 10) / 10; // Round to 1 decimal place
   } catch (error) {
     console.error("Error parsing student rating:", error);
