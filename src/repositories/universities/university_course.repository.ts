@@ -231,6 +231,34 @@ export class UniversityCourseRepository {
     return result.affectedRows > 0;
   }
 
+  /**
+   * Search university courses by course name
+   * Returns universities offering the course with their logo, name, fee types, and student ratings
+   */
+  async findByCourseName(courseName: string) {
+    const searchTerm = `%${courseName.trim()}%`;
+    
+    const [rows]: any = await pool.query(
+      `SELECT 
+          uc.id as course_id,
+          uc.name as course_name,
+          uc.fee_type_values,
+          u.id as university_id,
+          u.university_name,
+          u.university_logo,
+          u.university_slug
+        FROM university_courses uc
+        INNER JOIN universities u ON uc.university_id = u.id
+        WHERE uc.name LIKE ? 
+          AND uc.is_active = 1
+          AND u.is_active = 1
+        ORDER BY u.university_name ASC`,
+      [searchTerm]
+    );
+
+    return rows || [];
+  }
+
   private mapRowToModel(row: any): UniversityCourse {
     return {
       ...row,

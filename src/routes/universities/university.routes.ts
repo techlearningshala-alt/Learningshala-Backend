@@ -1,11 +1,15 @@
 import express from "express";
 import * as UniversityController from "../../controllers/universities/university.controller";
+import * as CourseSearchController from "../../controllers/universities/course-search.controller";
 import { upload } from "../../config/multer";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = express.Router();
 
-// Apply auth middleware to all routes
+// Public route for course search (no auth required)
+router.get("/search-by-course", CourseSearchController.searchByCourseName);
+
+// Apply auth middleware to all other routes
 router.use(authMiddleware);
 
 // Handle image + PDF uploads
