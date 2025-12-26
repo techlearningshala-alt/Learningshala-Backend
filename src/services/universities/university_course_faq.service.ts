@@ -1,5 +1,5 @@
-import { UniversityCourseFaqRepository } from "../repositories/university_course_faq.repository";
-import { UniversityCourseFaq } from "../models/university_course_faq.model";
+import { UniversityCourseFaqRepository } from "../../repositories/universities/university_course_faq.repository";
+import { UniversityCourseFaq } from "../../models/universities/university_course_faq.model";
 
 const universityCourseFaqRepo = new UniversityCourseFaqRepository();
 

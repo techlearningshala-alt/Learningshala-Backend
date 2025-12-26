@@ -1,5 +1,5 @@
-import pool from "../config/db";
-import { UniversityCourseSpecializationFaq } from "../models/university_course_specialization_faq.model";
+import pool from "../../config/db";
+import { UniversityCourseSpecializationFaq } from "../../models/universities/university_course_specialization_faq.model";
 
 export class UniversityCourseSpecializationFaqRepository {
   // -------- University Course Specialization FAQ Questions --------

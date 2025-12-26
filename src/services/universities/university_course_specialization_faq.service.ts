@@ -1,5 +1,5 @@
-import { UniversityCourseSpecializationFaqRepository } from "../repositories/university_course_specialization_faq.repository";
-import { UniversityCourseSpecializationFaq } from "../models/university_course_specialization_faq.model";
+import { UniversityCourseSpecializationFaqRepository } from "../../repositories/universities/university_course_specialization_faq.repository";
+import { UniversityCourseSpecializationFaq } from "../../models/universities/university_course_specialization_faq.model";
 
 const universityCourseSpecializationFaqRepo = new UniversityCourseSpecializationFaqRepository();
 

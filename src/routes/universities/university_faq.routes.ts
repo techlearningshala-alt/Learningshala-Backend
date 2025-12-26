@@ -1,13 +1,13 @@
 import { Router } from "express";
-import * as UniversityFaqController from "../controllers/university_faq.controller";
-import { validate } from "../middlewares/validate.middleware";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import * as UniversityFaqController from "../../controllers/universities/university_faq.controller";
+import { validate } from "../../middlewares/validate.middleware";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 import {
   createUniversityFaqCategorySchema,
   updateUniversityFaqCategorySchema,
   createUniversityFaqQuestionSchema,
   updateUniversityFaqQuestionSchema,
-} from "../validators/university_faq.validator";
+} from "../../validators/universities/university_faq.validator";
 
 const router = Router();
 

@@ -1,11 +1,11 @@
 import { Router } from "express";
-import * as UniversityCourseSpecializationFaqController from "../controllers/university_course_specialization_faq.controller";
-import { validate } from "../middlewares/validate.middleware";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import * as UniversityCourseSpecializationFaqController from "../../controllers/universities/university_course_specialization_faq.controller";
+import { validate } from "../../middlewares/validate.middleware";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 import {
   createUniversityCourseSpecializationFaqQuestionSchema,
   updateUniversityCourseSpecializationFaqQuestionSchema,
-} from "../validators/university_course_specialization_faq.validator";
+} from "../../validators/universities/university_course_specialization_faq.validator";
 
 const router = Router();
 

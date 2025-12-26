@@ -1,5 +1,5 @@
-import pool from "../config/db";
-import { ContactUs } from "../models/contact_us.model";
+import pool from "../../config/db";
+import { ContactUs } from "../../models/contact_us/contact_us.model";
 
 export interface ListContactUsOptions {
   search?: string;

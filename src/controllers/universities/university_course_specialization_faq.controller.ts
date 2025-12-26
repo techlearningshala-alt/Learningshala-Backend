@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { UniversityCourseSpecializationFaqService } from "../services/university_course_specialization_faq.service";
-import { successResponse, errorResponse } from "../utills/response";
+import { UniversityCourseSpecializationFaqService } from "../../services/universities/university_course_specialization_faq.service";
+import { successResponse, errorResponse } from "../../utills/response";
 
 // -------- Questions --------
 export const listAdminQuestion = async (req: Request, res: Response, next: NextFunction) => {

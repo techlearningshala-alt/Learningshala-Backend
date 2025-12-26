@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../utills/response";
+import { successResponse, errorResponse } from "../../utills/response";
 import {
   createContactUs,
   listContactUs,
   getContactUsById,
   deleteContactUs,
-} from "../services/contact_us.service";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../../services/contact_us/contact_us.service";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 export const create = async (req: Request, res: Response) => {
   try {

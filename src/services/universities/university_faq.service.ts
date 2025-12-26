@@ -1,5 +1,5 @@
-import { UniversityFaqRepository } from "../repositories/university_faq.repository";
-import { UniversityFaqCategory, UniversityFaq } from "../models/university_faq.model";
+import { UniversityFaqRepository } from "../../repositories/universities/university_faq.repository";
+import { UniversityFaqCategory, UniversityFaq } from "../../models/universities/university_faq.model";
 
 const universityFaqRepo = new UniversityFaqRepository();
 

@@ -1,5 +1,5 @@
-import { ContactUs } from "../models/contact_us.model";
-import { ContactUsRepository, ListContactUsOptions } from "../repositories/contact_us.repository";
+import { ContactUs } from "../../models/contact_us/contact_us.model";
+import { ContactUsRepository, ListContactUsOptions } from "../../repositories/contact_us/contact_us.repository";
 
 const normalizeString = (val?: string | null) =>
   typeof val === "string" ? val.trim() || null : val ?? null;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { UniversityFaqService } from "../services/university_faq.service";
-import { successResponse, errorResponse } from "../utills/response";
+import { UniversityFaqService } from "../../services/universities/university_faq.service";
+import { successResponse, errorResponse } from "../../utills/response";
 
 // -------- Categories --------
 
