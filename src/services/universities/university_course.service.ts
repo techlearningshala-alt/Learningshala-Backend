@@ -268,44 +268,14 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
     emi_duration: number | null;
     duration: string | null; 
     image: string | null; 
-    fees: { semester_fee?: number; full_fees?: number } | null 
+    fee_type_values: any
   }> = [];
   try {
     const { getUniversityCourseSpecializationOptions } = await import("./university_course_specialization.service");
     const specializations = await getUniversityCourseSpecializationOptions(course.id);
     
-    // Format specializations similar to how courses are formatted in university response
+    // Format specializations - send complete fee_type_values without extraction
     specializationData = specializations.map((spec: any) => {
-      // Extract semester_fee and full_fees from fee_type_values
-      const feeTypeValues = spec.fee_type_values || {};
-      const fees: { semester_fee?: number; full_fee?: number } = {};
-      
-      // Look for semester_fee or sem_fees
-      if (feeTypeValues.semester_fee !== undefined && feeTypeValues.semester_fee !== null) {
-        const value = Number(feeTypeValues.semester_fee);
-        if (!Number.isNaN(value)) {
-          fees.semester_fee = value;
-        }
-      } else if (feeTypeValues.sem_fees !== undefined && feeTypeValues.sem_fees !== null) {
-        const value = Number(feeTypeValues.sem_fees);
-        if (!Number.isNaN(value)) {
-          fees.semester_fee = value;
-        }
-      }
-      
-      // Look for full_fees or full_fee
-      if (feeTypeValues.full_fees !== undefined && feeTypeValues.full_fees !== null) {
-        const value = Number(feeTypeValues.full_fees);
-        if (!Number.isNaN(value)) {
-          fees.full_fee = value;
-        }
-      } else if (feeTypeValues.full_fee !== undefined && feeTypeValues.full_fee !== null) {
-        const value = Number(feeTypeValues.full_fee);
-        if (!Number.isNaN(value)) {
-          fees.full_fee = value;
-        }
-      }
-      
       return {
         name: spec.name,
         slug: spec.slug,
@@ -313,7 +283,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
         emi_duration: spec.emi_duration,
         duration: spec.duration,
         image: spec.course_thumbnail,
-        fees: Object.keys(fees).length > 0 ? fees : null,
+        fee_type_values: spec.fee_type_values || {},
       };
     });
   } catch (e) {

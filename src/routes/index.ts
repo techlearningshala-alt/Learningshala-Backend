@@ -31,6 +31,7 @@ import cityRoutes from "./location/city.routes";
 import searchRoutes from "./search.routes";
 import websiteLeadRoutes from "./website_lead.routes";
 import contactUsRoutes from "./contact_us.routes";
+import dashboardRoutes from "./dashboard/dashboard.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -77,5 +78,8 @@ router.use("/cms/website/leads", websiteLeadRoutes);
 
 // ✅ Contact Us routes
 router.use("/cms/contact-us", contactUsRoutes);
+
+// ✅ Dashboard routes
+router.use("/cms/dashboard", dashboardRoutes);
 
 export default router;
