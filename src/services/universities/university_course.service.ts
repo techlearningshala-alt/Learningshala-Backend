@@ -268,13 +268,13 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
     emi_duration: number | null;
     duration: string | null; 
     image: string | null; 
-    fee_type_values: any
+    fees: any
   }> = [];
   try {
     const { getUniversityCourseSpecializationOptions } = await import("./university_course_specialization.service");
     const specializations = await getUniversityCourseSpecializationOptions(course.id);
     
-    // Format specializations - send complete fee_type_values without extraction
+    // Format specializations - send complete fee_type_values as fees without extraction
     specializationData = specializations.map((spec: any) => {
       return {
         name: spec.name,
@@ -283,7 +283,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
         emi_duration: spec.emi_duration,
         duration: spec.duration,
         image: spec.course_thumbnail,
-        fee_type_values: spec.fee_type_values || {},
+        fees: spec.fee_type_values || {},
       };
     });
   } catch (e) {
