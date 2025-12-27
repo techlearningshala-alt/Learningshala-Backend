@@ -12,7 +12,7 @@ export class CourseFaqRepository {
 
     // Fetch paginated data
     const [rows] = await pool.query(
-      "SELECT * FROM course_faq_categories ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?",
+      "SELECT * FROM course_faq_categories ORDER BY priority ASC, id DESC LIMIT ? OFFSET ?",
       [limit, offset]
     );
 
@@ -32,8 +32,8 @@ export class CourseFaqRepository {
 
   async createCategory(item: Omit<CourseFaqCategory, "id" | "created_at" | "updated_at">): Promise<CourseFaqCategory> {
     const [result]: any = await pool.query(
-      `INSERT INTO course_faq_categories (heading, created_at, updated_at) VALUES (?, NOW(), NOW())`,
-      [item.heading]
+      `INSERT INTO course_faq_categories (heading, priority, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`,
+      [item.heading, item.priority ?? 999]
     );
     const [rows]: any = await pool.query("SELECT * FROM course_faq_categories WHERE id=?", [result.insertId]);
     return rows[0] as CourseFaqCategory;
@@ -43,7 +43,7 @@ export class CourseFaqRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
-    const allowedFields = new Set(["heading"]);
+    const allowedFields = new Set(["heading", "priority"]);
 
     for (const [key, value] of Object.entries(item)) {
       if (key === "saveWithDate") continue;
@@ -55,6 +55,9 @@ export class CourseFaqRepository {
     // Only update updated_at if saveWithDate === true
     if (item.saveWithDate) {
       fields.push("updated_at = NOW()");
+    } else {
+      // If saveWithDate is false, explicitly set updated_at = updated_at to prevent ON UPDATE CURRENT_TIMESTAMP
+      fields.push("updated_at = updated_at");
     }
 
     if (!fields.length) return false;

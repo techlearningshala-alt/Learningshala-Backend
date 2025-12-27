@@ -37,8 +37,11 @@ export interface DashboardData {
   recentActivity: RecentActivity;
   todayStats: {
     leadsToday: number;
+    leadsYesterday: number;
     websiteLeadsToday: number;
+    websiteLeadsYesterday: number;
     contactMessagesToday: number;
+    contactMessagesYesterday: number;
   };
   weekStats: {
     leadsThisWeek: number;
@@ -263,43 +266,65 @@ export class DashboardService {
   }
 
   /**
-   * Get today's statistics
+   * Get today's and yesterday's statistics
    * @param userRole - User role to filter data (admin sees all, lead sees only leads, others don't see leads)
    */
   static async getTodayStats(userRole?: string) {
     try {
       const isAdmin = userRole === "admin";
       const isLead = userRole === "lead";
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+      const yesterdayStr = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
 
-      let leadsToday, websiteLeadsToday, contactMessagesToday;
+      let leadsToday, leadsYesterday, websiteLeadsToday, websiteLeadsYesterday, contactMessagesToday, contactMessagesYesterday;
       
       if (isAdmin || isLead) {
-        [leadsToday, websiteLeadsToday, contactMessagesToday] = await Promise.all([
+        [leadsToday, leadsYesterday, websiteLeadsToday, websiteLeadsYesterday, contactMessagesToday, contactMessagesYesterday] = await Promise.all([
           pool.query(
             `SELECT COUNT(*) as count FROM leads WHERE DATE(created_on) = ?`,
-            [today]
+            [todayStr]
+          ),
+          pool.query(
+            `SELECT COUNT(*) as count FROM leads WHERE DATE(created_on) = ?`,
+            [yesterdayStr]
           ),
           pool.query(
             `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
-            [today]
+            [todayStr]
+          ),
+          pool.query(
+            `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
+            [yesterdayStr]
           ),
           pool.query(
             `SELECT COUNT(*) as count FROM contact_us WHERE DATE(created_at) = ?`,
-            [today]
+            [todayStr]
+          ),
+          pool.query(
+            `SELECT COUNT(*) as count FROM contact_us WHERE DATE(created_at) = ?`,
+            [yesterdayStr]
           ),
         ]);
       } else {
         // For non-admin and non-lead users, set all to 0
         leadsToday = [[{ count: 0 }]];
+        leadsYesterday = [[{ count: 0 }]];
         websiteLeadsToday = [[{ count: 0 }]];
+        websiteLeadsYesterday = [[{ count: 0 }]];
         contactMessagesToday = [[{ count: 0 }]];
+        contactMessagesYesterday = [[{ count: 0 }]];
       }
 
       return {
         leadsToday: (leadsToday[0] as any[])[0]?.count || 0,
+        leadsYesterday: (leadsYesterday[0] as any[])[0]?.count || 0,
         websiteLeadsToday: (websiteLeadsToday[0] as any[])[0]?.count || 0,
+        websiteLeadsYesterday: (websiteLeadsYesterday[0] as any[])[0]?.count || 0,
         contactMessagesToday: (contactMessagesToday[0] as any[])[0]?.count || 0,
+        contactMessagesYesterday: (contactMessagesYesterday[0] as any[])[0]?.count || 0,
       };
     } catch (error) {
       console.error("❌ Error fetching today's stats:", error);

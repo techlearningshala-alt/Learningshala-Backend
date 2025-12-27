@@ -78,13 +78,14 @@ async function getCourseFaqs(courseId: number) {
               f.title,
               f.description,
               f.category_id,
-              c.heading AS category_heading
+              c.heading AS category_heading,
+              COALESCE(c.priority, 999) AS category_priority
        FROM course_faqs f
        LEFT JOIN course_faq_categories c ON f.category_id = c.id
        WHERE f.course_id = ?
        ORDER BY 
-         CASE WHEN c.heading IS NULL THEN 1 ELSE 0 END,
-         c.heading,
+         CASE WHEN c.priority IS NULL THEN 1 ELSE 0 END,
+         c.priority ASC,
          f.created_at DESC`,
       [courseId]
     );
@@ -97,11 +98,13 @@ async function getCourseFaqs(courseId: number) {
       const categoryId = faq.category_id || 0;
       const heading = faq.category_heading || "Uncategorized";
       const slug = heading.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+      const priority = faq.category_priority ?? 999;
 
       if (!acc[categoryId]) {
         acc[categoryId] = {
           category: heading,
           cat_id: slug || `category-${categoryId || "uncategorized"}`,
+          priority: priority,
           items: [],
         };
       }
@@ -116,7 +119,12 @@ async function getCourseFaqs(courseId: number) {
       return acc;
     }, {});
 
-    return Object.values(grouped);
+    // Sort by priority (lower number = higher priority, appears first)
+    return Object.values(grouped).sort((a: any, b: any) => {
+      const priorityA = a.priority ?? 999;
+      const priorityB = b.priority ?? 999;
+      return priorityA - priorityB;
+    });
   } catch (error) {
     console.error(`❌ [COURSE FAQ] Error fetching course FAQs for course_id ${courseId}:`, error);
     return [];
