@@ -232,5 +232,27 @@ export const getSpecializationByCourseSlugAndSpecializationSlug = async (
   // Include FAQ data grouped by category
   (specialization as any).faq_data = faqs || [];
 
+  // Attach placement partners (like course by slug API)
+  try {
+    const placementIds: number[] = Array.isArray((specialization as any).placement_partner_ids)
+      ? (specialization as any).placement_partner_ids
+      : [];
+
+    let placementPartners: any[] = [];
+
+    if (placementIds.length > 0) {
+      const [rows]: any = await pool.query(
+        `SELECT id, name, logo FROM placement_partners WHERE id IN (?)`,
+        [placementIds]
+      );
+      placementPartners = rows || [];
+    }
+
+    (specialization as any).placement_partners = placementPartners;
+  } catch (error) {
+    console.error("❌ [SPECIALIZATION] Error fetching placement partners for specialization slug:", specializationSlug, error);
+    (specialization as any).placement_partners = [];
+  }
+
   return specialization;
 };

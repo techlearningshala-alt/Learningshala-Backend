@@ -2,6 +2,20 @@ import type { Pool, PoolConnection } from "mysql2/promise";
 import pool from "../../config/db";
 import { Specialization } from "../../models/courses/specializations.model";
 
+const safeParseJsonArray = (value: any): number[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 export default class SpecializationRepo {
   private getExecutor(conn?: Pool | PoolConnection) {
     return conn || pool;
@@ -9,8 +23,15 @@ export default class SpecializationRepo {
 
   private mapRow(row: any) {
     if (!row) return row;
+    const placementIds =
+      row.placement_partner_ids && typeof row.placement_partner_ids === "string"
+        ? safeParseJsonArray(row.placement_partner_ids)
+        : Array.isArray(row.placement_partner_ids)
+        ? row.placement_partner_ids
+        : [];
     return {
       ...row,
+      placement_partner_ids: placementIds,
       is_active:
         row.is_active === null || row.is_active === undefined ? true : Boolean(row.is_active),
       menu_visibility:
@@ -60,8 +81,8 @@ export default class SpecializationRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO specializations 
-        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.course_id,
         item.name,
@@ -80,6 +101,7 @@ export default class SpecializationRepo {
         item.priority ?? 0,
         menuVisibility ? 1 : 0,
         isActive ? 1 : 0,
+        item.placement_partner_ids ? JSON.stringify(item.placement_partner_ids) : null,
       ]
     );
     return this.findById(result.insertId, conn);
@@ -107,6 +129,14 @@ export default class SpecializationRepo {
     if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility ? 1 : 0); }
     if (item.is_active !== undefined) { fields.push("is_active = ?"); values.push(item.is_active ? 1 : 0); }
     if (item.priority !== undefined) { fields.push("priority = ?"); values.push(item.priority ?? 0); }
+    if (item.placement_partner_ids !== undefined) {
+      fields.push("placement_partner_ids = ?");
+      values.push(
+        item.placement_partner_ids === null
+          ? null
+          : JSON.stringify(item.placement_partner_ids)
+      );
+    }
 
     if (!fields.length) return null;
     if (saveWithDate) {

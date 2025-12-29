@@ -15,6 +15,7 @@ export interface Specialization {
   learning_mode?: string | null;
   podcast_embed?: string | null;
   priority?: number | null;
+  placement_partner_ids?: number[] | null;
   menu_visibility?: boolean;
   is_active?: boolean;
   created_at?: Date;

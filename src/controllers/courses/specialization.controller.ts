@@ -111,6 +111,22 @@ const uploadAsset = async (file: Express.Multer.File, folder: string) => {
   return uploadToS3(file.buffer, fileName, folder, file.mimetype);
 };
 
+const parseIds = (value: any) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return [];
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((v) => Number(v))
+        .filter((n) => !Number.isNaN(n));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 const normalizeSpecializationPayload = (body: any) => {
   const courseId = Number(body.course_id);
   const priority =
@@ -138,6 +154,7 @@ const normalizeSpecializationPayload = (body: any) => {
     podcast_embed: body.podcast_embed ?? null,
     priority: priority ?? 0,
     thumbnail: body.thumbnail ?? null,
+    placement_partner_ids: parseIds(body.placement_partner_ids),
     is_active: toBoolean(body.is_active, true),
     menu_visibility: toBoolean(body.menu_visibility, true),
   };
