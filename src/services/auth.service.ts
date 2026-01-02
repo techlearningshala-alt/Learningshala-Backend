@@ -19,12 +19,7 @@ class AuthService {
     name: string, 
     email: string, 
     password: string, 
-    role = "user",
-    phone?: string | null,
-    course?: string | null,
-    state?: string | null,
-    city?: string | null,
-    otp?: number | null
+    role = "user"
   ) {
     const existing = await UserRepo.findByEmail(email);
     if (existing) throw new Error("Email already registered");
@@ -34,12 +29,7 @@ class AuthService {
       name, 
       email, 
       password: hashed, 
-      role,
-      phone,
-      course,
-      state,
-      city,
-      otp
+      role
     });
   }
 
@@ -50,7 +40,14 @@ class AuthService {
     // const ok = await bcrypt.compare(password, user.password);
     // if (!ok) throw new Error("Invalid credentials");
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES });
+    const accessToken = jwt.sign({ 
+      id: user.id, 
+      role: user.role,
+      can_create: user.can_create || false,
+      can_read: user.can_read || false,
+      can_update: user.can_update || false,
+      can_delete: user.can_delete || false
+    }, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES });
     const refreshToken = jwt.sign({ id: user.id }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES });
 
     // save refresh token in DB with expiry timestamp
@@ -61,10 +58,19 @@ class AuthService {
 
     await TokenRepo.saveRefreshToken(user.id, refreshToken, expiresAtFromToken);
 
-    return {
+      return {
       accessToken,
       refreshToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        can_create: user.can_create || false,
+        can_read: user.can_read || false,
+        can_update: user.can_update || false,
+        can_delete: user.can_delete || false
+      }
     };
   }
 

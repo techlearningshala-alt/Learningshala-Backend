@@ -4,11 +4,10 @@ export interface User {
   email: string;
   password: string; // hashed
   role: string;
-  phone?: string | null;
-  course?: string | null;
-  state?: number | null;
-  city?: number | null;
-  otp?: string | null;
+  can_create?: boolean | null;
+  can_read?: boolean | null;
+  can_update?: boolean | null;
+  can_delete?: boolean | null;
   created_at: Date;
   updated_at: Date;
 }

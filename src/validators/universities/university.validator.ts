@@ -19,12 +19,13 @@ const sectionSchema = z.object({
 export const createUniversitySchema = z.object({
   university_name: z.string().min(1, "University name is required"),
   university_slug: z.string().optional(),
-  meta_title: z.string().max(60, "Meta title must be 60 characters or less").optional().nullable(),
-  meta_description: z.string().max(160, "Meta description must be 160 characters or less").optional().nullable(),
+  meta_title: z.string().optional().nullable(),
+  meta_description: z.string().optional().nullable(),
   university_logo: z.string().optional(),
   university_location: z.string().optional(),
   university_brochure: z.string().optional(),
   author_name: z.string().optional(),
+  university_type_id: z.number().int().positive().optional().nullable(),
   is_active: z
     .union([z.string(), z.boolean()])
     .transform((val) => val === "true" || val === true)

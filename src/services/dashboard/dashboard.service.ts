@@ -53,7 +53,7 @@ export interface DashboardData {
 export class DashboardService {
   /**
    * Get all dashboard statistics
-   * @param userRole - User role to filter data (admin sees all, lead sees only leads, others don't see leads)
+   * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getStatistics(userRole?: string): Promise<DashboardStatistics> {
     try {
@@ -61,17 +61,17 @@ export class DashboardService {
       const isLead = userRole === "lead";
       
       // Execute all count queries in parallel for better performance
-      // Only fetch lead-related data if user is admin or lead
+      // Only fetch lead-related data if user is lead (admin should NOT see lead data)
       const queries: Promise<any>[] = [];
       
-      if (isAdmin || isLead) {
+      if (isLead) {
         queries.push(
           pool.query("SELECT COUNT(*) as count FROM leads"),
           pool.query("SELECT COUNT(*) as count FROM website_leads"),
           pool.query("SELECT COUNT(*) as count FROM contact_us")
         );
       } else {
-        // For non-admin and non-lead users, set leads to 0
+        // For admin and other users, set leads to 0
         queries.push(
           Promise.resolve([[{ count: 0 }]]),
           Promise.resolve([[{ count: 0 }]]),
@@ -103,7 +103,7 @@ export class DashboardService {
           Promise.resolve([[{ count: 0 }]])  // specializationFaqs
         );
       } else {
-        // For admin and other roles, fetch all non-lead stats
+        // For admin and other roles, fetch all non-lead stats (admin should NOT see lead data)
         nonLeadQueries.push(
           pool.query("SELECT COUNT(*) as count FROM universities WHERE is_active = 1"),
           pool.query("SELECT COUNT(*) as count FROM university_courses WHERE is_active = 1"),
@@ -181,16 +181,16 @@ export class DashboardService {
 
   /**
    * Get recent activity data
-   * @param userRole - User role to filter data (admin sees all, lead sees only leads, others don't see leads)
+   * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getRecentActivity(userRole?: string): Promise<RecentActivity> {
     try {
       const isAdmin = userRole === "admin";
       const isLead = userRole === "lead";
       
-      // Only fetch lead-related data if user is admin or lead
+      // Only fetch lead-related data if user is lead (admin should NOT see lead data)
       const leadQueries: Promise<any>[] = [];
-      if (isAdmin || isLead) {
+      if (isLead) {
         leadQueries.push(
           pool.query(
             `SELECT id, name, phone, course, created_on as created_at 
@@ -212,7 +212,7 @@ export class DashboardService {
           )
         );
       } else {
-        // For non-admin and non-lead users, return empty arrays
+        // For admin and other users, return empty arrays
         leadQueries.push(
           Promise.resolve([[]]),
           Promise.resolve([[]]),
@@ -228,7 +228,7 @@ export class DashboardService {
           Promise.resolve([[]])  // recentCourses
         );
       } else {
-        // For admin and other roles, fetch non-lead recent activity
+        // For admin and other roles, fetch non-lead recent activity (admin should NOT see lead data)
         nonLeadQueries.push(
           pool.query(
             `SELECT id, university_name as name, created_at 
@@ -267,7 +267,7 @@ export class DashboardService {
 
   /**
    * Get today's and yesterday's statistics
-   * @param userRole - User role to filter data (admin sees all, lead sees only leads, others don't see leads)
+   * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getTodayStats(userRole?: string) {
     try {
@@ -281,7 +281,8 @@ export class DashboardService {
 
       let leadsToday, leadsYesterday, websiteLeadsToday, websiteLeadsYesterday, contactMessagesToday, contactMessagesYesterday;
       
-      if (isAdmin || isLead) {
+      if (isLead) {
+        // Only lead role should see lead data (admin should NOT see lead data)
         [leadsToday, leadsYesterday, websiteLeadsToday, websiteLeadsYesterday, contactMessagesToday, contactMessagesYesterday] = await Promise.all([
           pool.query(
             `SELECT COUNT(*) as count FROM leads WHERE DATE(created_on) = ?`,
@@ -309,7 +310,7 @@ export class DashboardService {
           ),
         ]);
       } else {
-        // For non-admin and non-lead users, set all to 0
+        // For admin and other users, set all to 0 (admin should NOT see lead data)
         leadsToday = [[{ count: 0 }]];
         leadsYesterday = [[{ count: 0 }]];
         websiteLeadsToday = [[{ count: 0 }]];
@@ -334,7 +335,7 @@ export class DashboardService {
 
   /**
    * Get this week's statistics
-   * @param userRole - User role to filter data (admin sees all, lead sees only leads, others don't see leads)
+   * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getWeekStats(userRole?: string) {
     try {
@@ -347,7 +348,8 @@ export class DashboardService {
 
       let leadsThisWeek, websiteLeadsThisWeek, contactMessagesThisWeek;
       
-      if (isAdmin || isLead) {
+      if (isLead) {
+        // Only lead role should see lead data (admin should NOT see lead data)
         [leadsThisWeek, websiteLeadsThisWeek, contactMessagesThisWeek] = await Promise.all([
           pool.query(
             `SELECT COUNT(*) as count FROM leads WHERE DATE(created_on) >= ?`,
@@ -363,7 +365,7 @@ export class DashboardService {
           ),
         ]);
       } else {
-        // For non-admin and non-lead users, set all to 0
+        // For admin and other users, set all to 0 (admin should NOT see lead data)
         leadsThisWeek = [[{ count: 0 }]];
         websiteLeadsThisWeek = [[{ count: 0 }]];
         contactMessagesThisWeek = [[{ count: 0 }]];
@@ -382,7 +384,7 @@ export class DashboardService {
 
   /**
    * Get complete dashboard data
-   * @param userRole - User role to filter data (admin sees all, others don't see leads)
+   * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getDashboardData(userRole?: string): Promise<DashboardData> {
     try {

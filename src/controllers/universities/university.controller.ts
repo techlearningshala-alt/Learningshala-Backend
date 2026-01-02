@@ -439,6 +439,21 @@ export const toggleStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const togglePageCreated = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_page_created } = req.body;
+    
+    const updated = await UniversityService.toggleUniversityPageCreated(Number(id), Boolean(is_page_created));
+    if (!updated) return errorResponse(res, "University not found", 404);
+    
+    return successResponse(res, updated, "University page visibility updated successfully");
+  } catch (err: any) {
+    console.error("❌ Toggle page created error:", err);
+    return errorResponse(res, err.message || "Failed to toggle page visibility", 400);
+  }
+};
+
 export const fetchList = async (req: Request, res: Response) => {
   try {
     console.log("fetchList");

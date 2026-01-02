@@ -7,6 +7,7 @@ import leadRoutes from "./lead.routes";
 import testimonialRoutes from "./student_testimonial.routes";
 import universityRoutes from "./universities/university.routes";
 import userRoutes from "./auth.routes";
+import adminUserRoutes from "./user.routes";
 
 // New courses module routes
 import domainRoutes from "./courses/domain.routes";
@@ -22,6 +23,7 @@ import feeTypeRoutes from "./universities/fee_type.routes";
 import universityFaqRoutes from "./university_faq.routes";
 import universityCourseFaqRoutes from "./university_course_faq.routes";
 import universityCourseSpecializationFaqRoutes from "./university_course_specialization_faq.routes";
+import universityTypesRoutes from "./universities/university_types.routes";
 import courseFaqRoutes from "./courses/course_faq.routes";
 import specializationFaqRoutes from "./courses/specialization_faq.routes";
 import courseImageRoutes from "./courses/course_image.routes";
@@ -44,6 +46,7 @@ router.use("/cms/student-testimonials", testimonialRoutes);
 router.use("/cms/leads", leadRoutes);
 // ✅ IMPORTANT: More specific routes must come BEFORE general routes
 router.use("/cms/universities/faqs", universityFaqRoutes);
+router.use("/cms/universities/types", universityTypesRoutes);
 router.use("/cms/university-courses/faqs", universityCourseFaqRoutes);
 router.use("/cms/university-course-specializations/faqs", universityCourseSpecializationFaqRoutes);
 router.use("/cms/universities-approvals", universityApprovalsRoutes);
@@ -56,6 +59,7 @@ router.use("/cms/fee-types", feeTypeRoutes);
 router.use("/cms/universities", universityRoutes);
 // router.use("/cms/universities-section", universitySectionRoute);
 router.use("/cms/users", userRoutes);
+router.use("/cms/admin/users", adminUserRoutes);
 
 // ✅ Courses module routes
 router.use("/cms/domains", domainRoutes);

@@ -14,7 +14,14 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   try {
     const payload = jwt.verify(token, ACCESS_SECRET) as any;
     // attach minimal user to request
-    (req as any).user = { id: payload.id, role: payload.role };
+    (req as any).user = { 
+      id: payload.id, 
+      role: payload.role,
+      can_create: payload.can_create,
+      can_read: payload.can_read,
+      can_update: payload.can_update,
+      can_delete: payload.can_delete
+    };
     return next();
   } catch (err) {
     return res.status(401).json({ success: false, message: "Invalid token" });

@@ -5,8 +5,8 @@ export const UniversityRepo = {
   async createUniversity(universityData: any) {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
-       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, is_active, approval_id, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, approval_id, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -15,8 +15,10 @@ export const UniversityRepo = {
         universityData.university_logo || null,
         universityData.university_location || null,
         universityData.university_brochure || null,
-        universityData.author_name || null, 
+        universityData.author_name || null,
+        universityData.university_type_id ?? null,
         universityData.is_active ?? true,
+        universityData.is_page_created !== undefined ? (universityData.is_page_created ? 1 : 0) : 1,
         universityData.approval_id ?? null,
         universityData.placement_partner_ids ?? null,
         universityData.emi_partner_ids ?? null,

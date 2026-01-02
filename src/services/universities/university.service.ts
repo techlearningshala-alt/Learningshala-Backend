@@ -28,6 +28,10 @@ export const UniversityService = {
 
       // 🔄 Return the created university
       const university = await UniversityRepo.getUniversityById(universityId);
+      if (university && university.is_page_created !== undefined) {
+        university.menu_visibility = university.is_page_created === null || university.is_page_created === undefined ? true : Boolean(university.is_page_created);
+        delete university.is_page_created;
+      }
       return university;
     } catch (err) {
       console.log(err)
@@ -141,6 +145,7 @@ let sql = `
     university_location = ?, 
     university_brochure = ?, 
     author_name = ?, 
+    university_type_id = ?,
     is_active = ?, 
     approval_id = ?,
     placement_partner_ids = ?,
@@ -156,6 +161,7 @@ const params = [
   updateData.university_location || null,
   universityBrochure,
   updateData.author_name || null,
+  updateData.university_type_id ?? null,
 
   // ✅ FIX: Convert string "false" or false to actual boolean false
   updateData.is_active === "false" || updateData.is_active === false ? 0 : 1,
@@ -289,7 +295,13 @@ await conn.query(sql, params);
       `SELECT * FROM universities WHERE id = ?`,
       [id]
     );
-    return rows[0];
+    const universityData = { ...rows[0] };
+    // Map is_page_created to menu_visibility
+    if (universityData.is_page_created !== undefined) {
+      universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
+      delete universityData.is_page_created;
+    }
+    return universityData;
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -462,10 +474,14 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
         id: u.id,
         university_name: u.university_name,
         university_slug: u.university_slug,
+        university_type_id: u.university_type_id,
+        meta_title: u.meta_title,
+        meta_description: u.meta_description,
         university_logo: u.university_logo,
         university_location: u.university_location,
         university_brochure: u.university_brochure,
         is_active: u.is_active,
+        menu_visibility: u.is_page_created === null || u.is_page_created === undefined ? true : Boolean(u.is_page_created),
         author_name: u.author_name,
         created_at: u.created_at,
         updated_at: u.updated_at,
@@ -635,8 +651,15 @@ export const getUniversityById = async (id: number) => {
     console.error('Error parsing approval_id:', e);
   }
 
+  const universityData = { ...rows[0] };
+  // Map is_page_created to menu_visibility
+  if (universityData.is_page_created !== undefined) {
+    universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
+    delete universityData.is_page_created;
+  }
+
   return {  data: {
-    ...rows[0],
+    ...universityData,
     approvals, // Add approval objects for website
     banners,
     sections: sectionsData.sections || {},
@@ -793,8 +816,15 @@ export const getUniversityBySlug = async (slug: string) => {
     console.error('Error fetching university courses:', e);
   }
 
+  const universityData = { ...rows[0] };
+  // Map is_page_created to menu_visibility
+  if (universityData.is_page_created !== undefined) {
+    universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
+    delete universityData.is_page_created;
+  }
+
   const result = {  data: {
-    ...rows[0],
+    ...universityData,
     approvals, // Add approval objects for website
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects
@@ -838,6 +868,31 @@ export const toggleUniversityStatus = async (id: number, isActive: boolean) => {
     
     const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
     return rows[0];
+  } catch (err) {
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+export const toggleUniversityPageCreated = async (id: number, isPageCreated: boolean) => {
+  const conn = await pool.getConnection();
+  try {
+    const [result]: any = await conn.query(
+      `UPDATE universities SET is_page_created = ? WHERE id = ?`,
+      [isPageCreated ? 1 : 0, id]
+    );
+    
+    if (result.affectedRows === 0) return null;
+    
+    const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
+    const universityData = { ...rows[0] };
+    // Map is_page_created to menu_visibility
+    if (universityData.is_page_created !== undefined) {
+      universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
+      delete universityData.is_page_created;
+    }
+    return universityData;
   } catch (err) {
     throw err;
   } finally {

@@ -42,6 +42,7 @@ router.get("/spell-check", UniversityController.spellCheck); // Spell correction
 router.get("/", UniversityController.findAll);
 router.get("/:university_slug", UniversityController.findOne);
 router.patch("/:id/toggle-status", UniversityController.toggleStatus);
+router.patch("/:id/toggle-page-created", UniversityController.togglePageCreated);
 router.delete("/:id", UniversityController.remove);
 
 export default router;
