@@ -37,7 +37,7 @@ const attachRelations = async (course: any) => {
   return course;
 };
 
-export const listCourses = (page = 1, limit = 10) => repo.findAll(page, limit);
+export const listCourses = (page = 1, limit = 20) => repo.findAll(page, limit);
 export const listCoursesName = () => repo.findAllCourseName();
 
 export const getCourse = async (id: number) => {

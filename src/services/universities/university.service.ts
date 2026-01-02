@@ -310,19 +310,26 @@ await conn.query(sql, params);
   }
 };
 
-export const getAllUniversities = async (page = 1, limit = 10) => {
+export const getAllUniversities = async (page = 1, limit = 10, university_type_id?: number) => {
   const offset = (page - 1) * limit;
 
   // 1️⃣ Fetch universities with latest first
-  const [universities]: any = await pool.query(
-    `
+  let query = `
     SELECT * 
     FROM universities 
-    ORDER BY created_at DESC, id DESC 
-    LIMIT ? OFFSET ?
-    `,
-    [limit, offset]
-  );
+  `;
+  const queryParams: any[] = [];
+
+  // Add filter for university_type_id if provided
+  if (university_type_id) {
+    query += ` WHERE university_type_id = ? `;
+    queryParams.push(university_type_id);
+  }
+
+  query += ` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ? `;
+  queryParams.push(limit, offset);
+
+  const [universities]: any = await pool.query(query, queryParams);
   
   const uniIds = universities.map((u: any) => u.id);
 
@@ -526,7 +533,13 @@ export const getAllUniversities = async (page = 1, limit = 10) => {
   const data = universities.map((u: any) => uniMap[u.id]);
 
   // 7️⃣ Total universities for pagination
-  const [[{ total }]]: any = await pool.query(`SELECT COUNT(*) AS total FROM universities`);
+  let countQuery = `SELECT COUNT(*) AS total FROM universities`;
+  const countParams: any[] = [];
+  if (university_type_id) {
+    countQuery += ` WHERE university_type_id = ?`;
+    countParams.push(university_type_id);
+  }
+  const [[{ total }]]: any = await pool.query(countQuery, countParams);
 
   return {
       data,

@@ -19,7 +19,7 @@ import {
 export const getAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string) || 20;
     const result = await CourseService.listCourses(page, limit);
     return successResponse(res, result, "Courses fetched successfully");
   } catch (err: any) {

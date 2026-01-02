@@ -67,7 +67,7 @@ export default class CourseRepo {
     };
   }
 
-  async findAll(page = 1, limit = 10, conn?: Pool | PoolConnection) {
+  async findAll(page = 1, limit = 20, conn?: Pool | PoolConnection) {
     const executor = this.getExecutor(conn);
     const offset = (page - 1) * limit;
 

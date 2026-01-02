@@ -11,7 +11,7 @@ export class UniversityTypesRepository {
 
     // Fetch paginated data
     const [rows] = await pool.query(
-      "SELECT * FROM university_types ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+      "SELECT * FROM university_types ORDER BY id ASC LIMIT ? OFFSET ?",
       [limit, offset]
     );
 
