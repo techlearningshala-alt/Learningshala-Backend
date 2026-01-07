@@ -113,11 +113,16 @@ export default class CourseRepo {
         c.name,
         c.thumbnail,
         c.slug,
+        c.course_duration,
+        c.label,
         d.slug AS domain_slug,
-        d.name AS domain_name
+        d.name AS domain_name,
+        COUNT(s.id) AS specialization_count
       FROM courses c
       INNER JOIN domains d ON c.domain_id = d.id
+      LEFT JOIN specializations s ON c.id = s.course_id
       WHERE c.is_active = 1 AND c.menu_visibility = 1
+      GROUP BY c.id, c.name, c.thumbnail, c.slug, c.course_duration, c.label, d.slug, d.name
       ORDER BY d.priority ASC, c.priority ASC, c.name ASC`
     );
     return rows;

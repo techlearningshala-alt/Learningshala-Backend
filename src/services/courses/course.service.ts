@@ -320,7 +320,10 @@ export const getCoursesByDomain = async () => {
       course_name: course.name,
       course_thumbnail: course.thumbnail || null,
       course_slug: course.slug,
+      course_duration: course.course_duration,
+      course_label: course.label,
       course_id: course.id,
+      specialization_count: course.specialization_count || 0,
     });
   });
   

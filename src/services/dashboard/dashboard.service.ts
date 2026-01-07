@@ -12,8 +12,8 @@ export interface DashboardStatistics {
   mentors: number;
   testimonials: number;
   mediaSpotlight: number;
-  placementPartners: number;
-  emiPartners: number;
+  partnerUniversities: number;
+  nonPartnerUniversities: number;
   domains: number;
   faqs: number;
   universityFaqs: number;
@@ -92,8 +92,8 @@ export class DashboardService {
           Promise.resolve([[{ count: 0 }]]), // mentors
           Promise.resolve([[{ count: 0 }]]), // testimonials
           Promise.resolve([[{ count: 0 }]]), // mediaSpotlight
-          Promise.resolve([[{ count: 0 }]]), // placementPartners
-          Promise.resolve([[{ count: 0 }]]), // emiPartners
+          Promise.resolve([[{ count: 0 }]]), // partnerUniversities
+          Promise.resolve([[{ count: 0 }]]), // nonPartnerUniversities
           Promise.resolve([[{ count: 0 }]]), // domains
           Promise.resolve([[{ count: 0 }]]), // faqs
           Promise.resolve([[{ count: 0 }]]), // universityFaqs
@@ -113,8 +113,22 @@ export class DashboardService {
           pool.query("SELECT COUNT(*) as count FROM mentors"),
           pool.query("SELECT COUNT(*) as count FROM student_testimonials"),
           pool.query("SELECT COUNT(*) as count FROM media_spotlight"),
-          pool.query("SELECT COUNT(*) as count FROM placement_partners"),
-          pool.query("SELECT COUNT(*) as count FROM emi_partners"),
+          // Count partner universities (universities with university_type_id matching "Partner" type)
+          pool.query(`
+            SELECT COUNT(*) as count 
+            FROM universities u
+            INNER JOIN university_types ut ON u.university_type_id = ut.id
+            WHERE u.is_active = 1 
+            AND LOWER(TRIM(ut.name)) = 'Partner University'
+          `),
+          // Count non-partner universities (universities with university_type_id matching "Non Partner" type or NULL)
+          pool.query(`
+            SELECT COUNT(*) as count 
+            FROM universities u
+            LEFT JOIN university_types ut ON u.university_type_id = ut.id
+            WHERE u.is_active = 1 
+            AND (LOWER(TRIM(ut.name)) = 'Non-Partner University' OR LOWER(TRIM(ut.name)) = 'Non Partner University')
+          `),
           pool.query("SELECT COUNT(*) as count FROM domains"),
           pool.query("SELECT COUNT(*) as count FROM faqs"),
           pool.query("SELECT COUNT(*) as count FROM university_faqs"),
@@ -137,8 +151,8 @@ export class DashboardService {
         mentorsResult,
         testimonialsResult,
         mediaSpotlightResult,
-        placementPartnersResult,
-        emiPartnersResult,
+        partnerUniversitiesResult,
+        nonPartnerUniversitiesResult,
         domainsResult,
         faqsResult,
         universityFaqsResult,
@@ -163,8 +177,8 @@ export class DashboardService {
         mentors: (mentorsResult[0] as any[])[0]?.count || 0,
         testimonials: (testimonialsResult[0] as any[])[0]?.count || 0,
         mediaSpotlight: (mediaSpotlightResult[0] as any[])[0]?.count || 0,
-        placementPartners: (placementPartnersResult[0] as any[])[0]?.count || 0,
-        emiPartners: (emiPartnersResult[0] as any[])[0]?.count || 0,
+        partnerUniversities: (partnerUniversitiesResult[0] as any[])[0]?.count || 0,
+        nonPartnerUniversities: (nonPartnerUniversitiesResult[0] as any[])[0]?.count || 0,
         domains: (domainsResult[0] as any[])[0]?.count || 0,
         faqs: (faqsResult[0] as any[])[0]?.count || 0,
         universityFaqs: (universityFaqsResult[0] as any[])[0]?.count || 0,
