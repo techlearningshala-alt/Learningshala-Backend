@@ -12,11 +12,11 @@ const app: Application = express();
 const PORT = process.env.PORT || 4000;
 
 // ✅ Enable CORS for your frontend
-// app.use(cors({
-//   origin: ["http://3.111.1.94/","http://localhost:3000","http://localhost:5173","https://3.111.1.94/","https://admin.learningshala.com","https://learningshala.vercel.app","https://13.205.148.159, http://13.205.148.159"], // your frontend public URL
-//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-//   credentials: true,
-// }));
+app.use(cors({
+  origin: ["http://3.111.1.94/","http://localhost:3000","http://localhost:5173","https://3.111.1.94/","https://admin.learningshala.com","https://learningshala.vercel.app","https://13.205.148.159, http://13.205.148.159"], // your frontend public URL
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  credentials: true,
+}));
 
 // ✅ Serve static uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
