@@ -53,7 +53,8 @@ const attachRelations = async (specialization: any) => {
   return specialization;
 };
 
-export const listSpecializations = (page = 1, limit = 10) => repo.findAll(page, limit);
+export const listSpecializations = (page = 1, limit = 10, filters?: { search?: string; course_id?: number }) => 
+  repo.findAll(page, limit, filters);
 export const getSpecialization = async (id: number) => {
   const specialization = await repo.findById(id);
   return await attachRelations(specialization);

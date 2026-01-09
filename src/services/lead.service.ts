@@ -107,6 +107,7 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
     email,
     phone,
     course: normalizeString(mappedPayload.course),
+    university: normalizeString(mappedPayload.university),
     specialisation: normalizeString(mappedPayload.specialisation),
     state: normalizeString(mappedPayload.state),
     city: normalizeString(mappedPayload.city),
@@ -176,6 +177,9 @@ const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
   }
   if (mappedPayload.course !== undefined) {
     normalized.course = normalizeString(mappedPayload.course);
+  }
+  if (mappedPayload.university !== undefined) {
+    normalized.university = normalizeString(mappedPayload.university);
   }
   if (mappedPayload.specialisation !== undefined) {
     normalized.specialisation = normalizeString(mappedPayload.specialisation);

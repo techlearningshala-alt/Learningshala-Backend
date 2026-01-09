@@ -6,6 +6,7 @@ import {
 } from "../../models/universities/university_specialization.model";
 
 interface ListSpecializationOptions {
+  universityId?: number;
   universityCourseId?: number;
   search?: string;
 }

@@ -15,6 +15,9 @@ export const findAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
+    const universityId = req.query.university_id
+      ? Number(req.query.university_id)
+      : undefined;
     const universityCourseId = req.query.university_course_id
       ? Number(req.query.university_course_id)
       : undefined;
@@ -22,6 +25,7 @@ export const findAll = async (req: Request, res: Response) => {
       typeof req.query.search === "string" ? req.query.search.trim() : undefined;
 
     const result = await listUniversitySpecializations(page, limit, {
+      universityId,
       universityCourseId,
       search,
     });

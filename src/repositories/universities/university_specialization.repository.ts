@@ -6,6 +6,7 @@ import {
 } from "../../models/universities/university_specialization.model";
 
 interface ListSpecializationFilters {
+  universityId?: number;
   universityCourseId?: number;
   search?: string;
 }
@@ -18,7 +19,15 @@ export class UniversitySpecializationRepository {
   ) {
     const offset = (page - 1) * limit;
     const params: any[] = [];
-    const where: string[] = ["1=1"];
+    const where: string[] = [];
+
+    // Determine if we need JOINs for filtering (always needed for SELECT, but check for COUNT)
+    const needsJoinForCount = filters.universityId !== undefined;
+
+    if (filters.universityId) {
+      where.push("u.id = ?");
+      params.push(filters.universityId);
+    }
 
     if (filters.universityCourseId) {
       where.push("ucs.university_course_id = ?");
@@ -30,7 +39,7 @@ export class UniversitySpecializationRepository {
       params.push(`%${filters.search}%`, `%${filters.search}%`);
     }
 
-    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await pool.query(
       `SELECT ucs.*,
@@ -45,12 +54,18 @@ export class UniversitySpecializationRepository {
       [...params, limit, offset]
     );
 
-    const [countRows]: any = await pool.query(
-      `SELECT COUNT(*) as total
+    // COUNT query: include JOINs only when filtering by university_id
+    const countQuery = needsJoinForCount
+      ? `SELECT COUNT(*) as total
          FROM university_course_specializations ucs
-        ${whereClause}`,
-      params
-    );
+         INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+         INNER JOIN universities u ON uc.university_id = u.id
+        ${whereClause}`
+      : `SELECT COUNT(*) as total
+         FROM university_course_specializations ucs
+        ${whereClause}`;
+
+    const [countRows]: any = await pool.query(countQuery, params);
 
     const total = countRows[0]?.total ?? 0;
 

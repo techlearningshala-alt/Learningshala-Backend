@@ -16,9 +16,9 @@ class LeadRepository {
     if (options.search) {
       const like = `%${options.search}%`;
       where.push(
-        "(name LIKE ? OR email LIKE ? OR phone LIKE ? OR course LIKE ? OR specialisation LIKE ?)"
+        "(name LIKE ? OR email LIKE ? OR phone LIKE ? OR course LIKE ? OR university LIKE ? OR specialisation LIKE ?)"
       );
-      params.push(like, like, like, like, like);
+      params.push(like, like, like, like, like, like);
     }
 
     if (options.fromDate) {
@@ -40,6 +40,7 @@ class LeadRepository {
         email,
         phone,
         course,
+        university,
         specialisation,
         state,
         city,
@@ -89,6 +90,7 @@ class LeadRepository {
       "email",
       "phone",
       "course",
+      "university",
       "specialisation",
       "state",
       "city",
@@ -125,6 +127,7 @@ class LeadRepository {
         email,
         phone,
         course,
+        university,
         specialisation,
         state,
         city,
@@ -167,6 +170,7 @@ class LeadRepository {
         email,
         phone,
         course,
+        university,
         specialisation,
         state,
         city,
@@ -221,6 +225,7 @@ class LeadRepository {
         email,
         phone,
         course,
+        university,
         specialisation,
         state,
         city,
@@ -259,6 +264,7 @@ class LeadRepository {
       "email",
       "phone",
       "course",
+      "university",
       "specialisation",
       "state",
       "city",
@@ -314,6 +320,7 @@ class LeadRepository {
         email,
         phone,
         course,
+        university,
         specialisation,
         state,
         city,

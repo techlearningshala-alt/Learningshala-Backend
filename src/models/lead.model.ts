@@ -4,6 +4,7 @@ export interface Lead {
   email: string | null;
   phone: string | null;
   course: string | null;
+  university: string | null;
   specialisation: string | null;
   state: string | null;
   city: string | null;
@@ -30,6 +31,7 @@ export interface CreateLeadDto {
   email?: string | null;
   phone?: string | null;
   course?: string | null;
+  university?: string | null;
   specialisation?: string | null;
   state?: string | null;
   city?: string | null;

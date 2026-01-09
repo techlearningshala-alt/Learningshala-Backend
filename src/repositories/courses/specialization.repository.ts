@@ -41,17 +41,39 @@ export default class SpecializationRepo {
     };
   }
 
-  async findAll(page = 1, limit = 10, conn?: Pool | PoolConnection) {
+  async findAll(page = 1, limit = 10, filters?: { search?: string; course_id?: number }, conn?: Pool | PoolConnection) {
     const executor = this.getExecutor(conn);
     const offset = (page - 1) * limit;
+
+    let whereClause = "";
+    const queryParams: any[] = [];
+
+    if (filters) {
+      const conditions: string[] = [];
+      
+      if (filters.search) {
+        conditions.push("s.name LIKE ?");
+        queryParams.push(`%${filters.search}%`);
+      }
+      
+      if (filters.course_id) {
+        conditions.push("s.course_id = ?");
+        queryParams.push(filters.course_id);
+      }
+      
+      if (conditions.length > 0) {
+        whereClause = "WHERE " + conditions.join(" AND ");
+      }
+    }
 
     const [rows]: any = await executor.query(
       `SELECT SQL_CALC_FOUND_ROWS s.*, c.name AS course_name
      FROM specializations s
      LEFT JOIN courses c ON s.course_id = c.id
+     ${whereClause}
      ORDER BY s.priority ASC, s.updated_at DESC 
      LIMIT ? OFFSET ?`,
-      [limit, offset]
+      [...queryParams, limit, offset]
     );
 
     const [[{ "FOUND_ROWS()": total }]]: any = await executor.query("SELECT FOUND_ROWS()");

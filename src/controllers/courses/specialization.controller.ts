@@ -20,7 +20,14 @@ export const getAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const result = await SpecializationService.listSpecializations(page, limit);
+    const search = req.query.search as string | undefined;
+    const course_id = req.query.course_id ? parseInt(req.query.course_id as string) : undefined;
+    
+    const filters: { search?: string; course_id?: number } = {};
+    if (search) filters.search = search;
+    if (course_id) filters.course_id = course_id;
+    
+    const result = await SpecializationService.listSpecializations(page, limit, Object.keys(filters).length > 0 ? filters : undefined);
     return successResponse(res, result, "Specializations fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch specializations");
