@@ -6,8 +6,6 @@ import { createLeadSchema, updateLeadSchema } from "../validators/lead.validator
 
 const router = Router();
 
-// Public endpoint to create leads (unauthenticated)
-
 // Protected endpoints (require authentication)
 router.use(authMiddleware);
 router.post("/", validate(createLeadSchema), LeadController.create);
@@ -16,5 +14,3 @@ router.get("/", LeadController.getLeads);
 router.put("/", validate(updateLeadSchema), LeadController.update);
 
 export default router;
-
-

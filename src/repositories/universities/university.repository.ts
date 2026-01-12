@@ -80,7 +80,7 @@ export const UniversityRepo = {
       `SELECT id, university_slug, university_name, university_logo
        FROM universities 
        WHERE is_active = 1
-       ORDER BY id DESC`
+       ORDER BY id ASC`
     );
     return { data: universities };
   },
