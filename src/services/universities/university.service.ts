@@ -694,6 +694,21 @@ export const getUniversityBySlug = async (slug: string) => {
   );
   const sectionsData = await getUniversitySections(universityId);
 
+  // Check if University_Faculties exists and first object has empty name and img
+  if (sectionsData.sections && sectionsData.sections.University_Faculties) {
+    const faculties = sectionsData.sections.University_Faculties;
+    if (Array.isArray(faculties) && faculties.length > 0) {
+      const firstFaculty = faculties[0];
+      if (
+        firstFaculty &&
+        (firstFaculty.name === "" || firstFaculty.name === null || firstFaculty.name === undefined) &&
+        (firstFaculty.img === "" || firstFaculty.img === null || firstFaculty.img === undefined)
+      ) {
+        sectionsData.sections.University_Faculties = [];
+      }
+    }
+  }
+
   // Fetch approvals
   let approvals = [];
   try {
