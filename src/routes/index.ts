@@ -34,6 +34,8 @@ import searchRoutes from "./search.routes";
 import websiteLeadRoutes from "./website_lead.routes";
 import contactUsRoutes from "./contact_us.routes";
 import dashboardRoutes from "./dashboard/dashboard.routes";
+import blogCategoryRoutes from "./blogs/blog_category.routes";
+import blogRoutes from "./blogs/blog.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -85,5 +87,9 @@ router.use("/cms/contact-us", contactUsRoutes);
 
 // ✅ Dashboard routes
 router.use("/cms/dashboard", dashboardRoutes);
+
+// ✅ Blog routes
+router.use("/cms/blog-categories", blogCategoryRoutes);
+router.use("/cms/blogs", blogRoutes);
 
 export default router;

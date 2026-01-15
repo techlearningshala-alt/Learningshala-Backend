@@ -12,7 +12,7 @@ export class UniversityFaqRepository {
 
     // Fetch paginated data
     const [rows] = await pool.query(
-      "SELECT * FROM university_faq_categories ORDER BY created_at ASC, id ASC LIMIT ? OFFSET ?",
+      "SELECT * FROM university_faq_categories ORDER BY priority ASC, id DESC LIMIT ? OFFSET ?",
       [limit, offset]
     );
 
@@ -32,8 +32,8 @@ export class UniversityFaqRepository {
 
   async createCategory(item: Omit<UniversityFaqCategory, "id" | "created_at" | "updated_at">): Promise<UniversityFaqCategory> {
     const [result]: any = await pool.query(
-      `INSERT INTO university_faq_categories (heading, created_at, updated_at) VALUES (?, NOW(), NOW())`,
-      [item.heading]
+      `INSERT INTO university_faq_categories (heading, priority, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`,
+      [item.heading, item.priority ?? 999]
     );
     const [rows]: any = await pool.query("SELECT * FROM university_faq_categories WHERE id=?", [result.insertId]);
     return rows[0] as UniversityFaqCategory;
@@ -43,7 +43,7 @@ export class UniversityFaqRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
-    const allowedFields = new Set(["heading"]);
+    const allowedFields = new Set(["heading", "priority"]);
 
     for (const [key, value] of Object.entries(item)) {
       if (key === "saveWithDate") continue;
