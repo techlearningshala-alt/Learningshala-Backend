@@ -3,10 +3,12 @@ import { z } from "zod";
 // Category Validation
 export const createCategorySchema = z.object({
   heading: z.string().min(1, "Category heading is required"),
+  priority: z.number().int().nonnegative().default(999),
 });
 
 export const updateCategorySchema = z.object({
   heading: z.string().min(1, "Category heading is required").optional(),
+  priority: z.number().int().nonnegative().default(999).optional(),
 });
 
 // Question Validation

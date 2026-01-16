@@ -46,6 +46,7 @@ export class FaqService {
         acc[category] = {
           category,
           cat_id,
+          priority: row.category_priority ?? 999,
           items: []
         };
       }
@@ -59,7 +60,12 @@ export class FaqService {
       return acc;
     }, {});
 
-    const groupedArray = Object.values(grouped);
+    // Convert to array and sort by priority
+    const groupedArray = Object.values(grouped).sort((a: any, b: any) => {
+      const priorityA = a.priority ?? 999;
+      const priorityB = b.priority ?? 999;
+      return priorityA - priorityB;
+    });
 
     return {
       data: groupedArray

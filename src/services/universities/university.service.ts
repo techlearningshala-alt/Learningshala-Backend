@@ -766,11 +766,12 @@ export const getUniversityBySlug = async (slug: string) => {
         f.description,
         f.created_at,
         f.updated_at,
-        c.heading as category_heading
+        c.heading as category_heading,
+        c.priority as category_priority
       FROM university_faqs f
       LEFT JOIN university_faq_categories c ON f.category_id = c.id
       WHERE f.university_id = ?
-      ORDER BY c.id, f.created_at DESC`,
+      ORDER BY c.priority ASC, c.id ASC, f.created_at DESC`,
       [universityId]
     );
 
@@ -783,6 +784,7 @@ export const getUniversityBySlug = async (slug: string) => {
           category: faq.category_heading || 'Uncategorized',
           id: categoryId,
           cat_id: faq.category_heading || 'Uncategorized',
+          priority: faq.category_priority || 999,
           items: []
         };
       }
@@ -793,8 +795,12 @@ export const getUniversityBySlug = async (slug: string) => {
       });
     });
 
-    // Convert to array format
-    universityFaqs = Object.values(faqsByCategory);
+    // Convert to array format and sort by priority
+    universityFaqs = Object.values(faqsByCategory).sort((a: any, b: any) => {
+      const priorityA = a.priority ?? 999;
+      const priorityB = b.priority ?? 999;
+      return priorityA - priorityB;
+    });
   } catch (e) {
     console.error('Error fetching university FAQs:', e);
   }

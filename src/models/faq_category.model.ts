@@ -1,6 +1,7 @@
 export interface FaqCategory {
   id: number;
   heading: string;
+  priority: number;
   created_at: Date;
   updated_at: Date;
 }

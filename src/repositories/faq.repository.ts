@@ -13,7 +13,7 @@ export class FaqRepository {
 
     // Fetch paginated data
     const [rows] = await pool.query(
-      "SELECT * FROM faq_categories ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      "SELECT * FROM faq_categories ORDER BY priority ASC, id DESC LIMIT ? OFFSET ?",
       [limit, offset]
     );
 
@@ -34,8 +34,8 @@ export class FaqRepository {
 
   async createCategory(item: Omit<FaqCategory, "id" | "created_at" | "updated_at">): Promise<FaqCategory> {
     const [result]: any = await pool.query(
-      `INSERT INTO faq_categories (heading, created_at, updated_at) VALUES (?, NOW(), NOW())`,
-      [item.heading]
+      `INSERT INTO faq_categories (heading, priority, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`,
+      [item.heading, item.priority ?? 999]
     );
     const [rows]: any = await pool.query("SELECT * FROM faq_categories WHERE id=?", [result.insertId]);
     return rows[0] as FaqCategory;
@@ -45,16 +45,21 @@ export class FaqRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
+    const allowedFields = new Set(["heading", "priority"]);
+
     for (const [key, value] of Object.entries(item)) {
-      if (key !== "saveWithDate") { // skip frontend flag
-        fields.push(`${key} = ?`);
-        values.push(value);
-      }
+      if (key === "saveWithDate") continue;
+      if (!allowedFields.has(key)) continue;
+      fields.push(`${key} = ?`);
+      values.push(value);
     }
 
     // Only update updated_at if saveWithDate === true
     if (item.saveWithDate) {
       fields.push("updated_at = NOW()");
+    } else {
+      // If saveWithDate is false, explicitly set updated_at = updated_at to prevent ON UPDATE CURRENT_TIMESTAMP
+      fields.push("updated_at = updated_at");
     }
 
     if (!fields.length) return false;
@@ -88,10 +93,10 @@ export class FaqRepository {
   async findAllQuestions(): Promise<{ data: Faq[];}> {
 
     const [rows] = await pool.query(
-      `SELECT f.*, c.heading 
+      `SELECT f.*, c.heading, c.priority as category_priority
      FROM faqs f
      LEFT JOIN faq_categories c ON f.category_id = c.id
-     ORDER BY f.created_at DESC`,
+     ORDER BY c.priority ASC, c.id ASC, f.created_at DESC`,
     );
     return { data: rows as Faq[] };
   }
