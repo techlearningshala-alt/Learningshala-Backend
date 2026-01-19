@@ -169,7 +169,7 @@ export const createLeadSchema = z
     emi_required: optionalBooleanLabel(),
     salary: optionalNumericString("Salary", { maxDigits: 10, allowDecimal: true, maxValue: 10000000 }),
     percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
-    experience: optionalNumericString("Experience", { maxDigits: 2, allowDecimal: true, maxValue: 60 }),
+    experience: optionalTrimmedString("Experience", 150),
 
     currently_employed: optionalBooleanLabel(),
     university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),
@@ -216,7 +216,7 @@ export const updateLeadSchema = z
     emi_required: optionalBooleanLabel(),
     salary: optionalNumericString("Salary", { maxDigits: 10, allowDecimal: true, maxValue: 10000000 }),
     percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
-    experience: optionalNumericString("Experience", { maxDigits: 2, allowDecimal: true, maxValue: 60 }),
+    experience: optionalTrimmedString("Experience", 150),
 
     currently_employed: optionalBooleanLabel(),
     university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),
