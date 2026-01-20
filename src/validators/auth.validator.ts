@@ -15,3 +15,8 @@ export const loginSchema = z.object({
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1, "refreshToken required"),
 });
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email("Invalid email"),
+  otp: z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only digits"),
+});

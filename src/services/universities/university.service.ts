@@ -478,26 +478,35 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
     }
 
     uniMap[u.id] = {
-        id: u.id,
-        university_name: u.university_name,
-        university_slug: u.university_slug,
-        university_type_id: u.university_type_id,
-        meta_title: u.meta_title,
-        meta_description: u.meta_description,
-        university_logo: u.university_logo,
-        university_location: u.university_location,
-        university_brochure: u.university_brochure,
-        is_active: u.is_active,
-        menu_visibility: u.is_page_created === null || u.is_page_created === undefined ? true : Boolean(u.is_page_created),
-        author_name: u.author_name,
-        created_at: u.created_at,
-        updated_at: u.updated_at,
-        approval_id: u.approval_id, // Keep for admin frontend
-        approvals: approvals, // Add approval objects for website
-        placement_partner_ids: u.placement_partner_ids, // Keep for admin frontend
-        placement_partners: placementPartners, // Add placement partner objects
-        emi_partner_ids: u.emi_partner_ids, // Keep for admin frontend
-        emi_partners: emiPartners, // Add EMI partner objects
+      id: u.id,
+      university_name: u.university_name,
+      university_slug: u.university_slug,
+      university_type_id: u.university_type_id,
+      meta_title: u.meta_title,
+      meta_description: u.meta_description,
+      university_logo: u.university_logo,
+      university_location: u.university_location,
+      university_brochure: u.university_brochure,
+      is_active: Boolean(u.is_active),
+      // Expose is_page_created as a boolean for admin panel
+      is_page_created:
+        u.is_page_created === null || u.is_page_created === undefined
+          ? true
+          : Boolean(u.is_page_created),
+      // Home page visibility flag
+      menu_visibility:
+        u.menu_visibility === null || u.menu_visibility === undefined
+          ? true
+          : Boolean(u.menu_visibility),
+      author_name: u.author_name,
+      created_at: u.created_at,
+      updated_at: u.updated_at,
+      approval_id: u.approval_id, // Keep for admin frontend
+      approvals: approvals, // Add approval objects for website
+      placement_partner_ids: u.placement_partner_ids, // Keep for admin frontend
+      placement_partners: placementPartners, // Add placement partner objects
+      emi_partner_ids: u.emi_partner_ids, // Keep for admin frontend
+      emi_partners: emiPartners, // Add EMI partner objects
       banners: [],
       sections: [],
     };
@@ -664,11 +673,16 @@ export const getUniversityById = async (id: number) => {
     console.error('Error parsing approval_id:', e);
   }
 
-  const universityData = { ...rows[0] };
-  // Map is_page_created to menu_visibility
+  const universityData: any = { ...rows[0] };
+  // Normalize booleans
   if (universityData.is_page_created !== undefined) {
-    universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
-    delete universityData.is_page_created;
+    universityData.is_page_created = Boolean(universityData.is_page_created);
+  }
+  if (universityData.is_active !== undefined) {
+    universityData.is_active = Boolean(universityData.is_active);
+  }
+  if (universityData.menu_visibility !== undefined) {
+    universityData.menu_visibility = Boolean(universityData.menu_visibility);
   }
 
   return {  data: {
@@ -850,11 +864,16 @@ export const getUniversityBySlug = async (slug: string) => {
     console.error('Error fetching university courses:', e);
   }
 
-  const universityData = { ...rows[0] };
-  // Map is_page_created to menu_visibility
+  const universityData: any = { ...rows[0] };
+  // Normalize booleans
   if (universityData.is_page_created !== undefined) {
-    universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
-    delete universityData.is_page_created;
+    universityData.is_page_created = Boolean(universityData.is_page_created);
+  }
+  if (universityData.is_active !== undefined) {
+    universityData.is_active = Boolean(universityData.is_active);
+  }
+  if (universityData.menu_visibility !== undefined) {
+    universityData.menu_visibility = Boolean(universityData.menu_visibility);
   }
 
   const result = {  data: {
@@ -920,11 +939,46 @@ export const toggleUniversityPageCreated = async (id: number, isPageCreated: boo
     if (result.affectedRows === 0) return null;
     
     const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
-    const universityData = { ...rows[0] };
-    // Map is_page_created to menu_visibility
+  const universityData: any = { ...rows[0] };
+  // Normalize booleans
+  if (universityData.is_page_created !== undefined) {
+    universityData.is_page_created = Boolean(universityData.is_page_created);
+  }
+  if (universityData.is_active !== undefined) {
+    universityData.is_active = Boolean(universityData.is_active);
+  }
+  if (universityData.menu_visibility !== undefined) {
+    universityData.menu_visibility = Boolean(universityData.menu_visibility);
+  }
+    return universityData;
+  } catch (err) {
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+export const toggleUniversityMenuVisibility = async (id: number, menuVisibility: boolean) => {
+  const conn = await pool.getConnection();
+  try {
+    const [result]: any = await conn.query(
+      `UPDATE universities SET menu_visibility = ? WHERE id = ?`,
+      [menuVisibility ? 1 : 0, id]
+    );
+    
+    if (result.affectedRows === 0) return null;
+    
+    const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
+    const universityData: any = { ...rows[0] };
+    // Normalize booleans
     if (universityData.is_page_created !== undefined) {
-      universityData.menu_visibility = universityData.is_page_created === null || universityData.is_page_created === undefined ? true : Boolean(universityData.is_page_created);
-      delete universityData.is_page_created;
+      universityData.is_page_created = Boolean(universityData.is_page_created);
+    }
+    if (universityData.is_active !== undefined) {
+      universityData.is_active = Boolean(universityData.is_active);
+    }
+    if (universityData.menu_visibility !== undefined) {
+      universityData.menu_visibility = Boolean(universityData.menu_visibility);
     }
     return universityData;
   } catch (err) {

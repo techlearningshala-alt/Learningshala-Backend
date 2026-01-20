@@ -455,10 +455,26 @@ export const togglePageCreated = async (req: Request, res: Response) => {
   }
 };
 
+export const toggleMenuVisibility = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { menu_visibility } = req.body;
+    
+    const updated = await UniversityService.toggleUniversityMenuVisibility(Number(id), Boolean(menu_visibility));
+    if (!updated) return errorResponse(res, "University not found", 404);
+    
+    return successResponse(res, updated, "University home page visibility updated successfully");
+  } catch (err: any) {
+    console.error("❌ Toggle menu visibility error:", err);
+    return errorResponse(res, err.message || "Failed to toggle home page visibility", 400);
+  }
+};
+
 export const fetchList = async (req: Request, res: Response) => {
   try {
     console.log("fetchList");
     const universities = await UniversityService.fetchUniversitiesList();
+    console.log(universities,"universities");
     return successResponse(res, universities, "Universities list fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch universities list", 400);

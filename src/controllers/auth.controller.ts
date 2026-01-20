@@ -23,6 +23,17 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+// OTP Verification (commented out - OTP temporarily disabled)
+// export const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const { email, otp } = req.body;
+//     const data = await AuthService.verifyOtp(email, otp);
+//     return successResponse(res, data, "Login successful");
+//   } catch (err: any) {
+//     return errorResponse(res, err.message || "OTP verification failed", 401);
+//   }
+// };
+
 export const refresh = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.body;

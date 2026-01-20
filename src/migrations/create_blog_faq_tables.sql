@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS blog_faq_categories (
 -- Create blog_faqs table
 CREATE TABLE IF NOT EXISTS blog_faqs (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  blog_id INT NOT NULL,
+  blog_id INT UNSIGNED NOT NULL,
   category_id INT NOT NULL,
   title VARCHAR(500) NOT NULL,
   description TEXT NOT NULL,

@@ -11,6 +11,7 @@ export interface University {
   university_type_id?: number | null;
   is_active: boolean;
   is_page_created: boolean;
+  menu_visibility: boolean;
   approval_id?: number[];
   placement_partner_ids?: number[];
   emi_partner_ids?: number[];

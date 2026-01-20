@@ -5,8 +5,8 @@ export const UniversityRepo = {
   async createUniversity(universityData: any) {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
-       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, approval_id, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, approval_id, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -19,6 +19,7 @@ export const UniversityRepo = {
         universityData.university_type_id ?? null,
         universityData.is_active ?? true,
         universityData.is_page_created !== undefined ? (universityData.is_page_created ? 1 : 0) : 1,
+        universityData.menu_visibility !== undefined ? (universityData.menu_visibility ? 1 : 0) : 1,
         universityData.approval_id ?? null,
         universityData.placement_partner_ids ?? null,
         universityData.emi_partner_ids ?? null,
@@ -77,11 +78,19 @@ export const UniversityRepo = {
 
   async fetchUniversitiesList() {
     const [universities]: any = await pool.query(
-      `SELECT id, university_slug, university_name, university_logo
+      `SELECT id, university_slug, university_name, university_logo, is_page_created, menu_visibility, is_active
        FROM universities 
-       WHERE is_active = 1
-       ORDER BY id ASC`
+      WHERE is_active = 1
+      ORDER BY id ASC`
     );
-    return { data: universities };
+    universities.forEach((item: any) => {
+      item.is_active = Boolean(item.is_active);
+      item.is_page_created = Boolean(item.is_page_created);
+      item.menu_visibility =
+        item.menu_visibility === null || item.menu_visibility === undefined
+          ? true
+          : Boolean(item.menu_visibility);
+    });
+    return universities;
   },
 };
