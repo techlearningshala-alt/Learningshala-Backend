@@ -990,5 +990,5 @@ export const toggleUniversityMenuVisibility = async (id: number, menuVisibility:
 
 export const fetchUniversitiesList = async () => {
   const data =  await UniversityRepo.fetchUniversitiesList();
-  return{ data :data}
+  return { data :data}
 };

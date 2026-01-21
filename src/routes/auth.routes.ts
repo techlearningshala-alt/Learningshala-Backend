@@ -9,7 +9,7 @@ const router = Router();
 router.post("/register", validate(registerSchema), AuthController.register);
 router.post("/login", validate(loginSchema), AuthController.login);
 // OTP route (commented out - OTP temporarily disabled)
-// router.post("/verify-otp", validate(verifyOtpSchema), AuthController.verifyOtp);
+router.post("/verify-otp", validate(verifyOtpSchema), AuthController.verifyOtp);
 router.post("/refresh", validate(refreshSchema), AuthController.refresh);
 router.post("/logout", AuthController.logout); // we accept refreshToken in body
 router.get("/me", authMiddleware, AuthController.me);
