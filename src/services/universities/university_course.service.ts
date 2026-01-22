@@ -151,6 +151,21 @@ async function getCourseSections(courseId: number) {
     return acc;
   }, {});
   
+  // Check if University_Faculties exists in sections_transformed and first object has empty name and img
+  if (newFormat.University_Faculties) {
+    const faculties = newFormat.University_Faculties;
+    if (Array.isArray(faculties) && faculties.length > 0) {
+      const firstFaculty = faculties[0];
+      if (
+        firstFaculty &&
+        (firstFaculty.name === "" || firstFaculty.name === null || firstFaculty.name === undefined) &&
+        (firstFaculty.img === "" || firstFaculty.img === null || firstFaculty.img === undefined)
+      ) {
+        newFormat.University_Faculties = [];
+      }
+    }
+  }
+  
   // Return both formats separately
   return {
     sections: oldFormat,
@@ -165,14 +180,13 @@ async function getCourseFaqs(courseId: number) {
               f.title,
               f.description,
               f.category_id,
-              c.heading AS category_heading
+              f.created_at,
+              c.heading AS category_heading,
+              c.priority AS category_priority
        FROM university_course_faqs f
        LEFT JOIN university_faq_categories c ON f.category_id = c.id
        WHERE f.course_id = ?
-       ORDER BY 
-         CASE WHEN c.heading IS NULL THEN 1 ELSE 0 END,
-         c.heading,
-         f.created_at DESC`,
+       ORDER BY c.priority ASC, c.id ASC, f.created_at DESC`,
       [courseId]
     );
 
@@ -190,6 +204,7 @@ console.log("rows", rows);
         acc[categoryId] = {
           category: heading,
           cat_id: slug || `category-${categoryId || "uncategorized"}`,
+          priority: faq.category_priority || 999,
           items: [],
         };
       }
@@ -204,7 +219,13 @@ console.log("rows", rows);
       return acc;
     }, {});
 
-    const result = Object.values(grouped);
+    // Convert to array format and sort by priority
+    const result = Object.values(grouped).sort((a: any, b: any) => {
+      const priorityA = a.priority ?? 999;
+      const priorityB = b.priority ?? 999;
+      return priorityA - priorityB;
+    });
+    
     console.log(`✅ [COURSE FAQ] Grouped FAQs for course_id ${courseId}:`, result.length, "categories");
     return result;
   } catch (error) {

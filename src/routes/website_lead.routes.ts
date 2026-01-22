@@ -14,6 +14,7 @@ router.post("/:id/verify-otp", validate(verifyOtpSchema), WebsiteLeadController.
 
 // Protected endpoint to list website leads (authenticated)
 router.get("/", authMiddleware, WebsiteLeadController.getAll);
+router.get("/export", authMiddleware, WebsiteLeadController.exportWebsiteLeads);
 
 export default router;
 

@@ -11,6 +11,7 @@ router.post("/", validate(createContactUsSchema), ContactUsController.create);
 
 // Protected endpoints to manage contact messages (authenticated)
 router.get("/", authMiddleware, ContactUsController.getAll);
+router.get("/export", authMiddleware, ContactUsController.exportContactUs);
 router.get("/:id", authMiddleware, ContactUsController.getOne);
 router.delete("/:id", authMiddleware, ContactUsController.deleteOne);
 

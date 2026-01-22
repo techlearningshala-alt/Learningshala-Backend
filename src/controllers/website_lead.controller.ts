@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { successResponse, errorResponse } from "../utills/response";
 import { createWebsiteLead, verifyWebsiteLeadOtp, listWebsiteLeads } from "../services/website_lead.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { exportToExcel, ExcelColumn } from "../utills/excelExport";
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -72,3 +73,59 @@ export const verifyOtp = async (req: Request, res: Response) => {
   }
 };
 
+export const exportWebsiteLeads = async (req: Request, res: Response) => {
+  try {
+    const search =
+      typeof req.query.search === "string" ? req.query.search.trim() : undefined;
+    const fromDate =
+      typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
+    const toDate =
+      typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
+
+    // Fetch all website leads with filters
+    const data = await listWebsiteLeads(1, 100000, { search, fromDate, toDate });
+    const leads = data.data || [];
+
+    // Define Excel columns
+    const columns: ExcelColumn[] = [
+      { key: "name", header: "Name", width: 20 },
+      { key: "email", header: "Email", width: 25 },
+      { key: "phone", header: "Phone", width: 15 },
+      { key: "course", header: "Course", width: 20 },
+      { key: "specialization", header: "Specialization", width: 20 },
+      { key: "state", header: "State", width: 15 },
+      { key: "city", header: "City", width: 15 },
+      { key: "lead_source", header: "Lead Source", width: 15 },
+      { key: "sub_source", header: "Sub Source", width: 15 },
+      { key: "utm_source", header: "UTM Source", width: 15 },
+      { key: "utm_campaign", header: "UTM Campaign", width: 15 },
+      { key: "utm_adgroup", header: "UTM Ad Group", width: 15 },
+      { key: "utm_ads", header: "UTM Ads", width: 15 },
+      { key: "website_url", header: "Website URL", width: 30 },
+      {
+        key: "created_at",
+        header: "Created On",
+        width: 20,
+        getValue: (row) => {
+          if (!row.created_at) return "-";
+          const date = new Date(row.created_at);
+          return isNaN(date.getTime())
+            ? "-"
+            : `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`;
+        },
+      },
+    ];
+
+    await exportToExcel(res, leads, columns, "Website_Leads");
+  } catch (error: any) {
+    console.error("❌ Error exporting website leads:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to export website leads",
+      error?.statusCode || 500
+    );
+  }
+};

@@ -11,6 +11,7 @@ router.use(authMiddleware);
 router.post("/", validate(createLeadSchema), LeadController.create);
 
 router.get("/", LeadController.getLeads);
+router.get("/export", LeadController.exportLeads);
 router.put("/", validate(updateLeadSchema), LeadController.update);
 
 export default router;

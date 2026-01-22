@@ -156,6 +156,21 @@ async function getSpecializationSections(specializationId: number) {
     return acc;
   }, {});
   
+  // Check if University_Faculties exists in sections_transformed and first object has empty name and img
+  if (newFormat.University_Faculties) {
+    const faculties = newFormat.University_Faculties;
+    if (Array.isArray(faculties) && faculties.length > 0) {
+      const firstFaculty = faculties[0];
+      if (
+        firstFaculty &&
+        (firstFaculty.name === "" || firstFaculty.name === null || firstFaculty.name === undefined) &&
+        (firstFaculty.img === "" || firstFaculty.img === null || firstFaculty.img === undefined)
+      ) {
+        newFormat.University_Faculties = [];
+      }
+    }
+  }
+  
   // Return both formats separately
   return {
     sections: oldFormat,
