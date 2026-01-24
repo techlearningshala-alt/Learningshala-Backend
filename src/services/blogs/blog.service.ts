@@ -14,6 +14,11 @@ export class BlogService {
 
   static async create(data: {
     category_id: number;
+    h1_tag?: string | null;
+    slug?: string | null;
+    meta_title?: string | null;
+    meta_description?: string | null;
+    author_id?: number | null;
     title: string;
     short_description?: string | null;
     author_name?: string | null;
@@ -43,6 +48,11 @@ export class BlogService {
 
     return blogRepo.create({
       category_id: data.category_id,
+      h1_tag: data.h1_tag ?? null,
+      slug: data.slug ?? null,
+      meta_title: data.meta_title ?? null,
+      meta_description: data.meta_description ?? null,
+      author_id: data.author_id ?? null,
       title: data.title,
       short_description: data.short_description ?? null,
       author_name: data.author_name ?? null,
@@ -59,6 +69,11 @@ export class BlogService {
     id: number,
     data: Partial<{
       category_id: number;
+      h1_tag: string | null;
+      slug: string | null;
+      meta_title: string | null;
+      meta_description: string | null;
+      author_id: number | null;
       title: string;
       short_description: string | null;
       author_name: string | null;

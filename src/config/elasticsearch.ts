@@ -3,15 +3,14 @@ import { Client } from '@elastic/elasticsearch';
 // Elasticsearch connection configuration
 const esClient = new Client({
   node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
-  // Add authentication if needed:
-  // auth: {
-  //   username: process.env.ELASTICSEARCH_USERNAME || '',
-  //   password: process.env.ELASTICSEARCH_PASSWORD || '',
-  // },
-  // For cloud Elasticsearch:
-  // cloud: {
-  //   id: process.env.ELASTICSEARCH_CLOUD_ID || '',
-  // },
+  auth: {
+    username: process.env.ELASTICSEARCH_USERNAME || '',
+    password: process.env.ELASTICSEARCH_PASSWORD || '',
+  },
+  // If you are using self-signed certs or docker internal connections:
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
 // Test connection
@@ -23,4 +22,3 @@ esClient.ping()
   });
 
 export default esClient;
-

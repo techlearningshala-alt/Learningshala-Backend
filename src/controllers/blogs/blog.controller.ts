@@ -43,11 +43,6 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     const body = { ...req.body };
     const files = req.files as { author_image?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
 
-    // Convert category_id to number if it's a string (from FormData)
-    if (body.category_id) {
-      body.category_id = typeof body.category_id === 'string' ? parseInt(body.category_id, 10) : body.category_id;
-    }
-
     // Handle author image upload
     if (files?.author_image?.[0]) {
       const file = files.author_image[0];
@@ -83,11 +78,6 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const body = { ...req.body };
     const files = req.files as { author_image?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
-
-    // Convert category_id to number if it's a string (from FormData)
-    if (body.category_id) {
-      body.category_id = typeof body.category_id === 'string' ? parseInt(body.category_id, 10) : body.category_id;
-    }
 
     // Handle author image upload or removal
     if (files?.author_image?.[0]) {

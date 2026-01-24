@@ -37,6 +37,7 @@ import dashboardRoutes from "./dashboard/dashboard.routes";
 import blogCategoryRoutes from "./blogs/blog_category.routes";
 import blogRoutes from "./blogs/blog.routes";
 import blogFaqRoutes from "./blogs/blog_faq.routes";
+import authorRoutes from "./author.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -93,5 +94,8 @@ router.use("/cms/dashboard", dashboardRoutes);
 router.use("/cms/blog-categories", blogCategoryRoutes);
 router.use("/cms/blogs", blogRoutes);
 router.use("/cms/blogs/faqs", blogFaqRoutes);
+
+// ✅ Author routes
+router.use("/cms/authors", authorRoutes);
 
 export default router;

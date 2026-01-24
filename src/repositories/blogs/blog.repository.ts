@@ -41,6 +41,11 @@ export class BlogRepository {
       `SELECT 
         b.id,
         b.category_id,
+        b.h1_tag,
+        b.slug,
+        b.meta_title,
+        b.meta_description,
+        b.author_id,
         b.title,
         b.short_description,
         b.author_name,
@@ -66,6 +71,11 @@ export class BlogRepository {
     const data = rows.map((row: any) => ({
       id: row.id,
       category_id: row.category_id,
+      h1_tag: row.h1_tag,
+      slug: row.slug,
+      meta_title: row.meta_title,
+      meta_description: row.meta_description,
+      author_id: row.author_id,
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
@@ -94,6 +104,11 @@ export class BlogRepository {
       `SELECT 
         b.id,
         b.category_id,
+        b.h1_tag,
+        b.slug,
+        b.meta_title,
+        b.meta_description,
+        b.author_id,
         b.title,
         b.short_description,
         b.author_name,
@@ -118,6 +133,11 @@ export class BlogRepository {
     return {
       id: row.id,
       category_id: row.category_id,
+      h1_tag: row.h1_tag,
+      slug: row.slug,
+      meta_title: row.meta_title,
+      meta_description: row.meta_description,
+      author_id: row.author_id,
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
@@ -137,11 +157,17 @@ export class BlogRepository {
   async create(item: Omit<Blog, "id" | "created_at" | "updated_at">): Promise<Blog> {
     const [result]: any = await pool.query(
       `INSERT INTO blogs (
-        category_id, title, short_description, author_name, author_details, 
+        category_id, h1_tag, slug, meta_title, meta_description, author_id,
+        title, short_description, author_name, author_details, 
         author_image, thumbnail, verified, update_date, content, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.category_id,
+        item.h1_tag ?? null,
+        item.slug ?? null,
+        item.meta_title ?? null,
+        item.meta_description ?? null,
+        item.author_id ?? null,
         item.title,
         item.short_description ?? null,
         item.author_name ?? null,
@@ -166,6 +192,11 @@ export class BlogRepository {
 
     const allowedFields = new Set([
       "category_id",
+      "h1_tag",
+      "slug",
+      "meta_title",
+      "meta_description",
+      "author_id",
       "title",
       "short_description",
       "author_name",
