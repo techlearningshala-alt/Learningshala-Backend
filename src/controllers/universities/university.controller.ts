@@ -472,7 +472,6 @@ export const toggleMenuVisibility = async (req: Request, res: Response) => {
 
 export const fetchList = async (req: Request, res: Response) => {
   try {
-    console.log("fetchList");
     const universities = await UniversityService.fetchUniversitiesList();
     console.log(universities,"universities");
     return successResponse(res, universities, "Universities list fetched successfully");

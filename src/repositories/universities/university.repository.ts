@@ -78,10 +78,24 @@ export const UniversityRepo = {
 
   async fetchUniversitiesList() {
     const [universities]: any = await pool.query(
-      `SELECT id, university_slug, university_name, university_logo, is_page_created, menu_visibility, is_active
-       FROM universities 
-      WHERE is_active = 1
-      ORDER BY id ASC`
+      `SELECT 
+        u.id, 
+        u.university_slug, 
+        u.university_name, 
+        u.university_logo, 
+        u.is_page_created, 
+        u.menu_visibility, 
+        u.is_active,
+        ut.name AS university_type,
+        COALESCE(COUNT(DISTINCT uc.id), 0) AS course_count,
+        COALESCE(COUNT(DISTINCT ucs.id), 0) AS specialization_count
+       FROM universities u
+       LEFT JOIN university_types ut ON u.university_type_id = ut.id
+       LEFT JOIN university_courses uc ON u.id = uc.university_id
+       LEFT JOIN university_course_specialization ucs ON uc.id = ucs.university_course_id
+       WHERE u.is_active = 1
+       GROUP BY u.id, u.university_slug, u.university_name, u.university_logo, u.is_page_created, u.menu_visibility, u.is_active, ut.name
+       ORDER BY u.id ASC`
     );
     universities.forEach((item: any) => {
       item.is_active = Boolean(item.is_active);
@@ -90,6 +104,11 @@ export const UniversityRepo = {
         item.menu_visibility === null || item.menu_visibility === undefined
           ? true
           : Boolean(item.menu_visibility);
+      // Convert counts to numbers
+      item.course_count = Number(item.course_count) || 0;
+      item.specialization_count = Number(item.specialization_count) || 0;
+      // University type can be null if not set
+      item.university_type = item.university_type || null;
     });
     return universities;
   },

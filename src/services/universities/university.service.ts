@@ -695,7 +695,12 @@ export const getUniversityById = async (id: number) => {
 
 export const getUniversityBySlug = async (slug: string) => {
   const [rows]: any = await pool.query(
-    `SELECT * FROM universities WHERE university_slug = ?`,
+    `SELECT 
+      u.*,
+      ut.name AS university_type
+    FROM universities u
+    LEFT JOIN university_types ut ON u.university_type_id = ut.id
+    WHERE u.university_slug = ?`,
     [slug]
   );
   if (!rows.length) return null;
@@ -875,9 +880,12 @@ export const getUniversityBySlug = async (slug: string) => {
   if (universityData.menu_visibility !== undefined) {
     universityData.menu_visibility = Boolean(universityData.menu_visibility);
   }
+  // Extract university type (can be null if not set)
+  const universityType = universityData.university_type || null;
 
   const result = {  data: {
     ...universityData,
+    university_type: universityType, // Add university type name
     approvals, // Add approval objects for website
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects
@@ -990,5 +998,5 @@ export const toggleUniversityMenuVisibility = async (id: number, menuVisibility:
 
 export const fetchUniversitiesList = async () => {
   const data =  await UniversityRepo.fetchUniversitiesList();
-  return { data :data}
+  return{ data :data}
 };
