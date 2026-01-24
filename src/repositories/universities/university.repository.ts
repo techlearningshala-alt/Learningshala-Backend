@@ -86,6 +86,7 @@ export const UniversityRepo = {
         u.is_page_created, 
         u.menu_visibility, 
         u.is_active,
+        u.university_type_id,
         ut.name AS university_type,
         COALESCE(COUNT(DISTINCT uc.id), 0) AS course_count,
         COALESCE(COUNT(DISTINCT ucs.id), 0) AS specialization_count
@@ -94,7 +95,7 @@ export const UniversityRepo = {
        LEFT JOIN university_courses uc ON u.id = uc.university_id
        LEFT JOIN university_course_specialization ucs ON uc.id = ucs.university_course_id
        WHERE u.is_active = 1
-       GROUP BY u.id, u.university_slug, u.university_name, u.university_logo, u.is_page_created, u.menu_visibility, u.is_active, ut.name
+       GROUP BY u.id, u.university_slug, u.university_name, u.university_logo, u.is_page_created, u.menu_visibility, u.is_active, u.university_type_id, ut.name
        ORDER BY u.id ASC`
     );
     universities.forEach((item: any) => {
