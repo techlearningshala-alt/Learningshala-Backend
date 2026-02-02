@@ -768,6 +768,17 @@ export const getUniversityBySlug = async (slug: string) => {
     }
   }
 
+  // Check if Student_Ratings exists and first object has empty name and reviewContent
+  if (sectionsData.sections && sectionsData.sections.Student_Ratings && sectionsData.sections.Student_Ratings.length > 0) {
+    const reviews = sectionsData.sections.Student_Ratings;
+    if (Array.isArray(reviews) && reviews.length > 0) {
+      const firstReview = reviews[0];
+      if (firstReview && (firstReview.name === "" || firstReview.name === null || firstReview.name === undefined)) {
+        sectionsData.sections.Student_Ratings = [];
+      }
+    }
+  }
+
   // Fetch approvals
   let approvals = [];
   try {
