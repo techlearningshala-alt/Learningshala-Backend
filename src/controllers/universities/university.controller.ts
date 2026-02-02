@@ -332,7 +332,8 @@ export const findAll = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const university_type_id = req.query.university_type_id ? parseInt(req.query.university_type_id as string) : undefined;
-    const result = await UniversityService.getAllUniversities(page, limit, university_type_id);
+    const search = req.query.search as string | undefined;
+    const result = await UniversityService.getAllUniversities(page, limit, university_type_id, search);
     return successResponse(res, result, "Universities fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch universities", 400);

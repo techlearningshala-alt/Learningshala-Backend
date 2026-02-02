@@ -1,31 +1,39 @@
 import pool from "../config/db";
-import { HomeBanner, CreateHomeBannerDto, UpdateHomeBannerDto } from "../models/home_banner.model";
+import { WebsiteBanner, CreateWebsiteBannerDto, UpdateWebsiteBannerDto } from "../models/website_banner.model";
 
-export class HomeBannerRepository {
-  async findAll(page = 1, limit = 10): Promise<{ data: HomeBanner[]; total: number; page: number; pages: number }> {
+export class WebsiteBannerRepository {
+  async findAll(page = 1, limit = 10, bannerType?: 'website' | 'mobile'): Promise<{ data: WebsiteBanner[]; total: number; page: number; pages: number }> {
     const offset = (page - 1) * limit;
-    const [rows]: any = await pool.query(
-      "SELECT SQL_CALC_FOUND_ROWS * FROM home_banners ORDER BY id DESC LIMIT ? OFFSET ?",
-      [limit, offset]
-    );
+    let query = "SELECT SQL_CALC_FOUND_ROWS * FROM home_banners";
+    const params: any[] = [];
+    
+    if (bannerType) {
+      query += " WHERE banner_type = ?";
+      params.push(bannerType);
+    }
+    
+    query += " ORDER BY id DESC LIMIT ? OFFSET ?";
+    params.push(limit, offset);
+    
+    const [rows]: any = await pool.query(query, params);
     const [[{ "FOUND_ROWS()": total }]]: any = await pool.query("SELECT FOUND_ROWS()");
     return { data: rows, page, pages: Math.ceil(total / limit), total };
   }
 
-  async findById(id: number): Promise<HomeBanner | null> {
+  async findById(id: number): Promise<WebsiteBanner | null> {
     const [rows]: any = await pool.query("SELECT * FROM home_banners WHERE id = ?", [id]);
     return rows.length ? rows[0] : null;
   }
 
-  async create(payload: CreateHomeBannerDto): Promise<HomeBanner> {
+  async create(payload: CreateWebsiteBannerDto): Promise<WebsiteBanner> {
     const [result]: any = await pool.query(
-      `INSERT INTO home_banners (banner_image, video_id, video_title, url) VALUES (?, ?, ?, ?)`,
-      [payload.banner_image, payload.video_id, payload.video_title, payload.url]
+      `INSERT INTO home_banners (banner_image, video_id, video_title, url, banner_type) VALUES (?, ?, ?, ?, ?)`,
+      [payload.banner_image, payload.video_id, payload.video_title, payload.url, payload.banner_type || 'website']
     );
-    return this.findById(result.insertId) as Promise<HomeBanner>;
+    return this.findById(result.insertId) as Promise<WebsiteBanner>;
   }
 
-  async update(id: number, payload: UpdateHomeBannerDto, saveWithDate: boolean): Promise<HomeBanner | null> {
+  async update(id: number, payload: UpdateWebsiteBannerDto, saveWithDate: boolean): Promise<WebsiteBanner | null> {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -44,6 +52,10 @@ export class HomeBannerRepository {
     if (payload.url !== undefined) {
       fields.push("url = ?");
       values.push(payload.url);
+    }
+    if (payload.banner_type !== undefined) {
+      fields.push("banner_type = ?");
+      values.push(payload.banner_type);
     }
 
     if (saveWithDate) {
@@ -70,4 +82,4 @@ export class HomeBannerRepository {
   }
 }
 
-export default new HomeBannerRepository();
+export default new WebsiteBannerRepository();

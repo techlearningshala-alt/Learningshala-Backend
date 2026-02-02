@@ -184,14 +184,18 @@ await conn.query(sql, params);
 
 
     // 🧩 Merge sections - preserve old images for unchanged sections
+    // ✅ Priority for section_key: 1) From payload (defaultSections), 2) From DB, 3) Generate from title (last resort)
     const mergedSections = sections.map((newSection: any, index: number) => {
       const oldSection = existingSections[index];
       
       if (!oldSection) {
-        // New section, ensure it has section_key
+        // New section - prioritize section_key from payload (from defaultSections)
+        // Only generate from title if section_key is truly missing
         return {
           ...newSection,
-          section_key: newSection.section_key || generateSectionKey(newSection.title || "")
+          section_key: (newSection.section_key && newSection.section_key.trim()) 
+            ? newSection.section_key.trim() 
+            : generateSectionKey(newSection.title || "")
         };
       }
 
@@ -205,9 +209,17 @@ await conn.query(sql, params);
       // Deep merge: preserve old image paths if new section doesn't have /uploads/ paths
       const mergedProps = deepMergeImages(oldProps, newProps);
 
+      // ✅ Priority: 1) section_key from payload (defaultSections), 2) from DB, 3) generate from title
+      // This ensures section_key from defaultSections is always preserved
+      const finalSectionKey = (newSection.section_key && newSection.section_key.trim())
+        ? newSection.section_key.trim() // Use from payload (defaultSections) - highest priority
+        : (oldSection.section_key && oldSection.section_key.trim())
+          ? oldSection.section_key.trim() // Fallback to DB value
+          : generateSectionKey(newSection.title || ""); // Last resort: generate from title
+
       return {
         ...newSection,
-        section_key: newSection.section_key || oldSection.section_key || generateSectionKey(newSection.title || ""),
+        section_key: finalSectionKey,
         props: mergedProps
       };
     });
@@ -280,8 +292,13 @@ await conn.query(sql, params);
     }
 
     // 🧩 Re-insert merged sections
+    // ✅ section_key should already be set from mergedSections (from payload/defaultSections)
     for (const s of mergedSections) {
-      const sectionKey = s.section_key || generateSectionKey(s.title || "");
+      // Use section_key from merged section (already prioritized: payload > DB > generated)
+      // Only generate as last resort if somehow missing
+      const sectionKey = (s.section_key && s.section_key.trim()) 
+        ? s.section_key.trim() 
+        : generateSectionKey(s.title || "");
       await conn.query(
         `INSERT INTO university_sections (university_id, section_key, title, component, props)
          VALUES (?, ?, ?, ?, ?)`,
@@ -310,7 +327,7 @@ await conn.query(sql, params);
   }
 };
 
-export const getAllUniversities = async (page = 1, limit = 10, university_type_id?: number) => {
+export const getAllUniversities = async (page = 1, limit = 10, university_type_id?: number, search?: string) => {
   const offset = (page - 1) * limit;
 
   // 1️⃣ Fetch universities with latest first
@@ -319,11 +336,23 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
     FROM universities 
   `;
   const queryParams: any[] = [];
+  const conditions: string[] = [];
 
   // Add filter for university_type_id if provided
   if (university_type_id) {
-    query += ` WHERE university_type_id = ? `;
+    conditions.push(`university_type_id = ?`);
     queryParams.push(university_type_id);
+  }
+
+  // Add search filter if provided
+  if (search && search.trim()) {
+    conditions.push(`university_name LIKE ?`);
+    queryParams.push(`%${search.trim()}%`);
+  }
+
+  // Add WHERE clause if there are any conditions
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')} `;
   }
 
   query += ` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ? `;
@@ -544,9 +573,20 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
   // 7️⃣ Total universities for pagination
   let countQuery = `SELECT COUNT(*) AS total FROM universities`;
   const countParams: any[] = [];
+  const countConditions: string[] = [];
+  
   if (university_type_id) {
-    countQuery += ` WHERE university_type_id = ?`;
+    countConditions.push(`university_type_id = ?`);
     countParams.push(university_type_id);
+  }
+  
+  if (search && search.trim()) {
+    countConditions.push(`university_name LIKE ?`);
+    countParams.push(`%${search.trim()}%`);
+  }
+  
+  if (countConditions.length > 0) {
+    countQuery += ` WHERE ${countConditions.join(' AND ')}`;
   }
   const [[{ total }]]: any = await pool.query(countQuery, countParams);
 
