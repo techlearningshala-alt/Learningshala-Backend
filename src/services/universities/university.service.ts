@@ -915,7 +915,7 @@ export const getUniversityBySlug = async (slug: string) => {
         image: course.image,
         specialization_count: Number(course.specialization_count) || 0,
         fees: fees,
-        is_page_created: course.is_page_created,
+        is_page_created: course.is_page_created == 1 ? true : false,
       };
     });
   } catch (e) {

@@ -304,7 +304,7 @@ export async function   getUniversityCourseByUniversitySlugAndCourseSlug(
         emi_duration: spec.emi_duration,
         duration: spec.duration,
         image: spec.course_thumbnail,
-        is_page_created: spec.is_page_created,
+        is_page_created: spec.is_page_created == 1 ? true : false,
         fees: spec.fee_type_values || {},
       };
     });
