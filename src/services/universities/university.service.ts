@@ -888,11 +888,12 @@ export const getUniversityBySlug = async (slug: string) => {
         uc.duration,
         uc.course_thumbnail as image,
         uc.fee_type_values,
+        uc.is_page_created,
         COUNT(ucs.id) as specialization_count
       FROM university_courses uc
       LEFT JOIN university_course_specialization ucs ON uc.id = ucs.university_course_id
       WHERE uc.university_id = ? AND uc.is_active = 1
-      GROUP BY uc.id, uc.name, uc.slug, uc.duration, uc.course_thumbnail, uc.fee_type_values, uc.emi_duration
+      GROUP BY uc.id, uc.name, uc.slug, uc.duration, uc.course_thumbnail, uc.fee_type_values, uc.emi_duration, uc.is_page_created
       ORDER BY uc.created_at ASC`,
       [universityId]
     );
@@ -913,7 +914,8 @@ export const getUniversityBySlug = async (slug: string) => {
         duration: course.duration,
         image: course.image,
         specialization_count: Number(course.specialization_count) || 0,
-        fees: fees
+        fees: fees,
+        is_page_created: course.is_page_created,
       };
     });
   } catch (e) {
