@@ -527,6 +527,11 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
         u.menu_visibility === null || u.menu_visibility === undefined
           ? true
           : Boolean(u.menu_visibility),
+      // Provide EMI flag
+      provide_emi:
+        u.provide_emi === null || u.provide_emi === undefined
+          ? false
+          : Boolean(u.provide_emi),
       author_name: u.author_name,
       created_at: u.created_at,
       updated_at: u.updated_at,
@@ -723,6 +728,9 @@ export const getUniversityById = async (id: number) => {
   }
   if (universityData.menu_visibility !== undefined) {
     universityData.menu_visibility = Boolean(universityData.menu_visibility);
+  }
+  if (universityData.provide_emi !== undefined) {
+    universityData.provide_emi = Boolean(universityData.provide_emi);
   }
 
   return {  data: {
@@ -933,6 +941,9 @@ export const getUniversityBySlug = async (slug: string) => {
   if (universityData.menu_visibility !== undefined) {
     universityData.menu_visibility = Boolean(universityData.menu_visibility);
   }
+  if (universityData.provide_emi !== undefined) {
+    universityData.provide_emi = Boolean(universityData.provide_emi);
+  }
   // Extract university type (can be null if not set)
   const universityType = universityData.university_type || null;
 
@@ -1040,6 +1051,42 @@ export const toggleUniversityMenuVisibility = async (id: number, menuVisibility:
     }
     if (universityData.menu_visibility !== undefined) {
       universityData.menu_visibility = Boolean(universityData.menu_visibility);
+    }
+    if (universityData.provide_emi !== undefined) {
+      universityData.provide_emi = Boolean(universityData.provide_emi);
+    }
+    return universityData;
+  } catch (err) {
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+export const toggleUniversityProvideEmi = async (id: number, provideEmi: boolean) => {
+  const conn = await pool.getConnection();
+  try {
+    const [result]: any = await conn.query(
+      `UPDATE universities SET provide_emi = ? WHERE id = ?`,
+      [provideEmi ? 1 : 0, id]
+    );
+    
+    if (result.affectedRows === 0) return null;
+    
+    const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
+    const universityData: any = { ...rows[0] };
+    // Normalize booleans
+    if (universityData.is_page_created !== undefined) {
+      universityData.is_page_created = Boolean(universityData.is_page_created);
+    }
+    if (universityData.is_active !== undefined) {
+      universityData.is_active = Boolean(universityData.is_active);
+    }
+    if (universityData.menu_visibility !== undefined) {
+      universityData.menu_visibility = Boolean(universityData.menu_visibility);
+    }
+    if (universityData.provide_emi !== undefined) {
+      universityData.provide_emi = Boolean(universityData.provide_emi);
     }
     return universityData;
   } catch (err) {

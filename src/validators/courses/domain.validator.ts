@@ -3,6 +3,7 @@ import { z } from "zod";
 // Domains
 export const createDomainSchema = z.object({
   name: z.string().min(1),
+  label: z.string().optional(),
   description: z.string().min(1),
   priority: z.number().int().nonnegative().default(999),
   is_active: z.boolean().default(true),
@@ -11,6 +12,7 @@ export const createDomainSchema = z.object({
 
 export const updateDomainSchema = z.object({
   name: z.string().min(1).optional(),
+  label: z.string().optional(),
   description: z.string().optional(),
   priority: z.number().int().nonnegative().default(999),
   is_active: z.boolean().default(true),

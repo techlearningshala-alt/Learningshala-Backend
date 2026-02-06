@@ -471,6 +471,21 @@ export const toggleMenuVisibility = async (req: Request, res: Response) => {
   }
 };
 
+export const toggleProvideEmi = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { provide_emi } = req.body;
+    
+    const updated = await UniversityService.toggleUniversityProvideEmi(Number(id), Boolean(provide_emi));
+    if (!updated) return errorResponse(res, "University not found", 404);
+    
+    return successResponse(res, updated, "University provide EMI status updated successfully");
+  } catch (err: any) {
+    console.error("❌ Toggle provide EMI error:", err);
+    return errorResponse(res, err.message || "Failed to toggle provide EMI", 400);
+  }
+};
+
 export const fetchList = async (req: Request, res: Response) => {
   try {
     const universities = await UniversityService.fetchUniversitiesList();

@@ -22,8 +22,8 @@ export default class DomainRepo {
 
   async create(item: Omit<Domain, "id" | "created_at" | "updated_at">) {
     const [result]: any = await pool.query(
-      `INSERT INTO domains (name, priority, is_active, menu_visibility, slug, description) VALUES (?, ?, ?, ?, ?, ?)`,
-      [item.name, item.priority, item.is_active, item.menu_visibility, item.slug, item.description]
+      `INSERT INTO domains (name, priority, is_active, menu_visibility, slug, description, label) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [item.name, item.priority, item.is_active, item.menu_visibility, item.slug, item.description, item.label || null]
     );
     return { id: result.insertId, ...item };
   }
@@ -33,6 +33,7 @@ export default class DomainRepo {
     const values: any[] = [];
     if (item.name !== undefined) { fields.push("name = ?"); values.push(item.name); }
     if (item.description !== undefined) { fields.push("description = ?"); values.push(item.description); }
+    if (item.label !== undefined) { fields.push("label = ?"); values.push(item.label || null); }
     if (item.priority !== undefined) { fields.push("priority = ?"); values.push(item.priority); }
     if (item.is_active !== undefined) { fields.push("is_active = ?"); values.push(item.is_active); }
     if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility); }
