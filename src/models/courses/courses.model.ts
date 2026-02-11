@@ -10,6 +10,9 @@ export interface Course {
   thumbnail: string;
   description?: string;
   course_duration?: string | null;
+  duration_for_schema?: string | null; // JSON string: {"month": "6", "year": ""} or {"month": "", "year": "1"}
+  eligibility?: string | null;
+  eligibility_info?: string | null; // Eligibility with info button
   upload_brochure?: string | null;
   author_name?: string | null;
   learning_mode?: string | null;

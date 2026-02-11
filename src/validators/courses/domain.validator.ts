@@ -56,6 +56,9 @@ export const createCourseSchema = z.object({
   label: z.string().optional(),
   description: z.string().optional().nullable(),
   course_duration: z.string().optional().nullable(),
+  duration_for_schema: z.string().optional().nullable(), // JSON string
+  eligibility: z.string().optional().nullable(),
+  eligibility_info: z.string().optional().nullable(),
   upload_brochure: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
   learning_mode: z.string().optional().nullable(),
@@ -79,6 +82,9 @@ export const updateCourseSchema = z.object({
   label: z.string().optional(),
   description: z.string().optional().nullable(),
   course_duration: z.string().optional().nullable(),
+  duration_for_schema: z.string().optional().nullable(), // JSON string
+  eligibility: z.string().optional().nullable(),
+  eligibility_info: z.string().optional().nullable(),
   upload_brochure: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
   learning_mode: z.string().optional().nullable(),

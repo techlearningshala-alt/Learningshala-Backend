@@ -196,6 +196,22 @@ console.log(files,"filesbefore")
       if (currentUniversity?.university_brochure && typeof currentUniversity.university_brochure === "string" && !currentUniversity.university_brochure.startsWith("/uploads/")) {
         await deleteFromS3(currentUniversity.university_brochure);
       }
+    } else if (
+      body.university_brochure === "" ||
+      body.university_brochure === "null" ||
+      body.university_brochure === "__REMOVE__"
+    ) {
+      // Brochure was removed - delete from S3 and set to null
+      body.university_brochure = null;
+      if (
+        currentUniversity?.university_brochure &&
+        typeof currentUniversity.university_brochure === "string" &&
+        !currentUniversity.university_brochure.startsWith("/uploads/")
+      ) {
+        await deleteFromS3(currentUniversity.university_brochure).catch((err) =>
+          console.error("Error deleting previous university brochure:", err)
+        );
+      }
     }
 
     // 🖼️ Handle multiple banner images (banner_image_0, banner_image_1, etc.) - upload to S3

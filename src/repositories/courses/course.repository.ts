@@ -22,6 +22,9 @@ export interface Course {
   thumbnail?: string | null;
   description?: string | null;
   course_duration?: string | null;
+  duration_for_schema?: string | null; // JSON string
+  eligibility?: string | null;
+  eligibility_info?: string | null;
   upload_brochure?: string | null;
   author_name?: string | null;
   learning_mode?: string | null;
@@ -54,8 +57,21 @@ export default class CourseRepo {
         : Array.isArray(row.emi_partner_ids)
         ? row.emi_partner_ids
         : [];
+    // Parse duration_for_schema JSON string to object
+    let durationForSchema = null;
+    if (row.duration_for_schema) {
+      try {
+        durationForSchema = typeof row.duration_for_schema === 'string' 
+          ? JSON.parse(row.duration_for_schema) 
+          : row.duration_for_schema;
+      } catch (e) {
+        console.error('Error parsing duration_for_schema:', e);
+      }
+    }
+
     return {
       ...row,
+      duration_for_schema: durationForSchema, // Return as object, not string
       placement_partner_ids: placementIds,
       emi_partner_ids: emiIds,
       is_active:
@@ -153,8 +169,8 @@ export default class CourseRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO courses 
-        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,
@@ -166,6 +182,9 @@ export default class CourseRepo {
         item.thumbnail ?? null,
         item.description ?? null,
         item.course_duration ?? null,
+        item.duration_for_schema ?? null,
+        item.eligibility ?? null,
+        item.eligibility_info ?? null,
         item.upload_brochure ?? null,
         item.author_name ?? null,
         item.learning_mode ?? null,
@@ -229,6 +248,18 @@ export default class CourseRepo {
     if (item.course_duration !== undefined) {
       fields.push("course_duration = ?");
       values.push(item.course_duration ?? null);
+    }
+    if (item.duration_for_schema !== undefined) {
+      fields.push("duration_for_schema = ?");
+      values.push(item.duration_for_schema ?? null);
+    }
+    if (item.eligibility !== undefined) {
+      fields.push("eligibility = ?");
+      values.push(item.eligibility ?? null);
+    }
+    if (item.eligibility_info !== undefined) {
+      fields.push("eligibility_info = ?");
+      values.push(item.eligibility_info ?? null);
     }
     if (item.upload_brochure !== undefined) {
       fields.push("upload_brochure = ?");
