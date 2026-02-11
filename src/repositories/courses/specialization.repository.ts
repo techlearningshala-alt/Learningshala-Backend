@@ -29,8 +29,22 @@ export default class SpecializationRepo {
         : Array.isArray(row.placement_partner_ids)
         ? row.placement_partner_ids
         : [];
+    
+    // Parse duration_for_schema JSON string to object
+    let durationForSchema = null;
+    if (row.duration_for_schema) {
+      try {
+        durationForSchema = typeof row.duration_for_schema === 'string' 
+          ? JSON.parse(row.duration_for_schema) 
+          : row.duration_for_schema;
+      } catch (e) {
+        console.error('Error parsing duration_for_schema:', e);
+      }
+    }
+
     return {
       ...row,
+      duration_for_schema: durationForSchema, // Return as object, not string
       placement_partner_ids: placementIds,
       is_active:
         row.is_active === null || row.is_active === undefined ? true : Boolean(row.is_active),
@@ -38,6 +52,7 @@ export default class SpecializationRepo {
         row.menu_visibility === null || row.menu_visibility === undefined
           ? true
           : Boolean(row.menu_visibility),
+      emi_facility: row.emi_facility === null || row.emi_facility === undefined ? false : Boolean(row.emi_facility),
     };
   }
 
@@ -103,8 +118,8 @@ export default class SpecializationRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO specializations 
-        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_facility)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.course_id,
         item.name,
@@ -116,6 +131,9 @@ export default class SpecializationRepo {
         item.thumbnail ?? null,
         item.description ?? null,
         item.course_duration ?? null,
+        item.duration_for_schema ?? null,
+        item.eligibility ?? null,
+        item.eligibility_info ?? null,
         item.upload_brochure ?? null,
         item.author_name ?? null,
         item.learning_mode ?? null,
@@ -124,6 +142,7 @@ export default class SpecializationRepo {
         menuVisibility ? 1 : 0,
         isActive ? 1 : 0,
         item.placement_partner_ids ? JSON.stringify(item.placement_partner_ids) : null,
+        item.emi_facility === undefined || item.emi_facility === null ? 0 : (item.emi_facility ? 1 : 0),
       ]
     );
     return this.findById(result.insertId, conn);
@@ -144,8 +163,12 @@ export default class SpecializationRepo {
     if (item.thumbnail !== undefined) { fields.push("thumbnail = ?"); values.push(item.thumbnail ?? null); }
     if (item.description !== undefined) { fields.push("description = ?"); values.push(item.description ?? null); }
     if (item.course_duration !== undefined) { fields.push("course_duration = ?"); values.push(item.course_duration ?? null); }
+    if (item.duration_for_schema !== undefined) { fields.push("duration_for_schema = ?"); values.push(item.duration_for_schema ?? null); }
+    if (item.eligibility !== undefined) { fields.push("eligibility = ?"); values.push(item.eligibility ?? null); }
+    if (item.eligibility_info !== undefined) { fields.push("eligibility_info = ?"); values.push(item.eligibility_info ?? null); }
     if (item.upload_brochure !== undefined) { fields.push("upload_brochure = ?"); values.push(item.upload_brochure ?? null); }
     if (item.author_name !== undefined) { fields.push("author_name = ?"); values.push(item.author_name ?? null); }
+    if (item.emi_facility !== undefined) { fields.push("emi_facility = ?"); values.push(item.emi_facility === null ? 0 : (item.emi_facility ? 1 : 0)); }
     if (item.learning_mode !== undefined) { fields.push("learning_mode = ?"); values.push(item.learning_mode ?? null); }
     if (item.podcast_embed !== undefined) { fields.push("podcast_embed = ?"); values.push(item.podcast_embed ?? null); }
     if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility ? 1 : 0); }

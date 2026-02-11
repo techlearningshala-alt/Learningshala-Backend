@@ -17,6 +17,7 @@ export interface Course {
   author_name?: string | null;
   learning_mode?: string | null;
   podcast_embed?: string | null;
+  emi_facility?: boolean | null;
   priority: number;
   menu_visibility: string;
   is_active: string;

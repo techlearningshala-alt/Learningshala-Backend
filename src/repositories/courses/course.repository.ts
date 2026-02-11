@@ -29,6 +29,7 @@ export interface Course {
   author_name?: string | null;
   learning_mode?: string | null;
   podcast_embed?: string | null;
+  emi_facility?: boolean | null;
   priority?: number | null;
   menu_visibility?: boolean;
   is_active?: boolean;
@@ -74,6 +75,10 @@ export default class CourseRepo {
       duration_for_schema: durationForSchema, // Return as object, not string
       placement_partner_ids: placementIds,
       emi_partner_ids: emiIds,
+      emi_facility:
+        row.emi_facility === null || row.emi_facility === undefined
+          ? false
+          : Boolean(row.emi_facility),
       is_active:
         row.is_active === null || row.is_active === undefined ? true : Boolean(row.is_active),
       menu_visibility:
@@ -169,8 +174,8 @@ export default class CourseRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO courses 
-        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, emi_facility, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,
@@ -189,6 +194,7 @@ export default class CourseRepo {
         item.author_name ?? null,
         item.learning_mode ?? null,
         item.podcast_embed ?? null,
+        item.emi_facility ?? null,
         item.priority ?? 0,
         menuVisibility ? 1 : 0,
         isActive ? 1 : 0,
@@ -276,6 +282,14 @@ export default class CourseRepo {
     if (item.podcast_embed !== undefined) {
       fields.push("podcast_embed = ?");
       values.push(item.podcast_embed ?? null);
+    }
+    if (item.emi_facility !== undefined) {
+      fields.push("emi_facility = ?");
+      values.push(
+        item.emi_facility === null || item.emi_facility === undefined
+          ? null
+          : item.emi_facility
+      );
     }
     if (item.placement_partner_ids !== undefined) {
       fields.push("placement_partner_ids = ?");

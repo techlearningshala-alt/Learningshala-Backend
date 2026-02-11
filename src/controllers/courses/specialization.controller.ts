@@ -148,6 +148,10 @@ const normalizeSpecializationPayload = (body: any) => {
   return {
     course_id: Number.isNaN(courseId) ? undefined : courseId,
     name: body.name,
+    duration_for_schema: body.duration_for_schema ?? null,
+    eligibility: body.eligibility ?? null,
+    eligibility_info: body.eligibility_info ?? null,
+    emi_facility: body.emi_facility !== undefined ? toBoolean(body.emi_facility, false) : undefined,
     slug: body.slug,
     h1Tag: body.h1Tag,
     meta_title: body.meta_title ?? null,

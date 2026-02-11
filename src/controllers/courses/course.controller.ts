@@ -165,6 +165,7 @@ const normalizeCoursePayload = (body: any) => {
     author_name: body.author_name ?? null,
     learning_mode: body.learning_mode ?? null,
     podcast_embed: body.podcast_embed ?? null,
+    emi_facility: body.emi_facility !== undefined ? toBoolean(body.emi_facility, false) : undefined,
     placement_partner_ids: parseIds(body.placement_partner_ids),
     emi_partner_ids: parseIds(body.emi_partner_ids),
     priority: priority ?? 0,
