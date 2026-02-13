@@ -39,6 +39,7 @@ import blogRoutes from "./blogs/blog.routes";
 import blogFaqRoutes from "./blogs/blog_faq.routes";
 import authorRoutes from "./author.routes";
 import websiteBannerRoutes from "./website_banner.routes";
+import redirectionRoutes from "./redirections/redirection.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -101,5 +102,8 @@ router.use("/cms/authors", authorRoutes);
 
 // ✅ Website Banner routes (handles both website and mobile banners)
 router.use("/cms/website-banners", websiteBannerRoutes);
+
+// ✅ Redirection routes
+router.use("/cms/redirections", redirectionRoutes);
 
 export default router;

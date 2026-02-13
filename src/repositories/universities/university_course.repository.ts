@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -117,6 +117,9 @@ export class UniversityCourseRepository {
         payload.meta_description ?? null,
         payload.duration ?? null,
         payload.emi_duration ?? null,
+        payload.duration_for_schema ?? null,
+        payload.eligibility ?? null,
+        payload.eligibility_info ?? null,
         payload.label ?? null,
         payload.course_thumbnail ?? null,
         payload.author_name ?? null,
@@ -166,6 +169,18 @@ export class UniversityCourseRepository {
     if (payload.emi_duration !== undefined) {
       fields.push("emi_duration = ?");
       values.push(payload.emi_duration ?? null);
+    }
+    if (payload.duration_for_schema !== undefined) {
+      fields.push("duration_for_schema = ?");
+      values.push(payload.duration_for_schema ?? null);
+    }
+    if (payload.eligibility !== undefined) {
+      fields.push("eligibility = ?");
+      values.push(payload.eligibility ?? null);
+    }
+    if (payload.eligibility_info !== undefined) {
+      fields.push("eligibility_info = ?");
+      values.push(payload.eligibility_info ?? null);
     }
     if (payload.label !== undefined) {
       fields.push("label = ?");

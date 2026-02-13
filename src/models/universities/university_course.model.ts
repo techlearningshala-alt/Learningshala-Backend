@@ -14,6 +14,9 @@ export interface UniversityCourse {
   meta_description?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
+  duration_for_schema?: string | null;
+  eligibility?: string | null;
+  eligibility_info?: string | null;
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;
@@ -52,6 +55,9 @@ export interface CreateUniversityCourseDto {
   meta_description?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
+  duration_for_schema?: string | null;
+  eligibility?: string | null;
+  eligibility_info?: string | null;
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;
@@ -71,6 +77,9 @@ export interface UpdateUniversityCourseDto {
   meta_description?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
+  duration_for_schema?: string | null;
+  eligibility?: string | null;
+  eligibility_info?: string | null;
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;

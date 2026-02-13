@@ -55,6 +55,9 @@ const normaliseSpecializationPayload = (payload: any): CreateUniversityCourseSpe
     emi_duration: payload.emi_duration !== undefined && payload.emi_duration !== null && payload.emi_duration !== "" 
       ? Number(payload.emi_duration) 
       : null,
+    duration_for_schema: payload.duration_for_schema ?? null,
+    eligibility: payload.eligibility ?? null,
+    eligibility_info: payload.eligibility_info ?? null,
     label: payload.label ?? null,
     course_thumbnail: payload.course_thumbnail ?? null,
     author_name: payload.author_name ?? null,
@@ -411,6 +414,15 @@ export async function updateUniversityCourseSpecialization(
       normalized.emi_duration = payload.emi_duration !== null && payload.emi_duration !== "" 
         ? Number(payload.emi_duration) 
         : null;
+    }
+    if (payload.duration_for_schema !== undefined) {
+      normalized.duration_for_schema = payload.duration_for_schema ?? null;
+    }
+    if (payload.eligibility !== undefined) {
+      normalized.eligibility = payload.eligibility ?? null;
+    }
+    if (payload.eligibility_info !== undefined) {
+      normalized.eligibility_info = payload.eligibility_info ?? null;
     }
     if (payload.label !== undefined) {
       normalized.label = payload.label ?? null;
