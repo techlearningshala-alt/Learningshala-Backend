@@ -124,20 +124,25 @@ export class FaqRepository {
   }
 
   // Update FAQ Question
-  async updateQuestion(id: number, item: Partial<FaqCategory> & { saveWithDate?: boolean }): Promise<boolean> {
+  async updateQuestion(id: number, item: Partial<Faq> & { saveWithDate?: boolean }): Promise<boolean> {
     const fields: string[] = [];
     const values: any[] = [];
 
+    const allowedFields = new Set(["category_id", "title", "description"]);
+
     for (const [key, value] of Object.entries(item)) {
-      if (key !== "saveWithDate") { // skip frontend flag
-        fields.push(`${key} = ?`);
-        values.push(value);
-      }
+      if (key === "saveWithDate") continue;
+      if (!allowedFields.has(key)) continue;
+      fields.push(`${key} = ?`);
+      values.push(value);
     }
-    console.log(item.saveWithDate, "item.saveWithDate")
+
     // Only update updated_at if saveWithDate === true
     if (item.saveWithDate) {
       fields.push("updated_at = NOW()");
+    } else {
+      // If saveWithDate is false, explicitly set updated_at = updated_at to prevent ON UPDATE CURRENT_TIMESTAMP
+      fields.push("updated_at = updated_at");
     }
 
     if (!fields.length) return false;
