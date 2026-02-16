@@ -86,6 +86,8 @@ export const UniversityRepo = {
         u.is_page_created, 
         u.menu_visibility, 
         u.is_active,
+        u.updated_at,
+        u.created_at,
         u.university_type_id,
         ut.name AS university_type,
         COALESCE(COUNT(DISTINCT uc.id), 0) AS course_count,
