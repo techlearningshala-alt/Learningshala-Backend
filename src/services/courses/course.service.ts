@@ -322,6 +322,7 @@ export const getCoursesByDomain = async () => {
       course_slug: course.slug,
       course_duration: course.course_duration,
       course_label: course.label,
+      course_domain_label: course.domain_label,
       course_id: course.id,
       specialization_count: course.specialization_count || 0,
     });
