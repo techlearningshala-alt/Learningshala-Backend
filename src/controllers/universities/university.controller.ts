@@ -505,7 +505,6 @@ export const toggleProvideEmi = async (req: Request, res: Response) => {
 export const fetchList = async (req: Request, res: Response) => {
   try {
     const universities = await UniversityService.fetchUniversitiesList();
-    console.log(universities,"universities");
     return successResponse(res, universities, "Universities list fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch universities list", 400);

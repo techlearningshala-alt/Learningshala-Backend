@@ -7,7 +7,7 @@ import { authMiddleware } from "../../middlewares/auth.middleware";
 const router = express.Router();
 
 // Public route for course search (no auth required)
-router.get("/search-by-course", CourseSearchController.searchByCourseName);
+router.get("/search-by-course", CourseSearchController.searchByCourseSlug);
 
 // Apply auth middleware to all other routes
 router.use(authMiddleware);

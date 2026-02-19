@@ -15,19 +15,14 @@ export interface CourseSearchResult {
 }
 
 /**
- * Search universities by course name
+ * Search universities by course slug
  * Returns universities that offer the specified course with their logo and fee types
  * Note: Student rating is currently commented out
  */
-export async function searchUniversitiesByCourseName(
-  courseName: string
+export async function searchUniversitiesByCourseSlug(
+  courseSlug: string
 ): Promise<CourseSearchResult[]> {
   try {
-    const searchTerm = `%${courseName.trim()}%`;
-
-    // Query to find university courses matching the course name
-    // Join with universities to get logo and name
-    // Join with sections to get student ratings (commented out for now)
     const [rows]: any = await pool.query(
       `SELECT 
         u.id AS university_id,
@@ -42,16 +37,14 @@ export async function searchUniversitiesByCourseName(
         uc.fee_type_values
       FROM university_courses uc
       INNER JOIN universities u ON uc.university_id = u.id
-      WHERE LOWER(uc.name) LIKE LOWER(?)
+      WHERE LOWER(uc.slug) LIKE LOWER(?)
         AND uc.is_active = 1
         AND u.is_active = 1
       ORDER BY u.university_name ASC, uc.id ASC`,
-      [searchTerm]
+      [courseSlug.trim()]
     );
 
-    // Process results to extract student rating and format fee types
     const results: CourseSearchResult[] = rows.map((row: any) => {
-      // Parse fee_type_values (stored as JSON string)
       let feeTypes: Record<string, number> | null = null;
       if (row.fee_type_values) {
         try {
@@ -64,44 +57,6 @@ export async function searchUniversitiesByCourseName(
         }
       }
 
-      // Extract student rating from sections props (commented out for now)
-      // let studentRating: number | null = null;
-      // if (row.student_ratings_props) {
-      //   try {
-      //     const props =
-      //       typeof row.student_ratings_props === "string"
-      //         ? JSON.parse(row.student_ratings_props)
-      //         : row.student_ratings_props;
-
-      //     // Check if props has allReviews array
-      //     if (props?.allReviews && Array.isArray(props.allReviews)) {
-      //       const ratings = props.allReviews
-      //         .map((review: any) => {
-      //           // Rating can be in "rating (1-5)" field or "rating" field
-      //           const ratingValue =
-      //             review["rating (1-5)"] || review.rating || null;
-      //           if (ratingValue) {
-      //             const num = parseFloat(String(ratingValue));
-      //             return !isNaN(num) && num >= 1 && num <= 5 ? num : null;
-      //           }
-      //           return null;
-      //         })
-      //         .filter((r: number | null) => r !== null) as number[];
-
-      //       if (ratings.length > 0) {
-      //         // Calculate average rating
-      //         studentRating =
-      //           ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
-      //         // Round to 1 decimal place
-      //         studentRating = Math.round(studentRating * 10) / 10;
-      //       }
-      //     }
-      //   } catch (e) {
-      //     // If parsing fails, rating remains null
-      //     studentRating = null;
-      //   }
-      // }
-
       return {
         university_id: row.university_id,
         university_name: row.university_name,
@@ -113,12 +68,9 @@ export async function searchUniversitiesByCourseName(
         syllabus_file: row.syllabus_file || null,
         brochure_file: row.brochure_file || null,
         fee_types: feeTypes,
-        // student_rating: studentRating,
       };
     });
 
-    // Group by university_id and course_slug to handle multiple courses per university
-    // If same university has multiple matching courses, return all of them
     const resultMap = new Map<string, CourseSearchResult>();
 
     results.forEach((result) => {
@@ -127,7 +79,6 @@ export async function searchUniversitiesByCourseName(
       if (!existing) {
         resultMap.set(key, result);
       } else {
-        // If same course appears multiple times, merge fee types
         if (result.fee_types) {
           existing.fee_types = {
             ...existing.fee_types,
