@@ -9,12 +9,16 @@ export const getUpload = (id: number) => {
   return uploadRepo.findById(id);
 };
 
+export const getUploadByFilePath = (filePath: string) => {
+  return uploadRepo.findByFilePath(filePath);
+};
+
 export const createUpload = (item: CreateUploadDto) => {
   if (!item.file_path || !item.file_path.trim()) {
     throw new Error("File path is required");
   }
-  if (!item.file_type || !["image", "pdf"].includes(item.file_type)) {
-    throw new Error("File type must be image or pdf");
+  if (!item.file_type || !["image", "pdf", "video"].includes(item.file_type)) {
+    throw new Error("File type must be image, pdf, or video");
   }
 
   return uploadRepo.create({
@@ -37,8 +41,8 @@ export const updateUpload = (id: number, item: UpdateUploadDto) => {
     updateData.file_path = item.file_path.trim();
   }
   if (item.file_type !== undefined) {
-    if (!["image", "pdf"].includes(item.file_type)) {
-      throw new Error("File type must be image or pdf");
+    if (!["image", "pdf", "video"].includes(item.file_type)) {
+      throw new Error("File type must be image, pdf, or video");
     }
     updateData.file_type = item.file_type;
   }

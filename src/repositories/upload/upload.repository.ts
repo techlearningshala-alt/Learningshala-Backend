@@ -36,6 +36,14 @@ export class UploadRepository {
     return rows.length ? this.mapRow(rows[0]) : null;
   }
 
+  async findByFilePath(filePath: string): Promise<Upload | null> {
+    const [rows]: any = await pool.query(
+      `SELECT * FROM uploads WHERE file_path = ? LIMIT 1`,
+      [filePath]
+    );
+    return rows.length ? this.mapRow(rows[0]) : null;
+  }
+
   async create(item: CreateUploadDto): Promise<Upload> {
     const [result]: any = await pool.query(
       `INSERT INTO uploads (name, file_path, file_type) VALUES (?, ?, ?)`,

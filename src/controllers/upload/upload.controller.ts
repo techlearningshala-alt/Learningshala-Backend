@@ -1,8 +1,8 @@
+import path from "path";
 import { Request, Response } from "express";
 import * as UploadService from "../../services/upload/upload.service";
 import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3, deleteFromS3 } from "../../config/s3";
-import { generateFileName } from "../../config/multer";
 
 const normalizeFilesArray = (files: Request["files"]) => {
   if (!files) return [];
@@ -10,14 +10,52 @@ const normalizeFilesArray = (files: Request["files"]) => {
   return Object.values(files).flat();
 };
 
-const uploadAsset = async (file: Express.Multer.File, folder: string) => {
-  const fileName = generateFileName(file.originalname);
+/**
+ * Sanitize original filename for use in path: basename only, safe chars.
+ * Replaces spaces and problematic chars with hyphen.
+ */
+function sanitizeFileName(originalname: string): string {
+  const basename = path.basename(originalname);
+  const ext = path.extname(basename);
+  const nameWithoutExt = basename.slice(0, -ext.length) || "file";
+  const safe = nameWithoutExt.replace(/[^\w\u00C0-\u024F.-]/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return (safe || "file") + ext.toLowerCase();
+}
+
+/**
+ * Get unique filename using original name. If path already exists (for another record), append timestamp before extension.
+ * @param excludeUploadId - When updating, pass current record id so the same path can be reused for this record.
+ */
+async function getUniqueFileNameForUpload(
+  file: Express.Multer.File,
+  folder: string,
+  excludeUploadId?: number
+): Promise<string> {
+  const sanitized = sanitizeFileName(file.originalname);
+  const baseKey = `${folder}/${sanitized}`;
+  const existing = await UploadService.getUploadByFilePath(baseKey);
+  if (!existing || (excludeUploadId != null && existing.id === excludeUploadId)) {
+    return sanitized;
+  }
+  const ext = path.extname(sanitized);
+  const nameWithoutExt = sanitized.slice(0, -ext.length);
+  const uniqueName = `${nameWithoutExt}-${Date.now()}${ext}`;
+  return uniqueName;
+}
+
+const uploadAsset = async (
+  file: Express.Multer.File,
+  folder: string,
+  excludeUploadId?: number
+) => {
+  const fileName = await getUniqueFileNameForUpload(file, folder, excludeUploadId);
   const key = await uploadToS3(file.buffer, fileName, folder, file.mimetype);
   return key;
 };
 
-const getFileType = (mimetype: string): "image" | "pdf" => {
+const getFileType = (mimetype: string): "image" | "pdf" | "video" => {
   if (mimetype === "application/pdf") return "pdf";
+  if (mimetype.startsWith("video/")) return "video";
   return "image";
 };
 
@@ -61,7 +99,7 @@ export const create = async (req: Request, res: Response) => {
     const fileType = (req.body.file_type as string)?.toLowerCase() === "pdf" ? "pdf" : "image";
 
     const folder = "uploads";
-    const filePath = await uploadAsset(file, folder);
+    const filePath = await uploadAsset(file, folder, undefined);
 
     const upload = await UploadService.createUpload({
       name,
@@ -90,14 +128,15 @@ export const update = async (req: Request, res: Response) => {
     const files = normalizeFilesArray(req.files);
     const file = files.find((f) => f.fieldname === "file");
 
-    const updateData: { name?: string | null; file_path?: string; file_type?: "image" | "pdf" } = {};
+    const updateData: { name?: string | null; file_path?: string; file_type?: "image" | "pdf" | "video" } = {};
 
     if (req.body.name !== undefined) {
       updateData.name = (req.body.name as string)?.trim() || null;
     }
 
     if (req.body.file_type !== undefined) {
-      updateData.file_type = (req.body.file_type as string)?.toLowerCase() === "pdf" ? "pdf" : "image";
+      const ft = (req.body.file_type as string)?.toLowerCase();
+      updateData.file_type = ft === "pdf" ? "pdf" : ft === "video" ? "video" : "image";
     }
 
     if (file) {
@@ -106,7 +145,7 @@ export const update = async (req: Request, res: Response) => {
       } catch (deleteErr) {
         console.error("Failed to delete old file from S3:", deleteErr);
       }
-      const filePath = await uploadAsset(file, "uploads");
+      const filePath = await uploadAsset(file, "uploads", id);
       updateData.file_path = filePath;
       if (!updateData.file_type) {
         updateData.file_type = getFileType(file.mimetype);
