@@ -40,6 +40,7 @@ import blogFaqRoutes from "./blogs/blog_faq.routes";
 import authorRoutes from "./author.routes";
 import websiteBannerRoutes from "./website_banner.routes";
 import redirectionRoutes from "./redirections/redirection.routes";
+import uploadRoutes from "./uploads/upload.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -105,5 +106,8 @@ router.use("/cms/website-banners", websiteBannerRoutes);
 
 // ✅ Redirection routes
 router.use("/cms/redirections", redirectionRoutes);
+
+// ✅ Uploads (image & PDF) routes
+router.use("/cms/uploads", uploadRoutes);
 
 export default router;
