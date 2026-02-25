@@ -136,13 +136,23 @@ export const exportLeads = async (req: Request, res: Response) => {
         width: 20,
         getValue: (row) => {
           if (!row.created_on) return "-";
+
+          // Use a fixed timezone (Asia/Kolkata) so export matches what you see in the UI
+          // UI runs in your browser timezone (likely IST), while server is often UTC.
           const date = new Date(row.created_on);
-          return isNaN(date.getTime())
-            ? "-"
-            : `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}`;
+          if (isNaN(date.getTime())) return "-";
+
+          const datePart = date.toLocaleDateString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          });
+
+          const timePart = date.toLocaleTimeString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          return `${datePart} ${timePart}`;
         },
       },
     ];

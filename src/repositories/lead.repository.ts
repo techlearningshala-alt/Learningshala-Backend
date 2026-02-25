@@ -21,13 +21,28 @@ class LeadRepository {
       params.push(like, like, like, like, like, like);
     }
 
-    if (options.fromDate) {
-      where.push("DATE(created_on) >= ?");
+    // Handle date filtering with proper timezone handling
+    // Use DATE() function to extract date part and compare, ensuring exact date matching
+    if (options.fromDate && options.toDate) {
+      // If both dates are the same, use exact date match
+      if (options.fromDate === options.toDate) {
+        // Exact date match - compare date parts only, ignoring time
+        where.push("DATE(created_on) = DATE(?)");
+        params.push(options.fromDate);
+      } else {
+        // Date range: fromDate to toDate (inclusive)
+        where.push("DATE(created_on) >= DATE(?) AND DATE(created_on) <= DATE(?)");
+        params.push(options.fromDate, options.toDate);
+      }
+    } else if (options.fromDate) {
+      // Only fromDate: from start of that day onwards
+      // Use DATE() to ensure we're comparing date parts only
+      where.push("DATE(created_on) >= DATE(?)");
       params.push(options.fromDate);
-    }
-
-    if (options.toDate) {
-      where.push("DATE(created_on) <= ?");
+    } else if (options.toDate) {
+      // Only toDate: up to end of that day
+      // Use DATE() to ensure we're comparing date parts only
+      where.push("DATE(created_on) <= DATE(?)");
       params.push(options.toDate);
     }
 
