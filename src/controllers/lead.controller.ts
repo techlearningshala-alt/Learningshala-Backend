@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { listLeads, createLead, updateLeadByPhone, getLeadByPhone } from "../services/lead.service";
 import { successResponse, errorResponse } from "../utills/response";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
+import OtpService from "../services/otp.service";
 
 export const getLeads = async (req: Request, res: Response) => {
   try {
@@ -163,6 +164,47 @@ export const exportLeads = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error?.message || "Failed to export leads",
+      error?.statusCode || 500
+    );
+  }
+};
+
+export const sendExportOtp = async (req: Request, res: Response) => {
+  try {
+    const FIXED_EMAIL = "aa@learningshala.in";
+    
+    // Send OTP to fixed email
+    await OtpService.createAndSendOtp(FIXED_EMAIL);
+    
+    return successResponse(res, { email: FIXED_EMAIL }, "OTP sent successfully");
+  } catch (error: any) {
+    console.error("❌ Error sending export OTP:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to send OTP",
+      error?.statusCode || 500
+    );
+  }
+};
+
+export const verifyExportOtp = async (req: Request, res: Response) => {
+  try {
+    const { otp } = req.body;
+    const FIXED_EMAIL = "aa@learningshala.in";
+    
+    // Verify OTP
+    const isValid = await OtpService.verifyOtp(FIXED_EMAIL, otp);
+    
+    if (!isValid) {
+      return errorResponse(res, "Invalid or expired OTP", 401);
+    }
+    
+    return successResponse(res, { verified: true }, "OTP verified successfully");
+  } catch (error: any) {
+    console.error("❌ Error verifying export OTP:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to verify OTP",
       error?.statusCode || 500
     );
   }

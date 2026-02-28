@@ -176,7 +176,7 @@ export default class CourseRepo {
     const [result]: any = await executor.query(
       `INSERT INTO courses 
         (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, emi_facility, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,

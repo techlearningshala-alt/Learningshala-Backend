@@ -12,6 +12,8 @@ router.post("/", validate(createLeadSchema), LeadController.create);
 
 router.get("/", LeadController.getLeads);
 router.get("/export", LeadController.exportLeads);
+router.post("/send-export-otp", LeadController.sendExportOtp);
+router.post("/verify-export-otp", LeadController.verifyExportOtp);
 router.put("/", validate(updateLeadSchema), LeadController.update);
 
 export default router;
