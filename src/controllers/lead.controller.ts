@@ -171,7 +171,7 @@ export const exportLeads = async (req: Request, res: Response) => {
 
 export const sendExportOtp = async (req: Request, res: Response) => {
   try {
-    const FIXED_EMAIL = "aa@learningshala.in";
+    const FIXED_EMAIL = "aashish@learningshala.in";
     
     // Send OTP to fixed email
     await OtpService.createAndSendOtp(FIXED_EMAIL);
@@ -190,7 +190,7 @@ export const sendExportOtp = async (req: Request, res: Response) => {
 export const verifyExportOtp = async (req: Request, res: Response) => {
   try {
     const { otp } = req.body;
-    const FIXED_EMAIL = "aa@learningshala.in";
+    const FIXED_EMAIL = "aashish@learningshala.in";
     
     // Verify OTP
     const isValid = await OtpService.verifyOtp(FIXED_EMAIL, otp);
