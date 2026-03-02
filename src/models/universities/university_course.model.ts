@@ -25,6 +25,9 @@ export interface UniversityCourse {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
   banner?: {
     banner_image?: string | null;
     brochure_file?: string | null;
@@ -66,6 +69,9 @@ export interface CreateUniversityCourseDto {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
 }
 
 export interface UpdateUniversityCourseDto {
@@ -88,6 +94,9 @@ export interface UpdateUniversityCourseDto {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
   saveWithDate?: boolean;
 }
 

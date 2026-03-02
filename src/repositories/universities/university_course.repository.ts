@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -128,6 +128,9 @@ export class UniversityCourseRepository {
         payload.syllabus_file ?? null,
         payload.brochure_file ?? null,
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null,
+        payload.fees_note ?? null,
+        payload.credit_points ?? null,
+        payload.why_choose ? JSON.stringify(payload.why_choose) : null,
       ]
     );
 
@@ -216,6 +219,23 @@ export class UniversityCourseRepository {
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null
       );
     }
+    if (payload.fees_note !== undefined) {
+      fields.push("fees_note = ?");
+      values.push(payload.fees_note && String(payload.fees_note).trim() ? String(payload.fees_note) : null);
+    }
+    if (payload.credit_points !== undefined) {
+      fields.push("credit_points = ?");
+      values.push(payload.credit_points && String(payload.credit_points).trim() ? String(payload.credit_points).trim() : null);
+    }
+    if (payload.why_choose !== undefined) {
+      fields.push("why_choose = ?");
+      if (payload.why_choose && Array.isArray(payload.why_choose) && payload.why_choose.length > 0) {
+        const filtered = payload.why_choose.filter(item => item && String(item).trim());
+        values.push(filtered.length > 0 ? JSON.stringify(filtered) : null);
+      } else {
+        values.push(null);
+      }
+    }
 
     if (!fields.length) {
       return this.findById(id);
@@ -229,6 +249,21 @@ export class UniversityCourseRepository {
     }
 
     values.push(id);
+
+    // Count fields that need placeholders (exclude updated_at = NOW() and updated_at = updated_at)
+    const fieldsWithPlaceholders = fields.filter(f => !f.includes('updated_at ='));
+    const expectedValues = fieldsWithPlaceholders.length + 1; // +1 for id in WHERE clause
+
+    if (values.length !== expectedValues) {
+      console.error("❌ SQL Query mismatch:", {
+        fieldsCount: fields.length,
+        fieldsWithPlaceholders: fieldsWithPlaceholders.length,
+        valuesCount: values.length,
+        expectedValues: expectedValues,
+        fields: fields,
+      });
+      throw new Error(`SQL query mismatch: ${fieldsWithPlaceholders.length} fields with placeholders but ${values.length - 1} values (expected ${expectedValues - 1})`);
+    }
 
     await pool.query(
       `UPDATE university_courses SET ${fields.join(", ")} WHERE id = ?`,
@@ -279,6 +314,9 @@ export class UniversityCourseRepository {
       ...row,
       fee_type_values: row.fee_type_values
         ? JSON.parse(row.fee_type_values)
+        : null,
+      why_choose: row.why_choose
+        ? (typeof row.why_choose === 'string' ? JSON.parse(row.why_choose) : row.why_choose)
         : null,
       is_active:
         row.is_active === null || row.is_active === undefined

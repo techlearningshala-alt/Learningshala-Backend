@@ -60,6 +60,11 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
     syllabus_file: payload.syllabus_file ?? null,
     brochure_file: payload.brochure_file ?? null,
     fee_type_values: parseFeeTypeValues(payload.fee_type_values),
+    fees_note: payload.fees_note ?? null,
+    credit_points: payload.credit_points ? String(payload.credit_points).trim() : null,
+    why_choose: payload.why_choose 
+      ? (typeof payload.why_choose === 'string' ? JSON.parse(payload.why_choose) : payload.why_choose)
+      : null,
   };
 };
 
@@ -464,6 +469,26 @@ export async function updateUniversityCourse(id: number, payload: any) {
     if (payload.fee_type_values !== undefined) {
       const parsed = parseFeeTypeValues(payload.fee_type_values);
       normalized.fee_type_values = parsed && Object.keys(parsed).length ? parsed : null;
+    }
+    if (payload.fees_note !== undefined) {
+      normalized.fees_note = payload.fees_note && String(payload.fees_note).trim() ? String(payload.fees_note) : null;
+    }
+    if (payload.credit_points !== undefined) {
+      normalized.credit_points = payload.credit_points && String(payload.credit_points).trim() ? String(payload.credit_points).trim() : null;
+    }
+    if (payload.why_choose !== undefined) {
+      if (payload.why_choose && typeof payload.why_choose === 'string') {
+        try {
+          const parsed = JSON.parse(payload.why_choose);
+          normalized.why_choose = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+        } catch (e) {
+          normalized.why_choose = null;
+        }
+      } else if (Array.isArray(payload.why_choose) && payload.why_choose.length > 0) {
+        normalized.why_choose = payload.why_choose;
+      } else {
+        normalized.why_choose = null;
+      }
     }
     if (payload.saveWithDate !== undefined) {
       normalized.saveWithDate =

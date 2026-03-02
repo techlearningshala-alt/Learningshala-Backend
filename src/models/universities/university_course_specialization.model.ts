@@ -25,6 +25,9 @@ export interface UniversityCourseSpecialization {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -50,6 +53,9 @@ export interface CreateUniversityCourseSpecializationDto {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
 }
 
 export interface UpdateUniversityCourseSpecializationDto {
@@ -73,6 +79,9 @@ export interface UpdateUniversityCourseSpecializationDto {
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
+  fees_note?: string | null;
+  credit_points?: string | null;
+  why_choose?: string[] | null;
   saveWithDate?: boolean;
 }
 
