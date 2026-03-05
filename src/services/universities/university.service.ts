@@ -134,52 +134,87 @@ export const updateUniversity = async (
         banner_image: finalImage,
       });
     }
-let sql = `
-  UPDATE universities 
-  SET 
-    university_name = ?, 
-    university_slug = ?, 
-    meta_title = ?,
-    meta_description = ?,
-    university_logo = ?, 
-    university_location = ?, 
-    university_brochure = ?, 
-    author_name = ?, 
-    university_type_id = ?,
-    is_active = ?, 
-    approval_id = ?,
-    placement_partner_ids = ?,
-    emi_partner_ids = ?
-`;
+    let sql = `
+      UPDATE universities 
+      SET 
+        university_name = ?, 
+        university_slug = ?, 
+        meta_title = ?,
+        meta_description = ?,
+        university_logo = ?, 
+        university_location = ?, 
+        university_brochure = ?, 
+        author_name = ?, 
+        university_type_id = ?,
+        is_active = ?, 
+        approval_id = ?,
+        placement_partner_ids = ?,
+        emi_partner_ids = ?,
+        university_tag_line = ?,
+        establishment_year = ?,
+        emi_provides = ?,
+        university_features = ?,
+        education_mode = ?,
+        examination_mode = ?,
+        alumni_status = ?,
+        online_classes = ?,
+        placement_assistance = ?,
+        why_choose = ?
+    `;
 
-const params = [
-  updateData.university_name,
-  updateData.university_slug,
-  updateData.meta_title || null,
-  updateData.meta_description || null,
-  universityLogo,
-  updateData.university_location || null,
-  universityBrochure,
-  updateData.author_name || null,
-  updateData.university_type_id ?? null,
+    const normalizeBool = (val: any): number =>
+      val === true || val === "true" || val === 1 || val === "1" ? 1 : 0;
 
-  // ✅ FIX: Convert string "false" or false to actual boolean false
-  updateData.is_active === "false" || updateData.is_active === false ? 0 : 1,
+    const serializeJsonField = (val: any): string | null => {
+      if (val === undefined || val === null) return null;
+      if (typeof val === "string") return val;
+      try {
+        return JSON.stringify(val);
+      } catch {
+        return null;
+      }
+    };
 
-  updateData.approval_id || "[]",
-  updateData.placement_partner_ids || "[]",
-  updateData.emi_partner_ids || "[]",
-];
+    const params = [
+      updateData.university_name,
+      updateData.university_slug,
+      updateData.meta_title || null,
+      updateData.meta_description || null,
+      universityLogo,
+      updateData.university_location || null,
+      universityBrochure,
+      updateData.author_name || null,
+      updateData.university_type_id ?? null,
 
-// ✅ Only include updated_at if saveWithDate = true
-if (updateData.saveWithDate === true || updateData.saveWithDate === "true") {
-  sql += `, updated_at = NOW()`;
-}
+      // ✅ Convert string/boolean to numeric flag
+      updateData.is_active === "false" || updateData.is_active === false ? 0 : 1,
 
-sql += ` WHERE id = ?`;
-params.push(id);
+      updateData.approval_id || "[]",
+      updateData.placement_partner_ids || "[]",
+      updateData.emi_partner_ids || "[]",
 
-await conn.query(sql, params);
+      // Compare Information fields
+      updateData.university_tag_line || null,
+      updateData.establishment_year || null,
+      normalizeBool(updateData.emi_provides),
+      serializeJsonField(updateData.university_features),
+      updateData.education_mode || null,
+      updateData.examination_mode || null,
+      updateData.alumni_status || null,
+      normalizeBool(updateData.online_classes),
+      normalizeBool(updateData.placement_assistance),
+      serializeJsonField(updateData.why_choose),
+    ];
+
+    // ✅ Only include updated_at if saveWithDate = true
+    if (updateData.saveWithDate === true || updateData.saveWithDate === "true") {
+      sql += `, updated_at = NOW()`;
+    }
+
+    sql += ` WHERE id = ?`;
+    params.push(id);
+
+    await conn.query(sql, params);
 
 
 
@@ -506,6 +541,26 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
       console.error('Error parsing emi_partner_ids:', e);
     }
 
+    // Parse compare information JSON fields
+    let universityFeatures: any[] = [];
+    let whyChoose: any[] = [];
+    try {
+      if (u.university_features) {
+        const parsed = JSON.parse(u.university_features);
+        if (Array.isArray(parsed)) universityFeatures = parsed;
+      }
+    } catch (e) {
+      console.error("Error parsing university_features:", e);
+    }
+    try {
+      if (u.why_choose) {
+        const parsed = JSON.parse(u.why_choose);
+        if (Array.isArray(parsed)) whyChoose = parsed;
+      }
+    } catch (e) {
+      console.error("Error parsing why_choose:", e);
+    }
+
     uniMap[u.id] = {
       id: u.id,
       university_name: u.university_name,
@@ -541,6 +596,20 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
       placement_partners: placementPartners, // Add placement partner objects
       emi_partner_ids: u.emi_partner_ids, // Keep for admin frontend
       emi_partners: emiPartners, // Add EMI partner objects
+      // Compare Information fields
+      university_tag_line: u.university_tag_line || null,
+      establishment_year: u.establishment_year || null,
+      emi_provides: u.emi_provides === null || u.emi_provides === undefined ? false : Boolean(u.emi_provides),
+      university_features: universityFeatures,
+      education_mode: u.education_mode || null,
+      examination_mode: u.examination_mode || null,
+      alumni_status: u.alumni_status || null,
+      online_classes: u.online_classes === null || u.online_classes === undefined ? false : Boolean(u.online_classes),
+      placement_assistance:
+        u.placement_assistance === null || u.placement_assistance === undefined
+          ? false
+          : Boolean(u.placement_assistance),
+      why_choose: whyChoose,
       banners: [],
       sections: [],
     };
@@ -731,6 +800,27 @@ export const getUniversityById = async (id: number) => {
   }
   if (universityData.provide_emi !== undefined) {
     universityData.provide_emi = Boolean(universityData.provide_emi);
+  }
+
+  // Parse compare information JSON fields for admin form
+  try {
+    if (typeof universityData.university_features === "string") {
+      const parsed = JSON.parse(universityData.university_features);
+      universityData.university_features = Array.isArray(parsed) ? parsed : [];
+    }
+  } catch (e) {
+    console.error("Error parsing university_features in getUniversityById:", e);
+    universityData.university_features = [];
+  }
+
+  try {
+    if (typeof universityData.why_choose === "string") {
+      const parsed = JSON.parse(universityData.why_choose);
+      universityData.why_choose = Array.isArray(parsed) ? parsed : [];
+    }
+  } catch (e) {
+    console.error("Error parsing why_choose in getUniversityById:", e);
+    universityData.why_choose = [];
   }
 
   return {  data: {

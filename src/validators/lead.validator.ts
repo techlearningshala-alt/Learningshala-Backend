@@ -165,11 +165,26 @@ export const createLeadSchema = z
     sub_source: optionalTrimmedString("Sub source", 150),
     highest_qualification: optionalTrimmedString("Highest qualification", 150),
 
-    preferred_budget: optionalNumericString("Preferred budget", { maxDigits: 10, allowDecimal: true }),
-    emi_required: optionalBooleanLabel(),
-    salary: optionalNumericString("Salary", { maxDigits: 10, allowDecimal: true, maxValue: 10000000 }),
-    percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
-    experience: optionalTrimmedString("Experience", 150),
+    preferred_budget: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    emi_required: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    salary: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    percentage: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    experience: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
 
     currently_employed: optionalBooleanLabel(),
     university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),
@@ -212,11 +227,26 @@ export const updateLeadSchema = z
     sub_source: optionalTrimmedString("Sub source", 150),
     highest_qualification: optionalTrimmedString("Highest qualification", 150),
 
-    preferred_budget: optionalNumericString("Preferred budget", { maxDigits: 10, allowDecimal: true }),
-    emi_required: optionalBooleanLabel(),
-    salary: optionalNumericString("Salary", { maxDigits: 10, allowDecimal: true, maxValue: 10000000 }),
-    percentage: optionalNumericString("Percentage", { maxDigits: 5, allowDecimal: true, maxValue: 100 }),
-    experience: optionalTrimmedString("Experience", 150),
+    preferred_budget: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    emi_required: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    salary: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    percentage: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
+    experience: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
 
     currently_employed: optionalBooleanLabel(),
     university_for_placement_salaryhike_promotions: optionalTrimmedString("University for placement/salary hike/promotions", 255),

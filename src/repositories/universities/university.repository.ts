@@ -5,8 +5,9 @@ export const UniversityRepo = {
   async createUniversity(universityData: any) {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
-       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, approval_id, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, approval_id, placement_partner_ids, emi_partner_ids,
+        university_tag_line, establishment_year, emi_provides, university_features, education_mode, examination_mode, alumni_status, online_classes, placement_assistance, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -23,6 +24,26 @@ export const UniversityRepo = {
         universityData.approval_id ?? null,
         universityData.placement_partner_ids ?? null,
         universityData.emi_partner_ids ?? null,
+        // Compare Information fields
+        universityData.university_tag_line || null,
+        universityData.establishment_year || null,
+        // Booleans stored as TINYINT(1)
+        universityData.emi_provides ? 1 : 0,
+        universityData.university_features
+          ? (typeof universityData.university_features === "string"
+              ? universityData.university_features
+              : JSON.stringify(universityData.university_features))
+          : null,
+        universityData.education_mode || null,
+        universityData.examination_mode || null,
+        universityData.alumni_status || null,
+        universityData.online_classes ? 1 : 0,
+        universityData.placement_assistance ? 1 : 0,
+        universityData.why_choose
+          ? (typeof universityData.why_choose === "string"
+              ? universityData.why_choose
+              : JSON.stringify(universityData.why_choose))
+          : null,
       ]
     );
     return result.insertId;

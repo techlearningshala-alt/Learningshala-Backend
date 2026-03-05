@@ -16,6 +16,17 @@ export interface University {
   approval_id?: number[];
   placement_partner_ids?: number[];
   emi_partner_ids?: number[];
+  // Compare Information fields
+  university_tag_line?: string | null;
+  establishment_year?: string | null;
+  emi_provides?: boolean;
+  university_features?: string[] | null;
+  education_mode?: string | null;
+  examination_mode?: string | null;
+  alumni_status?: string | null;
+  online_classes?: boolean;
+  placement_assistance?: boolean;
+  why_choose?: string[] | null;
   created_at: Date;
   updated_at: Date;
 }
