@@ -194,7 +194,10 @@ export const createLeadSchema = z
     utm_adgroup: optionalTrimmedString("UTM ad group", 150),
     utm_ads: optionalTrimmedString("UTM ads", 150),
 
-    created_on: optionalDate,
+    created_on: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
     website_url: optionalUrl("Website URL"),
   })
   .superRefine((data, ctx) => {
@@ -256,7 +259,10 @@ export const updateLeadSchema = z
     utm_adgroup: optionalTrimmedString("UTM ad group", 150),
     utm_ads: optionalTrimmedString("UTM ads", 150),
 
-    created_on: optionalDate,
+    created_on: z.preprocess(
+      (v) => (v === undefined || v === null ? null : String(v)),
+      z.string().optional().nullable()
+    ),
     website_url: optionalUrl("Website URL"),
   })
   .superRefine((data, ctx) => {
