@@ -8,6 +8,10 @@ export class BlogService {
     return blogRepo.findAll(page, limit, options);
   }
 
+  static async listByCategorySlug(page: number, limit: number, categorySlug: string, options: { search?: string } = {}) {
+    return blogRepo.findAllByCategorySlug(page, limit, categorySlug, options);
+  }
+
   static async get(slug: string): Promise<Blog | null> {
     return blogRepo.findBySlug(slug);
   }

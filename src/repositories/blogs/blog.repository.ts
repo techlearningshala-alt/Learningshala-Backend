@@ -99,6 +99,101 @@ export class BlogRepository {
     };
   }
 
+  async findAllByCategorySlug(
+    page: number,
+    limit: number,
+    categorySlug: string,
+    options: { search?: string } = {}
+  ): Promise<{ data: Blog[]; total: number; page: number; limit: number }> {
+    const offset = (page - 1) * limit;
+    const params: any[] = [];
+    const where: string[] = [];
+
+    // Filter by category slug
+    where.push("bc.category_slug = ?");
+    params.push(categorySlug);
+
+    if (options.search) {
+      where.push("(b.title LIKE ? OR b.short_description LIKE ? OR b.author_name LIKE ?)");
+      const searchTerm = `%${options.search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+
+    // Fetch total count
+    const [countRows]: any = await pool.query(
+      `SELECT COUNT(*) as total 
+       FROM blogs b
+       INNER JOIN blog_categories bc ON b.category_id = bc.id
+       ${whereClause}`,
+      params
+    );
+    const total = countRows[0].total;
+
+    // Fetch paginated data with category name
+    const [rows]: any = await pool.query(
+      `SELECT 
+        b.id,
+        b.category_id,
+        b.h1_tag,
+        b.slug,
+        b.meta_title,
+        b.meta_description,
+        b.author_id,
+        b.title,
+        b.short_description,
+        b.author_name,
+        b.author_details,
+        b.author_image,
+        b.thumbnail,
+        b.verified,
+        b.update_date,
+        b.content,
+        b.created_at,
+        b.updated_at,
+        bc.title as category_title,
+        bc.category_slug as category_slug
+      FROM blogs b
+      INNER JOIN blog_categories bc ON b.category_id = bc.id
+      ${whereClause}
+      ORDER BY b.id DESC
+      LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    // Map rows to Blog format
+    const data = rows.map((row: any) => ({
+      id: row.id,
+      category_id: row.category_id,
+      h1_tag: row.h1_tag,
+      slug: row.slug,
+      meta_title: row.meta_title,
+      meta_description: row.meta_description,
+      author_id: row.author_id,
+      title: row.title,
+      short_description: row.short_description,
+      author_name: row.author_name,
+      author_details: row.author_details,
+      author_image: row.author_image,
+      thumbnail: row.thumbnail,
+      verified: Boolean(row.verified),
+      update_date: row.update_date,
+      content: row.content,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      category_title: row.category_title,
+      category_slug: row.category_slug,
+    }));
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
   async findBySlug(slug: string): Promise<Blog | null> {
     const [rows]: any = await pool.query(
       `SELECT 

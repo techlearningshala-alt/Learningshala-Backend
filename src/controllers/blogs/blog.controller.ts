@@ -28,6 +28,34 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+export const getByCategory = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const categorySlug = req.params.categorySlug as string;
+    if (!categorySlug || categorySlug.trim() === "") {
+      return errorResponse(res, "Category slug is required", 400);
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string | undefined;
+
+    const result = await BlogService.listByCategorySlug(page, limit, categorySlug, { search });
+
+    // Calculate total pages
+    const pages = Math.ceil(result.total / limit);
+
+    return successResponse(res, {
+      data: result.data,
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      pages,
+    }, "Blogs fetched successfully");
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const get = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const blog = await BlogService.get(req.params.slug as string);
