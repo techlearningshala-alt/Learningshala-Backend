@@ -14,7 +14,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", BlogController.list);
-router.get("/:id", BlogController.get);
+router.get("/:slug", BlogController.get);
 router.post("/", upload.fields([{ name: "author_image", maxCount: 1 }, { name: "thumbnail", maxCount: 1 }]), validate(createBlogSchema), BlogController.create);
 router.put("/:id", upload.fields([{ name: "author_image", maxCount: 1 }, { name: "thumbnail", maxCount: 1 }]), validate(updateBlogSchema), BlogController.update);
 router.patch("/:id/toggle-verified", BlogController.toggleVerified);

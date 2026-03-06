@@ -30,11 +30,11 @@ export const list = async (req: Request, res: Response, next: NextFunction) => {
 
 export const get = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const blog = await BlogService.get(Number(req.params.id));
+    const blog = await BlogService.get(req.params.slug as string);
     if (!blog) return errorResponse(res, "Blog not found", 404);
     return successResponse(res, blog, "Blog fetched successfully");
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to get blog", 400);
   }
 };
 

@@ -99,7 +99,7 @@ export class BlogRepository {
     };
   }
 
-  async findById(id: number): Promise<Blog | null> {
+  async findBySlug(slug: string): Promise<Blog | null> {
     const [rows]: any = await pool.query(
       `SELECT 
         b.id,
@@ -124,8 +124,8 @@ export class BlogRepository {
         bc.category_slug as category_slug
       FROM blogs b
       LEFT JOIN blog_categories bc ON b.category_id = bc.id
-      WHERE b.id = ?`,
-      [id]
+      WHERE b.slug = ?`,
+      [slug]
     );
     if (!rows.length) return null;
 
@@ -152,6 +152,15 @@ export class BlogRepository {
       category_title: row.category_title,
       category_slug: row.category_slug,
     } as Blog & { category_title?: string; category_slug?: string };
+  }
+
+  async findById(id: number): Promise<Blog | null> {
+    const [rows]: any = await pool.query(
+      `SELECT * FROM blogs WHERE id = ?`,
+      [id]
+    );
+    if (!rows.length) return null;
+    return rows[0] as Blog;
   }
 
   async create(item: Omit<Blog, "id" | "created_at" | "updated_at">): Promise<Blog> {

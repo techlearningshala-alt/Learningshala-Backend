@@ -8,8 +8,8 @@ export class BlogService {
     return blogRepo.findAll(page, limit, options);
   }
 
-  static async get(id: number): Promise<Blog | null> {
-    return blogRepo.findById(id);
+  static async get(slug: string): Promise<Blog | null> {
+    return blogRepo.findBySlug(slug);
   }
 
   static async create(data: {
