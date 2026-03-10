@@ -88,9 +88,27 @@ export default class CourseRepo {
     };
   }
 
-  async findAll(page = 1, limit = 20, conn?: Pool | PoolConnection) {
+  async findAll(
+    page = 1,
+    limit = 20,
+    search?: string,
+    conn?: Pool | PoolConnection
+  ) {
     const executor = this.getExecutor(conn);
     const offset = (page - 1) * limit;
+
+    const where: string[] = [];
+    const params: any[] = [];
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      where.push(
+        "(c.name LIKE ? OR c.slug LIKE ? OR d.name LIKE ? OR d.slug LIKE ?)"
+      );
+      params.push(term, term, term, term);
+    }
+
+    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await executor.query(
       `
@@ -100,14 +118,18 @@ export default class CourseRepo {
       d.slug AS domain_slug
     FROM courses c
     LEFT JOIN domains d ON c.domain_id = d.id
+    ${whereClause}
     ORDER BY c.priority ASC, c.updated_at DESC
     LIMIT ? OFFSET ?
     `,
-      [limit, offset]
+      [...params, limit, offset]
     );
 
     const [countRows]: any = await executor.query(
-      "SELECT COUNT(*) as total FROM courses"
+      `SELECT COUNT(*) as total FROM courses c
+       LEFT JOIN domains d ON c.domain_id = d.id
+       ${whereClause}`,
+      params
     );
     const total = countRows[0]?.total ?? 0;
     return {

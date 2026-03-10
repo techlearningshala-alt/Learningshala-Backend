@@ -20,7 +20,8 @@ export const getAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const result = await CourseService.listCourses(page, limit);
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : undefined;
+    const result = await CourseService.listCourses(page, limit, search);
     return successResponse(res, result, "Courses fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch courses");

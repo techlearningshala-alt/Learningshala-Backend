@@ -48,6 +48,12 @@ export interface DashboardData {
     websiteLeadsThisWeek: number;
     contactMessagesThisWeek: number;
   };
+  websiteLeadsOverview: {
+    today: number;
+    yesterday: number;
+    thisMonth: number;
+    total: number;
+  };
 }
 
 export class DashboardService {
@@ -397,16 +403,68 @@ export class DashboardService {
   }
 
   /**
+   * Get website leads overview (today, yesterday, current month, total)
+   */
+  static async getWebsiteLeadsOverview() {
+    try {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+
+      const year = today.getFullYear();
+      const month = today.getMonth(); // 0-based
+      const monthStart = new Date(year, month, 1);
+
+      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+      const yesterdayStr = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
+      const monthStartStr = monthStart.toISOString().split("T")[0];
+
+      const [
+        [todayRows],
+        [yesterdayRows],
+        [monthRows],
+        [totalRows],
+      ]: any = await Promise.all([
+        pool.query(
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
+          [todayStr]
+        ),
+        pool.query(
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
+          [yesterdayStr]
+        ),
+        pool.query(
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ?`,
+          [monthStartStr]
+        ),
+        pool.query(`SELECT COUNT(*) as count FROM website_leads`),
+      ]);
+
+      return {
+        today: (todayRows as any[])[0]?.count || 0,
+        yesterday: (yesterdayRows as any[])[0]?.count || 0,
+        thisMonth: (monthRows as any[])[0]?.count || 0,
+        total: (totalRows as any[])[0]?.count || 0,
+      };
+    } catch (error) {
+      console.error("❌ Error fetching website leads overview:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get complete dashboard data
    * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getDashboardData(userRole?: string): Promise<DashboardData> {
     try {
-      const [statistics, recentActivity, todayStats, weekStats] = await Promise.all([
+      const [statistics, recentActivity, todayStats, weekStats, websiteLeadsOverview] =
+        await Promise.all([
         this.getStatistics(userRole),
         this.getRecentActivity(userRole),
         this.getTodayStats(userRole),
         this.getWeekStats(userRole),
+        this.getWebsiteLeadsOverview(),
       ]);
 
       return {
@@ -414,6 +472,7 @@ export class DashboardService {
         recentActivity,
         todayStats,
         weekStats,
+        websiteLeadsOverview,
       };
     } catch (error) {
       console.error("❌ Error fetching dashboard data:", error);

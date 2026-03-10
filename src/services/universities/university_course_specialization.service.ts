@@ -194,6 +194,11 @@ export async function getUniversityCourseSpecializationById(id: number) {
   (specialization as any).banners = banners || [];
   (specialization as any).sections = sectionsData.sections || [];
   (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
+  // Expose exam pattern as a top-level field from transformed sections
+  (specialization as any).exam_pattern =
+    sectionsData.sections_transformed?.Examination_Pattern ||
+    sectionsData.sections_transformed?.exam_pattern ||
+    null;
   const lookup = await buildFeeTypeLookup();
   return enrichSpecializationFeeTypeValues(specialization, lookup);
 }
@@ -211,6 +216,11 @@ export async function getUniversityCourseSpecializationBySlug(slug: string) {
   (specialization as any).banners = banners || [];
   (specialization as any).sections = sectionsData.sections || [];
   (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
+  // Expose exam pattern as a top-level field from transformed sections
+  (specialization as any).exam_pattern =
+    sectionsData.sections_transformed?.Examination_Pattern ||
+    sectionsData.sections_transformed?.exam_pattern ||
+    null;
   const lookup = await buildFeeTypeLookup();
   return enrichSpecializationFeeTypeValues(specialization, lookup);
 }
@@ -297,6 +307,11 @@ export async function getUniversityCourseSpecializationByCourseSlugAndSpecializa
   (specialization as any).banners = banners || [];
   (specialization as any).sections = sectionsData.sections || [];
   (specialization as any).sections_transformed = sectionsData.sections_transformed || {};
+  // Expose exam pattern as a top-level field from transformed sections
+  (specialization as any).exam_pattern =
+    sectionsData.sections_transformed?.Examination_Pattern ||
+    sectionsData.sections_transformed?.exam_pattern ||
+    null;
   (specialization as any).university_faqs = await getSpecializationFaqs(specialization.id);
   const lookup = await buildFeeTypeLookup();
   return enrichSpecializationFeeTypeValues(specialization, lookup);

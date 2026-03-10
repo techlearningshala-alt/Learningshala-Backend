@@ -37,7 +37,8 @@ const attachRelations = async (course: any) => {
   return course;
 };
 
-export const listCourses = (page = 1, limit = 20) => repo.findAll(page, limit);
+export const listCourses = (page = 1, limit = 20, search?: string) =>
+  repo.findAll(page, limit, search);
 export const listCoursesName = () => repo.findAllCourseName();
 
 export const getCourse = async (id: number) => {
@@ -144,7 +145,12 @@ export const getCourseBySlug = async (slug: string) => {
 
   (course as any).banners = banners || [];
   // For slug-based API we return transformed sections object (like sections_transformed)
-  (course as any).sections = transformCourseSections(sections || []);
+  const transformedSections = transformCourseSections(sections || []);
+  (course as any).sections = transformedSections;
+
+  // Expose exam pattern as a top-level field (from sections.exam_pattern)
+  (course as any).exam_pattern =
+    (transformedSections && (transformedSections as any).exam_pattern) || null;
   // Include specialization data with name and duration
   (course as any).specialization_data = specializationData || [];
   // Include FAQ data grouped by category
