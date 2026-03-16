@@ -60,3 +60,23 @@ export const remove = async (req: Request, res: Response, next: NextFunction) =>
     next(err);
   }
 };
+
+export const toggleVisibility = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    const visible =
+      req.body.visible === true ||
+      req.body.visible === "true" ||
+      req.body.visible === "yes" ||
+      req.body.visible === 1;
+
+    const category = await BlogCategoryService.toggleVisibility(id, visible);
+    if (!category) {
+      return errorResponse(res, "Blog category not found", 404);
+    }
+
+    return successResponse(res, category, "Category visibility updated successfully");
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to update category visibility", 400);
+  }
+};

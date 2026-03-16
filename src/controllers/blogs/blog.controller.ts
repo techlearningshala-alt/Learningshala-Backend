@@ -58,8 +58,23 @@ export const getByCategory = async (req: Request, res: Response, next: NextFunct
 
 export const get = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const blog = await BlogService.get(req.params.slug as string);
-    if (!blog) return errorResponse(res, "Blog not found", 404);
+    const slugOrId = String(req.params.slug || "").trim();
+    if (!slugOrId) {
+      return errorResponse(res, "Blog slug or ID is required", 400);
+    }
+
+    let blog = null;
+    const numericId = Number(slugOrId);
+    if (!Number.isNaN(numericId) && numericId > 0) {
+      blog = await BlogService.getById(numericId);
+    } else {
+      blog = await BlogService.get(slugOrId);
+    }
+
+    if (!blog) {
+      return errorResponse(res, "Blog not found", 404);
+    }
+
     return successResponse(res, blog, "Blog fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to get blog", 400);

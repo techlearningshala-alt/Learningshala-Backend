@@ -16,6 +16,7 @@ router.get("/", BlogCategoryController.list);
 router.get("/:id", BlogCategoryController.get);
 router.post("/", validate(createBlogCategorySchema), BlogCategoryController.create);
 router.put("/:id", validate(updateBlogCategorySchema), BlogCategoryController.update);
+router.patch("/:id/toggle-visibility", BlogCategoryController.toggleVisibility);
 router.delete("/:id", BlogCategoryController.remove);
 
 export default router;

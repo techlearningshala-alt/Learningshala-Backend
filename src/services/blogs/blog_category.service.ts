@@ -17,7 +17,7 @@ export class BlogCategoryService {
     return blogCategoryRepo.findBySlug(slug);
   }
 
-  static async create(data: { title: string; category_slug?: string }): Promise<BlogCategory> {
+  static async create(data: { title: string; category_slug?: string; category_visibility?: string }): Promise<BlogCategory> {
     // Generate slug from title if not provided
     const category_slug = data.category_slug || slugify(data.title, { lower: true, strict: true });
     
@@ -27,15 +27,21 @@ export class BlogCategoryService {
       throw new Error("Category slug already exists");
     }
 
+    const visibilityBool =
+      data.category_visibility === "yes"
+        ? true
+        : false;
+
     return blogCategoryRepo.create({
       title: data.title,
       category_slug,
+      category_visibility: visibilityBool,
     });
   }
 
   static async update(
     id: number,
-    data: Partial<{ title: string; category_slug: string }> & { saveWithDate?: boolean }
+    data: Partial<{ title: string; category_slug: string; category_visibility: string }> & { saveWithDate?: boolean }
   ): Promise<boolean> {
     const updateData: any = { ...data };
 
@@ -56,7 +62,17 @@ export class BlogCategoryService {
       }
     }
 
+    if (data.category_visibility !== undefined) {
+      updateData.category_visibility = data.category_visibility === "yes";
+    }
+
     return blogCategoryRepo.update(id, updateData);
+  }
+
+  static async toggleVisibility(id: number, visible: boolean): Promise<BlogCategory | null> {
+    const updated = await blogCategoryRepo.update(id, { category_visibility: visible });
+    if (!updated) return null;
+    return blogCategoryRepo.findById(id);
   }
 
   static async delete(id: number): Promise<void> {

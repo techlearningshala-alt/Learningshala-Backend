@@ -39,6 +39,8 @@ router.get("/list", UniversityController.fetchList);
 router.get("/search", UniversityController.search); // Search endpoint (must come before /:university_slug)
 router.get("/suggestions", UniversityController.suggestions); // Autocomplete suggestions
 router.get("/spell-check", UniversityController.spellCheck); // Spell correction
+// Admin-only helper: fetch full university by numeric ID for CMS (must come before slug route)
+router.get("/admin/:id", UniversityController.findByIdAdmin);
 router.get("/", UniversityController.findAll);
 router.get("/:university_slug", UniversityController.findOne);
 router.patch("/:id/toggle-status", UniversityController.toggleStatus);

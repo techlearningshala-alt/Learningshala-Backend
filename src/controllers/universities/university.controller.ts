@@ -510,3 +510,30 @@ export const fetchList = async (req: Request, res: Response) => {
     return errorResponse(res, err.message || "Failed to fetch universities list", 400);
   }
 };
+
+// 🛠 Admin-only: fetch full university data by ID for CMS edit form
+export const findByIdAdmin = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      return errorResponse(res, "Valid university ID is required", 400);
+    }
+
+    const result: any = await UniversityService.getUniversityById(id);
+    if (!result) {
+      return errorResponse(res, "University not found", 404);
+    }
+
+    // getUniversityById currently returns { ...universityData, approvals, banners, sections }
+    // or a wrapped object; normalize both shapes
+    const university =
+      result?.data?.data ??
+      result?.data ??
+      result;
+
+    return successResponse(res, university, "University fetched successfully");
+  } catch (err: any) {
+    console.error("❌ Admin findById error:", err);
+    return errorResponse(res, err.message || "Failed to fetch university", 400);
+  }
+};

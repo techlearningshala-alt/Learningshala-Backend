@@ -16,6 +16,10 @@ export class BlogService {
     return blogRepo.findBySlug(slug);
   }
 
+  static async getById(id: number): Promise<Blog | null> {
+    return blogRepo.findById(id);
+  }
+
   static async create(data: {
     category_id: number;
     h1_tag?: string | null;

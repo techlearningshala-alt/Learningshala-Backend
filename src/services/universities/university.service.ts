@@ -823,12 +823,15 @@ export const getUniversityById = async (id: number) => {
     universityData.why_choose = [];
   }
 
-  return {  data: {
+  // For admin, return plain object with sections as ARRAY (sections_array),
+  // plus flattened sections object for optional uses.
+  return {
     ...universityData,
-    approvals, // Add approval objects for website
+    approvals,
     banners,
-    sections: sectionsData.sections || {},
-  }};
+    sections: sectionsData.sections_array || [],
+    sections_flat: sectionsData.sections || {},
+  };
 };
 
 export const getUniversityBySlug = async (slug: string) => {
