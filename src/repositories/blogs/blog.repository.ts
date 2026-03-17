@@ -206,9 +206,9 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
-        b.author_name,
-        b.author_details,
-        b.author_image,
+        a.author_name,
+        a.author_details,
+        a.image as author_image,
         b.thumbnail,
         b.verified,
         b.update_date,
@@ -219,6 +219,7 @@ export class BlogRepository {
         bc.category_slug as category_slug
       FROM blogs b
       LEFT JOIN blog_categories bc ON b.category_id = bc.id
+      LEFT JOIN authors a ON b.author_id = a.id
       WHERE b.slug = ?`,
       [slug]
     );
@@ -247,8 +248,8 @@ export class BlogRepository {
       author_id: row.author_id,
       title: row.title,
       short_description: row.short_description,
-      author_name: row.author_name,
-      author_details: row.author_details,
+      author_name: row.author_name || row.author_name,
+      author_details: row.author_details || row.author_details,
       author_image: row.author_image,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
