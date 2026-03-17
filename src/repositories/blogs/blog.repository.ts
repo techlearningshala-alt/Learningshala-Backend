@@ -224,7 +224,7 @@ export class BlogRepository {
     );
     if (!rows.length) return null;
     const [relatedBlogs]: any = await pool.query(
-      `SELECT * FROM blogs WHERE category_id = ? ORDER BY created_at DESC limit 3`,
+      `SELECT * FROM blogs WHERE category_id = ? ORDER BY created_at DESC limit 6`,
       [rows[0].category_id]
     );
     const relatedBlogsData = relatedBlogs.map((row: any) => ({
