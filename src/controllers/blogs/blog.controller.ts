@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { BlogService } from "../../services/blogs/blog.service";
+import { BlogFaqService } from "../../services/blogs/blog_faq.service";
 import { successResponse, errorResponse } from "../../utills/response";
 import { uploadToS3 } from "../../config/s3";
 import { generateFileName } from "../../config/multer";
@@ -75,7 +76,13 @@ export const get = async (req: Request, res: Response, next: NextFunction) => {
       return errorResponse(res, "Blog not found", 404);
     }
 
-    return successResponse(res, blog, "Blog fetched successfully");
+    const blogFaqs = await BlogFaqService.listQuestionsByBlogId(blog.id);
+    const responseData = {
+      ...blog,
+      blog_faqs: blogFaqs,
+    };
+
+    return successResponse(res, responseData, "Blog fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to get blog", 400);
   }

@@ -17,9 +17,9 @@ export class BlogRepository {
     const where: string[] = [];
 
     if (options.search) {
-      where.push("(b.title LIKE ? OR b.short_description LIKE ? OR b.author_name LIKE ?)");
+      where.push("(b.title LIKE ? OR b.author_name LIKE ?)");
       const searchTerm = `%${options.search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm);
     }
 
     if (options.category_id) {
@@ -114,9 +114,9 @@ export class BlogRepository {
     params.push(categorySlug);
 
     if (options.search) {
-      where.push("(b.title LIKE ? OR b.short_description LIKE ? OR b.author_name LIKE ?)");
+      where.push("(b.title LIKE ? OR b.author_name LIKE ?)");
       const searchTerm = `%${options.search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm);
     }
 
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
