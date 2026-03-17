@@ -223,6 +223,18 @@ export class BlogRepository {
       [slug]
     );
     if (!rows.length) return null;
+    const [relatedBlogs]: any = await pool.query(
+      `SELECT * FROM blogs WHERE category_id = ? ORDER BY created_at DESC limit 3`,
+      [rows[0].category_id]
+    );
+    const relatedBlogsData = relatedBlogs.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      thumbnail: row.thumbnail,
+      short_description: row.short_description,
+      updated_at: row.updated_at,
+    }));
 
     const row = rows[0];
     return {
@@ -246,6 +258,7 @@ export class BlogRepository {
       updated_at: row.updated_at,
       category_title: row.category_title,
       category_slug: row.category_slug,
+      related_blogs: relatedBlogsData,
     } as Blog & { category_title?: string; category_slug?: string };
   }
 
