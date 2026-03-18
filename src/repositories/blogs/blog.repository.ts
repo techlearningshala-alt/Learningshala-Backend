@@ -48,8 +48,9 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
-        b.author_name,
-        b.author_details,
+        a.author_name,
+        a.author_details,
+        a.image ,
         b.author_image,
         b.thumbnail,
         b.verified,
@@ -61,6 +62,7 @@ export class BlogRepository {
         bc.category_slug as category_slug
       FROM blogs b
       LEFT JOIN blog_categories bc ON b.category_id = bc.id
+      LEFT JOIN authors a ON b.author_id = a.id
       ${whereClause}
       ORDER BY b.id DESC
       LIMIT ? OFFSET ?`,
@@ -79,8 +81,8 @@ export class BlogRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
-      author_details: row.author_details,
-      author_image: row.author_image,
+      author_details: row.author_details || row.author_details,
+      author_image: row.image,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
       update_date: row.update_date,
