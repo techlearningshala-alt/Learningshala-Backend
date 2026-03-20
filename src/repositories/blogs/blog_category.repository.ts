@@ -53,11 +53,14 @@ export class BlogCategoryRepository {
 
   async create(item: Omit<BlogCategory, "id" | "created_at" | "updated_at">): Promise<BlogCategory> {
     const [result]: any = await pool.query(
-      `INSERT INTO blog_categories (title, category_slug, category_visibility, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
+      `INSERT INTO blog_categories (title, category_slug, category_visibility, category_summary, meta_title, meta_description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.title,
         item.category_slug,
         item.category_visibility ? 1 : 0,
+        item.category_summary ?? null,
+        item.meta_title ?? null,
+        item.meta_description ?? null,
       ]
     );
     const [rows]: any = await pool.query("SELECT * FROM blog_categories WHERE id=?", [result.insertId]);
@@ -68,7 +71,14 @@ export class BlogCategoryRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
-    const allowedFields = new Set(["title", "category_slug", "category_visibility"]);
+    const allowedFields = new Set([
+      "title",
+      "category_slug",
+      "category_visibility",
+      "category_summary",
+      "meta_title",
+      "meta_description",
+    ]);
 
     for (const [key, value] of Object.entries(item)) {
       if (key === "saveWithDate") continue;

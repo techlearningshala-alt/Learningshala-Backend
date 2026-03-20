@@ -17,7 +17,14 @@ export class BlogCategoryService {
     return blogCategoryRepo.findBySlug(slug);
   }
 
-  static async create(data: { title: string; category_slug?: string; category_visibility?: string }): Promise<BlogCategory> {
+  static async create(data: {
+    title: string;
+    category_slug?: string;
+    category_visibility?: string;
+    category_summary?: string;
+    meta_title?: string;
+    meta_description?: string;
+  }): Promise<BlogCategory> {
     // Generate slug from title if not provided
     const category_slug = data.category_slug || slugify(data.title, { lower: true, strict: true });
     
@@ -36,12 +43,22 @@ export class BlogCategoryService {
       title: data.title,
       category_slug,
       category_visibility: visibilityBool,
+      category_summary: data.category_summary ?? null,
+      meta_title: data.meta_title ?? null,
+      meta_description: data.meta_description ?? null,
     });
   }
 
   static async update(
     id: number,
-    data: Partial<{ title: string; category_slug: string; category_visibility: string }> & { saveWithDate?: boolean }
+    data: Partial<{
+      title: string;
+      category_slug: string;
+      category_visibility: string;
+      category_summary: string;
+      meta_title: string | null;
+      meta_description: string | null;
+    }> & { saveWithDate?: boolean }
   ): Promise<boolean> {
     const updateData: any = { ...data };
 
@@ -64,6 +81,17 @@ export class BlogCategoryService {
 
     if (data.category_visibility !== undefined) {
       updateData.category_visibility = data.category_visibility === "yes";
+    }
+
+    // Normalize optional meta fields to null (keeps DB consistent)
+    if (data.category_summary !== undefined) {
+      updateData.category_summary = data.category_summary ?? null;
+    }
+    if (data.meta_title !== undefined) {
+      updateData.meta_title = data.meta_title ?? null;
+    }
+    if (data.meta_description !== undefined) {
+      updateData.meta_description = data.meta_description ?? null;
     }
 
     return blogCategoryRepo.update(id, updateData);
