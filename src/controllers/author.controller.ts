@@ -68,12 +68,25 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
     const normalizedSlug =
       typeof rawSlug === "string" && rawSlug.trim().length ? rawSlug.trim() : generatedSlug;
 
+    // Normalize empty strings coming from FormData -> null
+    const metaTitle =
+      typeof req.body.meta_title === "string" && req.body.meta_title.trim().length
+        ? req.body.meta_title.trim()
+        : null;
+
+    const metaDescription =
+      typeof req.body.meta_description === "string" && req.body.meta_description.trim().length
+        ? req.body.meta_description
+        : null;
+
     const body = {
       author_name: rawAuthorName,
       image: imageUrl ?? null,
       author_details: req.body.author_details ?? null,
       label: req.body.label ?? null,
       author_slug: normalizedSlug ?? null,
+      meta_title: metaTitle,
+      meta_description: metaDescription,
     };
 
     const validatedData = createAuthorSchema.parse(body);
@@ -84,6 +97,8 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       author_details: validatedData.author_details ?? null,
       label: validatedData.label ?? null,
       author_slug: validatedData.author_slug ?? null,
+      meta_title: validatedData.meta_title ?? null,
+      meta_description: validatedData.meta_description ?? null,
     };
     const result = await AuthorService.createAuthor(createData);
 
@@ -112,6 +127,8 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     const updates: any = { ...rest };
     // Normalize empty string → null for optional nullable fields
     if (updates.author_slug === "") updates.author_slug = null;
+    if (updates.meta_title === "") updates.meta_title = null;
+    if (updates.meta_description === "") updates.meta_description = null;
 
     // Handle image upload
     const imageFile = files?.image?.[0] || files?.image;
@@ -146,6 +163,8 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (validatedData.author_details !== undefined) updateData.author_details = validatedData.author_details ?? null;
     if (validatedData.label !== undefined) updateData.label = validatedData.label ?? null;
     if (validatedData.author_slug !== undefined) updateData.author_slug = validatedData.author_slug ?? null;
+    if (validatedData.meta_title !== undefined) updateData.meta_title = validatedData.meta_title ?? null;
+    if (validatedData.meta_description !== undefined) updateData.meta_description = validatedData.meta_description ?? null;
     
     const success = await AuthorService.updateAuthor(Number(id), updateData, saveDateFlag);
 
