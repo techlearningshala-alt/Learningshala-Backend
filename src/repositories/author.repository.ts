@@ -1,5 +1,6 @@
 import pool from "../config/db";
 import { Author, CreateAuthorDto, UpdateAuthorDto } from "../models/author.model";
+import { Blog } from "../models/blogs/blog.model";
 
 export class AuthorRepository {
   async findAll(page = 1, limit = 10) {
@@ -18,8 +19,13 @@ export class AuthorRepository {
     }
 
   async findBySlug(slug: string): Promise<Author | null> {
-    const [rows]: any = await pool.query("SELECT * FROM authors WHERE author_slug = ?", [slug]);
-    return rows.length ? (rows[0] as Author) : null;
+    const [rows]: any = await pool.query("SELECT authors.id, authors.author_name, authors.image, authors.author_details, authors.label, authors.author_slug, b.h1_tag as blog_title, b.short_description as blog_short_description, b.thumbnail as blog_thumbnail  FROM authors left join blogs b on authors.id = b.author_id WHERE author_slug = ?", [slug]);
+    const author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null }[] = rows.map((row: any) => ({
+      title: row.blog_title,
+      short_description: row.blog_short_description,
+      thumbnail: row.blog_thumbnail,
+    }));
+    return rows.length ? { id: rows[0].id, author_name: rows[0].author_name, image: rows[0].image, author_details: rows[0].author_details, label: rows[0].label, author_slug: rows[0].author_slug, created_at: rows[0].created_at, updated_at: rows[0].updated_at, author_blogs } : null;
   }
 
   async create(item: CreateAuthorDto): Promise<Author> {

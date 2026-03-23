@@ -7,6 +7,7 @@ export interface Author {
   author_slug: string | null;
   created_at: Date;
   updated_at: Date;
+  author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null }[];
 }
 
 export interface CreateAuthorDto {
