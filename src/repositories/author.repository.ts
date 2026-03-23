@@ -21,7 +21,7 @@ export class AuthorRepository {
   async findBySlug(slug: string): Promise<Author | null> {
     const [rows]: any = await pool.query("SELECT authors.id, authors.author_name, authors.image, authors.author_details, authors.label, authors.author_slug, b.h1_tag as blog_title, b.short_description as blog_short_description, b.thumbnail as blog_thumbnail , b.slug as blog_slug,b.verified as blog_verified, b.update_date as blog_update_date, b.meta_title as blog_meta_title, b.meta_description as blog_meta_description FROM authors left join blogs b on authors.id = b.author_id WHERE author_slug = ?", [slug]);
     const author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null, slug: string | null, verified: boolean | null, update_date: Date | null, meta_title: string | null, meta_description: string | null }[] = rows.map((row: any) => ({
-      title: row.blog_title,
+      h1_tag: row.blog_title,
       short_description: row.blog_short_description,
       thumbnail: row.blog_thumbnail,
       slug: row.blog_slug,
