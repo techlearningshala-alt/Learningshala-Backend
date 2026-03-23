@@ -5,6 +5,7 @@ export interface ListLeadOptions {
   search?: string;
   fromDate?: string;
   toDate?: string;
+  website_url?: string;
 }
 
 class LeadRepository {
@@ -44,6 +45,13 @@ class LeadRepository {
       // Use DATE() to ensure we're comparing date parts only
       where.push("DATE(created_on) <= DATE(?)");
       params.push(options.toDate);
+    }
+
+    if (options.website_url) {
+      const url = options.website_url;
+      const urlNoTrailingSlash = url.replace(/\/$/, "");
+      where.push("(website_url = ? OR website_url = ?)");
+      params.push(url, urlNoTrailingSlash);
     }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";

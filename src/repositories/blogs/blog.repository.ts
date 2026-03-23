@@ -145,9 +145,9 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
-        b.author_name,
-        b.author_details,
-        b.author_image,
+        a.author_name,
+        a.author_details,
+        a.image as author_image,
         b.thumbnail,
         b.verified,
         b.update_date,
@@ -158,6 +158,7 @@ export class BlogRepository {
         bc.category_slug as category_slug
       FROM blogs b
       INNER JOIN blog_categories bc ON b.category_id = bc.id
+      LEFT JOIN authors a ON b.author_id = a.id 
       ${whereClause}
       ORDER BY b.id DESC
       LIMIT ? OFFSET ?`,
@@ -176,8 +177,8 @@ export class BlogRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
-      author_details: row.author_details,
-      author_image: row.author_image,
+      author_details: row.author_details || row.author_details,
+      author_image: row.image || row.author_image,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
       update_date: row.update_date,
@@ -277,9 +278,9 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
-        b.author_name,
-        b.author_details,
-        b.author_image,
+        a.author_name,
+        a.author_details,
+        a.image as author_image,
         b.thumbnail,
         b.verified,
         b.update_date,
@@ -290,6 +291,7 @@ export class BlogRepository {
         bc.category_slug as category_slug
       FROM blogs b
       LEFT JOIN blog_categories bc ON b.category_id = bc.id
+      LEFT JOIN authors a ON b.author_id = a.id
       WHERE b.id = ?`,
       [id]
     );
@@ -306,9 +308,9 @@ export class BlogRepository {
       author_id: row.author_id,
       title: row.title,
       short_description: row.short_description,
-      author_name: row.author_name,
-      author_details: row.author_details,
-      author_image: row.author_image,
+      author_name: row.author_name || row.author_name,
+      author_details: row.author_details || row.author_details,
+      author_image: row.image || row.author_image,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
       update_date: row.update_date,
@@ -324,8 +326,7 @@ export class BlogRepository {
     const [result]: any = await pool.query(
       `INSERT INTO blogs (
         category_id, h1_tag, slug, meta_title, meta_description, author_id,
-        title, short_description, author_name, author_details, 
-        author_image, thumbnail, verified, update_date, content, created_at, updated_at
+        title, short_description, thumbnail, verified, update_date, content, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.category_id,

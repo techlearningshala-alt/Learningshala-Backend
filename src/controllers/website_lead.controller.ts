@@ -30,7 +30,6 @@ export const getAll = async (req: Request, res: Response) => {
       typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
     const toDate =
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
-
     const data = await listWebsiteLeads(page, limit, { search, fromDate, toDate });
     return successResponse(res, data, "Website leads fetched successfully");
   } catch (error: any) {

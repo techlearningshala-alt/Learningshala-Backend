@@ -23,8 +23,12 @@ export const getLeads = async (req: Request, res: Response) => {
       typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
     const toDate =
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
+    const website_url =
+      typeof req.query.website_url === "string"
+        ? req.query.website_url.trim()
+        : undefined;
 
-    const data = await listLeads(page, limit, { search, fromDate, toDate });
+    const data = await listLeads(page, limit, { search, fromDate, toDate, website_url });
     return successResponse(res, data, "Leads fetched successfully");
   } catch (error: any) {
     console.error("❌ Error fetching leads:", error);
@@ -72,10 +76,14 @@ export const exportLeads = async (req: Request, res: Response) => {
       typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
     const toDate =
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
+    const website_url =
+      typeof req.query.website_url === "string"
+        ? req.query.website_url.trim()
+        : undefined;
 
     // Fetch all leads with filters (using high limit for export)
     // listLeads already maps DB columns to question keys, so we use the data as-is
-    const data = await listLeads(1, 100000, { search, fromDate, toDate });
+    const data = await listLeads(1, 100000, { search, fromDate, toDate, website_url });
     const leads = data.data || [];
 
     // Define Excel columns matching the frontend table
