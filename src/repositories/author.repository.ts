@@ -15,12 +15,17 @@ export class AuthorRepository {
   async findById(id: number): Promise<Author | null> {
     const [rows]: any = await pool.query("SELECT * FROM authors WHERE id = ?", [id]);
     return rows.length ? (rows[0] as Author) : null;
+    }
+
+  async findBySlug(slug: string): Promise<Author | null> {
+    const [rows]: any = await pool.query("SELECT * FROM authors WHERE author_slug = ?", [slug]);
+    return rows.length ? (rows[0] as Author) : null;
   }
 
   async create(item: CreateAuthorDto): Promise<Author> {
     const [result]: any = await pool.query(
-      `INSERT INTO authors (author_name, image, author_details, label) VALUES (?, ?, ?, ?)`,
-      [item.author_name, item.image, item.author_details, item.label]
+      `INSERT INTO authors (author_name, image, author_details, label, author_slug) VALUES (?, ?, ?, ?, ?)`,
+      [item.author_name, item.image, item.author_details, item.label, item.author_slug]
     );
     const created = await this.findById(result.insertId);
     if (!created) {
@@ -48,6 +53,10 @@ export class AuthorRepository {
     if (item.label !== undefined) {
       fields.push("label = ?");
       values.push(item.label);
+    }
+    if (item.author_slug !== undefined) {
+      fields.push("author_slug = ?");
+      values.push(item.author_slug);
     }
 
     if (fields.length === 0) return false;

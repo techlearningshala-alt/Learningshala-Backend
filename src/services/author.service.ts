@@ -9,6 +9,10 @@ export const getAuthor = async (id: number): Promise<Author | null> => {
   return await repo.findById(id);
 };
 
+export const getAuthorBySlug = async (slug: string): Promise<Author | null> => {
+  return await repo.findBySlug(slug);
+};
+
 export const createAuthor = async (data: CreateAuthorDto): Promise<Author> => {
   return await repo.create(data);
 };

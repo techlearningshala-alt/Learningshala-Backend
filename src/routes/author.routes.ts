@@ -10,6 +10,7 @@ router.use(authMiddleware);
 
 router.get("/", AuthorController.getAll);
 router.get("/:id", AuthorController.getOne);
+router.get("/slug/:slug", AuthorController.getBySlug);
 router.post(
   "/",
   upload.fields([{ name: "image", maxCount: 1 }]),

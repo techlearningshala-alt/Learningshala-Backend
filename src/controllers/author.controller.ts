@@ -5,6 +5,7 @@ import { successResponse, errorResponse } from "../utills/response";
 import { uploadToS3, deleteFromS3 } from "../config/s3";
 import { generateFileName } from "../config/multer";
 import { CreateAuthorDto, UpdateAuthorDto } from "../models/author.model";
+import slugify from "slugify";
 
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -30,6 +31,19 @@ export const getOne = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
+export const getBySlug = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const slug = req.params.slug as string;
+    if (!slug) return errorResponse(res, "Author slug is required", 400);
+    const author = await AuthorService.getAuthorBySlug(slug);
+    if (!author) return errorResponse(res, "Author not found", 404);
+    return successResponse(res, author, "Author fetched successfully");
+  }
+  catch (err: any) {
+    return errorResponse(res, err.message || "Failed to fetch author", 500);
+  }
+};  
+
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const files = req.files as any;
@@ -48,11 +62,18 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       );
     }
 
+    const rawAuthorName = req.body.author_name;
+    const rawSlug = req.body.author_slug;
+    const generatedSlug = slugify(rawAuthorName, { lower: true, strict: true });
+    const normalizedSlug =
+      typeof rawSlug === "string" && rawSlug.trim().length ? rawSlug.trim() : generatedSlug;
+
     const body = {
-      author_name: req.body.author_name,
+      author_name: rawAuthorName,
       image: imageUrl ?? null,
       author_details: req.body.author_details ?? null,
       label: req.body.label ?? null,
+      author_slug: normalizedSlug ?? null,
     };
 
     const validatedData = createAuthorSchema.parse(body);
@@ -62,6 +83,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       image: validatedData.image ?? null,
       author_details: validatedData.author_details ?? null,
       label: validatedData.label ?? null,
+      author_slug: validatedData.author_slug ?? null,
     };
     const result = await AuthorService.createAuthor(createData);
 
@@ -88,6 +110,8 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
     // Build updates object
     const updates: any = { ...rest };
+    // Normalize empty string → null for optional nullable fields
+    if (updates.author_slug === "") updates.author_slug = null;
 
     // Handle image upload
     const imageFile = files?.image?.[0] || files?.image;
@@ -121,6 +145,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (validatedData.image !== undefined) updateData.image = validatedData.image ?? null;
     if (validatedData.author_details !== undefined) updateData.author_details = validatedData.author_details ?? null;
     if (validatedData.label !== undefined) updateData.label = validatedData.label ?? null;
+    if (validatedData.author_slug !== undefined) updateData.author_slug = validatedData.author_slug ?? null;
     
     const success = await AuthorService.updateAuthor(Number(id), updateData, saveDateFlag);
 

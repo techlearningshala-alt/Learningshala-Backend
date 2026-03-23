@@ -4,6 +4,7 @@ export interface Author {
   image: string | null;
   author_details: string | null;
   label: string | null;
+  author_slug: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -13,6 +14,7 @@ export interface CreateAuthorDto {
   image: string | null;
   author_details: string | null;
   label: string | null;
+  author_slug: string | null;
 }
 
 export interface UpdateAuthorDto extends Partial<CreateAuthorDto> {}
