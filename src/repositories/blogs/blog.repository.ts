@@ -235,7 +235,7 @@ export class BlogRepository {
     );
     const relatedBlogsData = relatedBlogs.map((row: any) => ({
       id: row.id,
-      title: row.h1_tag,
+      h1_tag: row.h1_tag,
       slug: row.slug,
       thumbnail: row.thumbnail,
       short_description: row.short_description,
