@@ -5,6 +5,7 @@ export interface CourseSearchResult {
   university_name: string;
   university_logo: string | null;
   course_slug: string;
+  compare_page_slug: string | null;
   duration: string | null;
   emi_duration: number | null;
   label: string | null;
@@ -46,11 +47,12 @@ export async function searchUniversitiesByCourseSlug(
         uc.label,
         uc.syllabus_file,
         uc.brochure_file,
-        uc.fee_type_values
+        uc.fee_type_values, 
+        uc.compare_page_slug
       FROM university_courses uc
       INNER JOIN universities u ON uc.university_id = u.id
       LEFT JOIN university_types ut ON u.university_type_id = ut.id
-      WHERE LOWER(uc.slug) LIKE LOWER(?)
+      WHERE LOWER(uc.compare_page_slug) LIKE LOWER(?)
         AND uc.is_active = 1
         AND u.is_active = 1
       ORDER BY u.university_name ASC, uc.id ASC`,
@@ -250,6 +252,7 @@ export async function searchUniversitiesByCourseSlug(
         course_slug: row.course_slug || "",
         duration: row.duration || null,
         emi_duration: row.emi_duration || null,
+        compare_page_slug: row.compare_page_slug || null,
         label: row.label || null,
         syllabus_file: row.syllabus_file || null,
         brochure_file: row.brochure_file || null,
