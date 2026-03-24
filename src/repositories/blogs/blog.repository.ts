@@ -155,7 +155,8 @@ export class BlogRepository {
         b.created_at,
         b.updated_at,
         bc.title as category_title,
-        bc.category_slug as category_slug
+        bc.category_slug as category_slug,
+        bc.category_summary as category_summary
       FROM blogs b
       INNER JOIN blog_categories bc ON b.category_id = bc.id
       LEFT JOIN authors a ON b.author_id = a.id 
@@ -187,6 +188,7 @@ export class BlogRepository {
       updated_at: row.updated_at,
       category_title: row.category_title,
       category_slug: row.category_slug,
+      category_summary: row.category_summary,
     }));
 
     return {
