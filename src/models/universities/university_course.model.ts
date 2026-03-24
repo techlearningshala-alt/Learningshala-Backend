@@ -12,6 +12,7 @@ export interface UniversityCourse {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;
@@ -56,6 +57,7 @@ export interface CreateUniversityCourseDto {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;
@@ -81,6 +83,7 @@ export interface UpdateUniversityCourseDto {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;

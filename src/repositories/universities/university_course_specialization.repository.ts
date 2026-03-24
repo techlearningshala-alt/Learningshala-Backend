@@ -154,8 +154,8 @@ export class UniversityCourseSpecializationRepository {
   async create(payload: CreateUniversityCourseSpecializationDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_course_specialization
-        (university_id, university_course_id, name, slug, h1Tag, meta_title, meta_description, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, university_course_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.university_course_id,
@@ -164,6 +164,7 @@ export class UniversityCourseSpecializationRepository {
         payload.h1Tag ?? null,
         payload.meta_title ?? null,
         payload.meta_description ?? null,
+        payload.compare_page_slug ?? null,
         payload.duration ?? null,
         payload.emi_duration ?? null,
         payload.duration_for_schema ?? null,
@@ -217,6 +218,10 @@ export class UniversityCourseSpecializationRepository {
     if (payload.meta_description !== undefined) {
       fields.push("meta_description = ?");
       values.push(payload.meta_description ?? null);
+    }
+    if (payload.compare_page_slug !== undefined) {
+      fields.push("compare_page_slug = ?");
+      values.push(payload.compare_page_slug ?? null);
     }
     if (payload.duration !== undefined) {
       fields.push("duration = ?");

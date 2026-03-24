@@ -19,6 +19,7 @@ export const createUniversityCourseSpecializationSchema = z.object({
   h1Tag: z.string().optional(),
   meta_title: z.string().optional().nullable(),
   meta_description: z.string().optional().nullable(),
+  compare_page_slug: z.string().optional().nullable(),
   duration: z.string().optional(),
   label: z.string().optional(),
   course_thumbnail: z.string().optional(),

@@ -12,6 +12,7 @@ export interface UniversityCourseSpecialization {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;
@@ -40,6 +41,7 @@ export interface CreateUniversityCourseSpecializationDto {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;
@@ -66,6 +68,7 @@ export interface UpdateUniversityCourseSpecializationDto {
   h1Tag?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  compare_page_slug?: string | null;
   duration?: string | null;
   emi_duration?: number | null;
   duration_for_schema?: string | null;
