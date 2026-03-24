@@ -61,6 +61,7 @@ export const createWebsiteLeadSchema = z
     utm_ads: optionalTrimmed("UTM ads", 255),
     website_url: optionalUrl,
     otp: optionalOtp,
+    click_source: optionalTrimmed("Click source", 150),
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {

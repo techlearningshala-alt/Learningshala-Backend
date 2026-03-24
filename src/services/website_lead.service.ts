@@ -36,6 +36,7 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     utm_ads: normalizeString(payload.utm_ads),
     website_url: normalizeString(payload.website_url),
     otp: otpValue,
+    click_source: normalizeString(payload.click_source),
   };
 
   return WebsiteLeadRepository.create(normalized);

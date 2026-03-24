@@ -50,6 +50,7 @@ export const WebsiteLeadRepository = {
         utm_adgroup,
         utm_ads,
         website_url,
+        click_source,
         created_at
       FROM website_leads
       ${whereClause}
@@ -81,9 +82,9 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url, otp
+        website_url, otp, click_source
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const params = [
@@ -102,6 +103,7 @@ export const WebsiteLeadRepository = {
       payload.utm_ads ?? null,
       payload.website_url ?? null,
       payload.otp ?? "123456",
+      payload.click_source ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);
