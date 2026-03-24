@@ -32,7 +32,7 @@ const optionalTrimmed = (label: string, max = 255) =>
 const optionalUrl = z
   .string()
   .trim()
-  .url("Invalid URL")
+  // .url("Invalid URL")
   .max(2048, "URL too long")
   .optional()
   .or(z.literal("").transform(() => undefined));
@@ -62,6 +62,7 @@ export const createWebsiteLeadSchema = z
     website_url: optionalUrl,
     otp: optionalOtp,
     click_source: optionalTrimmed("Click source", 150),
+    lead_url: optionalUrl,
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {

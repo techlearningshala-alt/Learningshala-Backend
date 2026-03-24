@@ -16,6 +16,7 @@ export interface WebsiteLead {
   website_url?: string | null;
   otp?: string | null;
   click_source?: string | null;
+  lead_url?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
