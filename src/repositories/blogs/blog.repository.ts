@@ -336,8 +336,8 @@ export class BlogRepository {
     const [result]: any = await pool.query(
       `INSERT INTO blogs (
         category_id, h1_tag, slug, meta_title, meta_description, author_id,
-        title, short_description, thumbnail, verified, update_date, content, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        title, short_description, author_name, thumbnail, verified, update_date, content, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,NOW(), NOW())`,
       [
         item.category_id,
         item.h1_tag ?? null,
@@ -348,8 +348,6 @@ export class BlogRepository {
         item.title,
         item.short_description ?? null,
         item.author_name ?? null,
-        item.author_details ?? null,
-        item.author_image ?? null,
         item.thumbnail ?? null,
         item.verified ? 1 : 0,
         item.update_date ?? null,
