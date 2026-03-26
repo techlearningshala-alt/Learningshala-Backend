@@ -89,41 +89,24 @@ export async function redirectionMiddleware(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+
+  console.log("REDIRECT HIT:", req.originalUrl);
+
+  if (shouldSkip(req)) {
+    return next();
+  }
+
   try {
-
-    if (shouldSkip(req)) {
-      return next();
-    }
-
     const originalUrl = req.originalUrl || req.url || "";
+    const hostname = req.hostname || (req.get("host") || "").split(":")[0];
 
-    const hostname =
-      (req.hostname || (req.get("host") || "").split(":")[0])
-        .replace(/^www\./, "");
+    const keys = buildOldUrlLookupKeys(req);
 
-    // Build keys
-    const keys = [
-      ...buildOldUrlLookupKeys(req),
-
-      // fallback path matching
-      req.path,
-      req.path.replace(/\/$/, "")
-    ];
-
-    // Debug logs (remove after testing)
-    console.log("========== REDIRECT DEBUG ==========");
-    console.log("HOST:", req.get("host"));
-    console.log("HOSTNAME:", hostname);
-    console.log("PROTOCOL:", req.protocol);
-    console.log("ORIGINAL URL:", originalUrl);
-    console.log("REDIRECT KEYS:", keys);
-
-    const match =
-      await RedirectionService.resolveRedirectForRequest(
-        hostname,
-        originalUrl,
-        keys
-      );
+    const match = await RedirectionService.resolveRedirectForRequest(
+      hostname,
+      originalUrl,
+      keys
+    );
 
     if (match?.new_url) {
       console.log("REDIRECT FOUND:", match.new_url);
@@ -131,8 +114,8 @@ export async function redirectionMiddleware(
     }
 
     next();
-
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }
+
