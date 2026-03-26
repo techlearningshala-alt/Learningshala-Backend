@@ -1,5 +1,3 @@
-
-
 import { Request, Response, NextFunction } from "express";
 import * as RedirectionService from "../services/redirections/redirection.service";
 
@@ -23,7 +21,12 @@ function shouldSkip(req: Request): boolean {
  * Build candidate old_url strings that might be stored in DB
  */
 function buildOldUrlLookupKeys(req: Request): string[] {
-  const rawHost = req.get("host") || "";
+
+  // FIX: Get correct host behind nginx
+  const rawHost =
+    (req.headers["x-forwarded-host"] as string) ||
+    req.get("host") ||
+    "";
 
   // normalize host
   const host = rawHost
@@ -83,6 +86,7 @@ function buildOldUrlLookupKeys(req: Request): string[] {
   return keys;
 }
 
+
 /**
  * Redirection Middleware
  */
@@ -91,6 +95,7 @@ export async function redirectionMiddleware(
   res: Response,
   next: NextFunction
 ) {
+
   console.log("🔥 REDIRECTION MIDDLEWARE HIT:", req.originalUrl);
 
   if (shouldSkip(req)) {
@@ -98,21 +103,26 @@ export async function redirectionMiddleware(
   }
 
   try {
+
     const originalUrl = req.originalUrl || req.url || "";
-    const hostname = req.hostname || (req.get("host") || "").split(":")[0];
-    
+
+    // FIX: Get correct hostname behind nginx
+    const hostname =
+      (req.headers["x-forwarded-host"] as string)?.split(":")[0] ||
+      req.hostname ||
+      (req.get("host") || "").split(":")[0];
+
     const keys = buildOldUrlLookupKeys(req);
-    
+
     console.log("HOST:", hostname);
     console.log("ORIGINAL URL:", originalUrl);
     console.log("LOOKUP KEYS:", keys);
-    
+
     const match = await RedirectionService.resolveRedirectForRequest(
       hostname,
       originalUrl,
       keys
     );
-        
 
     if (match?.new_url) {
       console.log("REDIRECT FOUND:", match.new_url);
@@ -120,8 +130,8 @@ export async function redirectionMiddleware(
     }
 
     next();
+
   } catch (err) {
     next(err);
   }
 }
-
