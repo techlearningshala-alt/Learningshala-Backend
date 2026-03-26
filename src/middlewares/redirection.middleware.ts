@@ -100,14 +100,19 @@ export async function redirectionMiddleware(
   try {
     const originalUrl = req.originalUrl || req.url || "";
     const hostname = req.hostname || (req.get("host") || "").split(":")[0];
-
+    
     const keys = buildOldUrlLookupKeys(req);
-
+    
+    console.log("HOST:", hostname);
+    console.log("ORIGINAL URL:", originalUrl);
+    console.log("LOOKUP KEYS:", keys);
+    
     const match = await RedirectionService.resolveRedirectForRequest(
       hostname,
       originalUrl,
       keys
     );
+        
 
     if (match?.new_url) {
       console.log("REDIRECT FOUND:", match.new_url);
