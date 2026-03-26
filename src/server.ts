@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 4000;
 
 // Correct req.hostname / req.protocol behind reverse proxies (needed for redirect URL matching)
 app.set("trust proxy", true);
+app.use(redirectionMiddleware);
 
 // ✅ Enable CORS for your frontend
 app.use(cors({
@@ -29,8 +30,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(morgan("combined", { stream }));
 
-// DB-backed 301 redirects (old_url → new_url); skips /api and /uploads
-// app.use(redirectionMiddleware);
 
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
