@@ -39,3 +39,5 @@ app.use("/api", routes);
 app.use(errorHandler);
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+
+setInterval(() => {}, 1000);
