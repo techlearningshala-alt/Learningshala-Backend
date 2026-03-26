@@ -20,3 +20,14 @@ export const updateRedirection = async (id: number, item: Partial<Redirection>) 
 export const deleteRedirection = async (id: number) => {
   return await repo.delete(id);
 };
+
+/** Used by HTTP redirect middleware: exact old_url match first, then host + path + query. */
+export const resolveRedirectForRequest = async (
+  hostname: string,
+  originalUrl: string,
+  lookupKeys: string[]
+) => {
+  const byExact = await repo.findFirstByOldUrls(lookupKeys);
+  if (byExact) return byExact;
+  return repo.findByHostAndPath(hostname, originalUrl);
+};

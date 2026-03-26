@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import routes from "./routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import { redirectionMiddleware } from "./middlewares/redirection.middleware";
 import { stream } from "./utills/logger";
 import cors from "cors";
 import path from "path";
@@ -10,6 +11,9 @@ import path from "path";
 dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 4000;
+
+// Correct req.hostname / req.protocol behind reverse proxies (needed for redirect URL matching)
+app.set("trust proxy", true);
 
 // ✅ Enable CORS for your frontend
 app.use(cors({
@@ -24,6 +28,9 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(morgan("combined", { stream }));
+
+// DB-backed 301 redirects (old_url → new_url); skips /api and /uploads
+app.use(redirectionMiddleware);
 
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
