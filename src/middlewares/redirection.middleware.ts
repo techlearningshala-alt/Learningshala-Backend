@@ -1,3 +1,5 @@
+
+
 import { Request, Response, NextFunction } from "express";
 import * as RedirectionService from "../services/redirections/redirection.service";
 
@@ -88,9 +90,8 @@ export async function redirectionMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
-
-  console.log("REDIRECT HIT:", req.originalUrl);
+) {
+  console.log("🔥 REDIRECTION MIDDLEWARE HIT:", req.originalUrl);
 
   if (shouldSkip(req)) {
     return next();
