@@ -5,33 +5,6 @@ import {
   updateRedirectionSchema,
 } from "../../validators/redirections/redirection.validator";
 import { successResponse, errorResponse } from "../../utills/response";
-import { buildOldUrlLookupKeysFromHref } from "../../utills/redirectionLookup";
-
-/** Public (no auth): used by Next.js edge / CDN to resolve 301 targets for a full URL. */
-export const resolvePublic = async (req: Request, res: Response) => {
-  try {
-    const urlParam = (req.query.url as string | undefined)?.trim();
-    if (!urlParam) {
-      return errorResponse(res, "Query parameter url is required (full URL, e.g. https://learningshala.com/old-path)", 400);
-    }
-    let parsed: URL;
-    try {
-      parsed = new URL(urlParam);
-    } catch {
-      return errorResponse(res, "Invalid url", 400);
-    }
-    const hostname = parsed.hostname;
-    const originalUrl = parsed.pathname + parsed.search;
-    const keys = buildOldUrlLookupKeysFromHref(urlParam);
-    const match = await RedirectionService.resolveRedirectForRequest(hostname, originalUrl, keys);
-    if (!match?.new_url) {
-      return errorResponse(res, "No redirect configured for this URL", 404);
-    }
-    return successResponse(res, { new_url: match.new_url }, "Redirect found");
-  } catch (err: any) {
-    return errorResponse(res, err.message || "Failed to resolve redirect");
-  }
-};
 
 export const getAll = async (req: Request, res: Response) => {
   try {

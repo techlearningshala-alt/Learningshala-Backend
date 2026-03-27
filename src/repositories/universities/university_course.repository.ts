@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -126,6 +126,7 @@ export class UniversityCourseRepository {
         payload.author_name ?? null,
         payload.is_active !== undefined ? (payload.is_active ? 1 : 0) : 1,
         payload.is_page_created !== undefined ? (payload.is_page_created ? 1 : 0) : 1,
+        payload.compare !== undefined ? (payload.compare ? 1 : 0) : 0,
         payload.syllabus_file ?? null,
         payload.brochure_file ?? null,
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null,
@@ -209,6 +210,10 @@ export class UniversityCourseRepository {
     if (payload.is_page_created !== undefined) {
       fields.push("is_page_created = ?");
       values.push(payload.is_page_created ? 1 : 0);
+    }
+    if (payload.compare !== undefined) {
+      fields.push("`compare` = ?");
+      values.push(payload.compare ? 1 : 0);
     }
     if (payload.syllabus_file !== undefined) {
       fields.push("syllabus_file = ?");
@@ -331,6 +336,10 @@ export class UniversityCourseRepository {
         row.is_page_created === null || row.is_page_created === undefined
           ? true
           : Boolean(row.is_page_created),
+      compare:
+        row.compare === null || row.compare === undefined
+          ? false
+          : Boolean(row.compare),
     };
   }
 }

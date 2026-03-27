@@ -23,6 +23,7 @@ export interface UniversityCourse {
   author_name?: string | null;
   is_active: boolean;
   is_page_created: boolean;
+  compare: boolean;
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
@@ -68,6 +69,7 @@ export interface CreateUniversityCourseDto {
   author_name?: string | null;
   is_active?: boolean;
   is_page_created?: boolean;
+  compare?: boolean;
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;
@@ -94,6 +96,7 @@ export interface UpdateUniversityCourseDto {
   author_name?: string | null;
   is_active?: boolean;
   is_page_created?: boolean;
+  compare?: boolean;
   syllabus_file?: string | null;
   brochure_file?: string | null;
   fee_type_values?: Record<string, number> | null;

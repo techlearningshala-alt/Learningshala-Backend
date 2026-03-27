@@ -502,6 +502,21 @@ export const toggleProvideEmi = async (req: Request, res: Response) => {
   }
 };
 
+export const toggleCompare = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { compare } = req.body;
+
+    const updated = await UniversityService.toggleUniversityCompare(Number(id), Boolean(compare));
+    if (!updated) return errorResponse(res, "University not found", 404);
+
+    return successResponse(res, updated, "University compare status updated successfully");
+  } catch (err: any) {
+    console.error("❌ Toggle compare error:", err);
+    return errorResponse(res, err.message || "Failed to toggle compare", 400);
+  }
+};
+
 export const fetchList = async (req: Request, res: Response) => {
   try {
     const universities = await UniversityService.fetchUniversitiesList();

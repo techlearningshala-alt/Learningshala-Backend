@@ -150,6 +150,7 @@ export const updateUniversity = async (
         approval_id = ?,
         placement_partner_ids = ?,
         emi_partner_ids = ?,
+        \`compare\` = ?,
         university_tag_line = ?,
         establishment_year = ?,
         emi_provides = ?,
@@ -192,6 +193,7 @@ export const updateUniversity = async (
       updateData.approval_id || "[]",
       updateData.placement_partner_ids || "[]",
       updateData.emi_partner_ids || "[]",
+      updateData.compare === undefined ? normalizeBool(existing.compare) : normalizeBool(updateData.compare),
 
       // Compare Information fields
       updateData.university_tag_line || null,
@@ -587,6 +589,10 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
         u.provide_emi === null || u.provide_emi === undefined
           ? false
           : Boolean(u.provide_emi),
+      compare:
+        u.compare === null || u.compare === undefined
+          ? false
+          : Boolean(u.compare),
       author_name: u.author_name,
       created_at: u.created_at,
       updated_at: u.updated_at,
@@ -800,6 +806,9 @@ export const getUniversityById = async (id: number) => {
   }
   if (universityData.provide_emi !== undefined) {
     universityData.provide_emi = Boolean(universityData.provide_emi);
+  }
+  if (universityData.compare !== undefined) {
+    universityData.compare = Boolean(universityData.compare);
   }
 
   // Parse compare information JSON fields for admin form
@@ -1039,6 +1048,9 @@ export const getUniversityBySlug = async (slug: string) => {
   if (universityData.provide_emi !== undefined) {
     universityData.provide_emi = Boolean(universityData.provide_emi);
   }
+  if (universityData.compare !== undefined) {
+    universityData.compare = Boolean(universityData.compare);
+  }
   // Extract university type (can be null if not set)
   const universityType = universityData.university_type || null;
 
@@ -1182,6 +1194,44 @@ export const toggleUniversityProvideEmi = async (id: number, provideEmi: boolean
     }
     if (universityData.provide_emi !== undefined) {
       universityData.provide_emi = Boolean(universityData.provide_emi);
+    }
+    if (universityData.compare !== undefined) {
+      universityData.compare = Boolean(universityData.compare);
+    }
+    return universityData;
+  } catch (err) {
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+export const toggleUniversityCompare = async (id: number, compare: boolean) => {
+  const conn = await pool.getConnection();
+  try {
+    const [result]: any = await conn.query(
+      `UPDATE universities SET \`compare\` = ? WHERE id = ?`,
+      [compare ? 1 : 0, id]
+    );
+
+    if (result.affectedRows === 0) return null;
+
+    const [rows]: any = await conn.query(`SELECT * FROM universities WHERE id = ?`, [id]);
+    const universityData: any = { ...rows[0] };
+    if (universityData.is_page_created !== undefined) {
+      universityData.is_page_created = Boolean(universityData.is_page_created);
+    }
+    if (universityData.is_active !== undefined) {
+      universityData.is_active = Boolean(universityData.is_active);
+    }
+    if (universityData.menu_visibility !== undefined) {
+      universityData.menu_visibility = Boolean(universityData.menu_visibility);
+    }
+    if (universityData.provide_emi !== undefined) {
+      universityData.provide_emi = Boolean(universityData.provide_emi);
+    }
+    if (universityData.compare !== undefined) {
+      universityData.compare = Boolean(universityData.compare);
     }
     return universityData;
   } catch (err) {

@@ -47,6 +47,7 @@ router.patch("/:id/toggle-status", UniversityController.toggleStatus);
 router.patch("/:id/toggle-page-created", UniversityController.togglePageCreated);
 router.patch("/:id/toggle-menu-visibility", UniversityController.toggleMenuVisibility);
 router.patch("/:id/toggle-provide-emi", UniversityController.toggleProvideEmi);
+router.patch("/:id/toggle-compare", UniversityController.toggleCompare);
 router.delete("/:id", UniversityController.remove);
 
 export default router;

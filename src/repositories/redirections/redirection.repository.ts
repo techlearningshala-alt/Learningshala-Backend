@@ -57,53 +57,6 @@ export default class RedirectionRepo {
     return rows.length ? this.mapRow(rows[0]) : null;
   }
 
-  /** First row matching any of the given old_url values (single round-trip). */
-  async findFirstByOldUrls(urls: string[], conn?: Pool | PoolConnection) {
-    const unique = [...new Set(urls.filter(Boolean))];
-    if (!unique.length) return null;
-    const executor = this.getExecutor(conn);
-    const placeholders = unique.map(() => "?").join(", ");
-    const [rows]: any = await executor.query(
-      `SELECT * FROM redirections WHERE old_url IN (${placeholders}) LIMIT 1`,
-      unique
-    );
-    return rows.length ? this.mapRow(rows[0]) : null;
-  }
-
-  /**
-   * Match when DB stores a full URL but the incoming request uses the same host + path + query
-   * (ignores http vs https; host compares with www stripped).
-   */
-  async findByHostAndPath(
-    requestHostname: string,
-    pathWithQuery: string,
-    conn?: Pool | PoolConnection
-  ) {
-    const executor = this.getExecutor(conn);
-    const [rows]: any = await executor.query("SELECT id, old_url, new_url, created_at, updated_at FROM redirections");
-    const normalizeHost = (h: string) => h.replace(/^www\./i, "").toLowerCase();
-    const normalizePathname = (p: string) => {
-      if (p.length > 1 && p.endsWith("/")) return p.slice(0, -1) || "/";
-      return p || "/";
-    };
-    const pathPart = pathWithQuery.split("?")[0] || "/";
-    const searchPart = pathWithQuery.includes("?") ? pathWithQuery.slice(pathWithQuery.indexOf("?")) : "";
-    const reqKey = normalizePathname(pathPart) + searchPart;
-    const reqHost = normalizeHost(requestHostname);
-
-    for (const row of rows) {
-      try {
-        const u = new URL(row.old_url);
-        if (normalizeHost(u.hostname) !== reqHost) continue;
-        const dbKey = normalizePathname(u.pathname) + u.search;
-        if (dbKey === reqKey) return this.mapRow(row);
-      } catch {
-        continue;
-      }
-    }
-    return null;
-  }
-
   async create(item: Partial<Redirection>, conn?: Pool | PoolConnection) {
     const executor = this.getExecutor(conn);
     const [result]: any = await executor.query(

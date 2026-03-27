@@ -78,6 +78,18 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       typeof req.body.meta_description === "string" && req.body.meta_description.trim().length
         ? req.body.meta_description
         : null;
+    const linkedInProfileLink =
+      typeof req.body.linkedin_profile_link === "string" && req.body.linkedin_profile_link.trim().length
+        ? req.body.linkedin_profile_link.trim()
+        : null;
+    const designation =
+      typeof req.body.designation === "string" && req.body.designation.trim().length
+        ? req.body.designation.trim()
+        : null;
+    const educationBackground =
+      typeof req.body.education_background === "string" && req.body.education_background.trim().length
+        ? req.body.education_background.trim()
+        : null;
 
     const body = {
       author_name: rawAuthorName,
@@ -87,6 +99,9 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       author_slug: normalizedSlug ?? null,
       meta_title: metaTitle,
       meta_description: metaDescription,
+      linkedin_profile_link: linkedInProfileLink,
+      designation: designation,
+      education_background: educationBackground,
     };
 
     const validatedData = createAuthorSchema.parse(body);
@@ -99,6 +114,9 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       author_slug: validatedData.author_slug ?? null,
       meta_title: validatedData.meta_title ?? null,
       meta_description: validatedData.meta_description ?? null,
+      linkedin_profile_link: validatedData.linkedin_profile_link ?? null,
+      designation: validatedData.designation ?? null,
+      education_background: validatedData.education_background ?? null,
     };
     const result = await AuthorService.createAuthor(createData);
 
@@ -129,6 +147,9 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (updates.author_slug === "") updates.author_slug = null;
     if (updates.meta_title === "") updates.meta_title = null;
     if (updates.meta_description === "") updates.meta_description = null;
+    if (updates.linkedin_profile_link === "") updates.linkedin_profile_link = null;
+    if (updates.designation === "") updates.designation = null;
+    if (updates.education_background === "") updates.education_background = null;
 
     // Handle image upload
     const imageFile = files?.image?.[0] || files?.image;
@@ -165,6 +186,9 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (validatedData.author_slug !== undefined) updateData.author_slug = validatedData.author_slug ?? null;
     if (validatedData.meta_title !== undefined) updateData.meta_title = validatedData.meta_title ?? null;
     if (validatedData.meta_description !== undefined) updateData.meta_description = validatedData.meta_description ?? null;
+    if (validatedData.linkedin_profile_link !== undefined) updateData.linkedin_profile_link = validatedData.linkedin_profile_link ?? null;
+    if (validatedData.designation !== undefined) updateData.designation = validatedData.designation ?? null;
+    if (validatedData.education_background !== undefined) updateData.education_background = validatedData.education_background ?? null;
     
     const success = await AuthorService.updateAuthor(Number(id), updateData, saveDateFlag);
 

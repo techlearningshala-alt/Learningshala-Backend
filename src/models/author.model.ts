@@ -7,6 +7,9 @@ export interface Author {
   author_slug: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  linkedin_profile_link: string | null;
+  designation: string | null;
+  education_background: string | null;
   created_at: Date;
   updated_at: Date;
   author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null }[];
@@ -20,6 +23,9 @@ export interface CreateAuthorDto {
   author_slug: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  linkedin_profile_link: string | null;
+  designation: string | null;
+  education_background: string | null;
 }
 
 export interface UpdateAuthorDto extends Partial<CreateAuthorDto> {}

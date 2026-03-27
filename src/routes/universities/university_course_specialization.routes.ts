@@ -33,6 +33,7 @@ router.put(
 );
 router.patch("/:id/toggle-status", UniversityCourseSpecializationController.toggleStatus);
 router.patch("/:id/toggle-page-created", UniversityCourseSpecializationController.togglePageCreated);
+router.patch("/:id/toggle-compare", UniversityCourseSpecializationController.toggleCompare);
 router.delete("/:id", UniversityCourseSpecializationController.remove);
 
 export default router;

@@ -9,6 +9,7 @@ interface ListSpecializationFilters {
   universityId?: number;
   universityCourseId?: number;
   search?: string;
+  courseSearch?: string;
 }
 
 export class UniversityCourseSpecializationRepository {
@@ -35,6 +36,10 @@ export class UniversityCourseSpecializationRepository {
       where.push("(ucs.name LIKE ? OR ucs.slug LIKE ?)");
       params.push(`%${filters.search}%`, `%${filters.search}%`);
     }
+    if (filters.courseSearch) {
+      where.push("uc.name LIKE ?");
+      params.push(`%${filters.courseSearch}%`);
+    }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
@@ -54,6 +59,8 @@ export class UniversityCourseSpecializationRepository {
     const [countRows]: any = await pool.query(
       `SELECT COUNT(*) as total
          FROM university_course_specialization ucs
+         INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+         INNER JOIN universities u ON ucs.university_id = u.id
         ${whereClause}`,
       params
     );
@@ -148,14 +155,18 @@ export class UniversityCourseSpecializationRepository {
         row.is_page_created === null || row.is_page_created === undefined
           ? true
           : Boolean(row.is_page_created),
+      compare:
+        row.compare === null || row.compare === undefined
+          ? false
+          : Boolean(row.compare),
     };
   }
 
   async create(payload: CreateUniversityCourseSpecializationDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_course_specialization
-        (university_id, university_course_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, university_course_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.university_course_id,
@@ -175,6 +186,7 @@ export class UniversityCourseSpecializationRepository {
         payload.author_name ?? null,
         payload.is_active !== undefined ? (payload.is_active ? 1 : 0) : 1,
         payload.is_page_created !== undefined ? (payload.is_page_created ? 1 : 0) : 1,
+        payload.compare !== undefined ? (payload.compare ? 1 : 0) : 0,
         payload.syllabus_file ?? null,
         payload.brochure_file ?? null,
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null,
@@ -262,6 +274,10 @@ export class UniversityCourseSpecializationRepository {
     if (payload.is_page_created !== undefined) {
       fields.push("is_page_created = ?");
       values.push(payload.is_page_created ? 1 : 0);
+    }
+    if (payload.compare !== undefined) {
+      fields.push("`compare` = ?");
+      values.push(payload.compare ? 1 : 0);
     }
     if (payload.syllabus_file !== undefined) {
       fields.push("syllabus_file = ?");

@@ -8,6 +8,7 @@ import {
   listUniversityCourseSpecializations,
   toggleUniversityCourseSpecializationStatus,
   toggleUniversityCourseSpecializationPageCreated,
+  toggleUniversityCourseSpecializationCompare,
   updateUniversityCourseSpecialization,
 } from "../../services/universities/university_course_specialization.service";
 import { successResponse, errorResponse } from "../../utills/response";
@@ -35,11 +36,14 @@ export const findAll = async (req: Request, res: Response) => {
       : undefined;
     const search =
       typeof req.query.search === "string" ? req.query.search.trim() : undefined;
+    const courseSearch =
+      typeof req.query.course_search === "string" ? req.query.course_search.trim() : undefined;
 
     const result = await listUniversityCourseSpecializations(page, limit, {
       universityId,
       universityCourseId,
       search,
+      courseSearch,
     });
 
     return successResponse(
@@ -594,6 +598,32 @@ export const togglePageCreated = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error.message || "Failed to toggle university course specialization page created status",
+      400
+    );
+  }
+};
+
+export const toggleCompare = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const compare = req.body.compare === true || req.body.compare === "true" || req.body.compare === 1;
+
+    const specialization = await toggleUniversityCourseSpecializationCompare(id, compare);
+
+    if (!specialization) {
+      return errorResponse(res, "University course specialization not found", 404);
+    }
+
+    return successResponse(
+      res,
+      specialization,
+      "University course specialization compare status toggled successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error toggling university course specialization compare status:", error);
+    return errorResponse(
+      res,
+      error.message || "Failed to toggle university course specialization compare status",
       400
     );
   }

@@ -14,6 +14,7 @@ interface ListSpecializationOptions {
   universityId?: number;
   universityCourseId?: number;
   search?: string;
+  courseSearch?: string;
 }
 
 const toBoolean = (value: unknown): boolean | undefined => {
@@ -63,6 +64,7 @@ const normaliseSpecializationPayload = (payload: any): CreateUniversityCourseSpe
     course_thumbnail: payload.course_thumbnail ?? null,
     author_name: payload.author_name ?? null,
     is_active: toBoolean(payload.is_active) ?? true,
+    compare: toBoolean(payload.compare) ?? false,
     syllabus_file: payload.syllabus_file ?? null,
     brochure_file: payload.brochure_file ?? null,
     fee_type_values: parseFeeTypeValues(payload.fee_type_values),
@@ -463,6 +465,12 @@ export async function updateUniversityCourseSpecialization(
         normalized.is_active = boolValue;
       }
     }
+    if (payload.compare !== undefined) {
+      const boolValue = toBoolean(payload.compare);
+      if (boolValue !== undefined) {
+        normalized.compare = boolValue;
+      }
+    }
     if (payload.syllabus_file !== undefined) {
       normalized.syllabus_file = payload.syllabus_file ?? null;
     }
@@ -655,6 +663,14 @@ export async function toggleUniversityCourseSpecializationPageCreated(id: number
   if (!specialization) return null;
 
   await specializationRepo.update(id, { is_page_created: isPageCreated });
+  return await specializationRepo.findById(id);
+}
+
+export async function toggleUniversityCourseSpecializationCompare(id: number, compare: boolean) {
+  const specialization = await specializationRepo.findById(id);
+  if (!specialization) return null;
+
+  await specializationRepo.update(id, { compare });
   return await specializationRepo.findById(id);
 }
 

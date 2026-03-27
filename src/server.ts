@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import routes from "./routes";
 import { errorHandler } from "./middlewares/error.middleware";
-import { redirectionMiddleware } from "./middlewares/redirection.middleware";
 import { stream } from "./utills/logger";
 import cors from "cors";
 import path from "path";
@@ -12,9 +11,6 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 4000;
 
-// Correct req.hostname / req.protocol behind reverse proxies (needed for redirect URL matching)
-app.set("trust proxy", true);
-app.use(redirectionMiddleware);
 
 // ✅ Enable CORS for your frontend
 app.use(cors({
@@ -40,4 +36,4 @@ app.use(errorHandler);
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
-setInterval(() => {}, 1000);
+// setInterval(() => {}, 1000);

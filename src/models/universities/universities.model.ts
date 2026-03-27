@@ -13,6 +13,7 @@ export interface University {
   is_page_created: boolean;
   menu_visibility: boolean;
   provide_emi: boolean;
+  compare: boolean;
   approval_id?: number[];
   placement_partner_ids?: number[];
   emi_partner_ids?: number[];
