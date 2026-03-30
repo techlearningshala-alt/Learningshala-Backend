@@ -16,14 +16,11 @@ export class BlogCategoryRepository {
     const [countRows]: any = await pool.query("SELECT COUNT(*) as total FROM blog_categories");
     const total = countRows[0].total;
 
-    // Fetch paginated data with blog count per category
+    // Fetch paginated categories only.
+    // UI doesn't use blog_count; JOIN+GROUP BY makes this endpoint slow.
     const [rows]: any = await pool.query(
-      `SELECT 
-         bc.*,
-         COUNT(b.id) AS blog_count
+      `SELECT bc.*
        FROM blog_categories bc
-       LEFT JOIN blogs b ON b.category_id = bc.id
-       GROUP BY bc.id
        ORDER BY bc.id DESC
        LIMIT ? OFFSET ?`,
       [limit, offset]

@@ -16,10 +16,10 @@ export class BlogRepository {
     const params: any[] = [];
     const where: string[] = [];
 
-    if (options.search) {
-      where.push("(b.title LIKE ? OR b.author_name LIKE ?)");
-      const searchTerm = `%${options.search}%`;
-      params.push(searchTerm, searchTerm);
+    if (options.search && options.search.trim()) {
+      where.push("(b.title LIKE ? OR b.h1_tag LIKE ? OR a.author_name LIKE ? OR b.author_name LIKE ?)");
+      const searchTerm = `%${options.search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (options.category_id) {
@@ -31,7 +31,10 @@ export class BlogRepository {
 
     // Fetch total count
     const [countRows]: any = await pool.query(
-      `SELECT COUNT(*) as total FROM blogs b ${whereClause}`,
+      `SELECT COUNT(*) as total
+       FROM blogs b
+       LEFT JOIN authors a ON b.author_id = a.id
+       ${whereClause}`,
       params
     );
     const total = countRows[0].total;
@@ -115,10 +118,10 @@ export class BlogRepository {
     where.push("bc.category_slug = ?");
     params.push(categorySlug);
 
-    if (options.search) {
-      where.push("(b.title LIKE ? OR b.author_name LIKE ?)");
-      const searchTerm = `%${options.search}%`;
-      params.push(searchTerm, searchTerm);
+    if (options.search && options.search.trim()) {
+      where.push("(b.title LIKE ? OR b.h1_tag LIKE ? OR a.author_name LIKE ? OR b.author_name LIKE ?)");
+      const searchTerm = `%${options.search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
