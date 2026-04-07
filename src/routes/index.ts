@@ -37,6 +37,9 @@ import dashboardRoutes from "./dashboard/dashboard.routes";
 import blogCategoryRoutes from "./blogs/blog_category.routes";
 import blogRoutes from "./blogs/blog.routes";
 import blogFaqRoutes from "./blogs/blog_faq.routes";
+import newsCategoryRoutes from "./news/news_category.routes";
+import newsRoutes from "./news/news.routes";
+import newsFaqRoutes from "./news/news_faq.routes";
 import authorRoutes from "./author.routes";
 import websiteBannerRoutes from "./website_banner.routes";
 import redirectionRoutes from "./redirections/redirection.routes";
@@ -97,6 +100,11 @@ router.use("/cms/dashboard", dashboardRoutes);
 router.use("/cms/blog-categories", blogCategoryRoutes);
 router.use("/cms/blogs", blogRoutes);
 router.use("/cms/blogs/faqs", blogFaqRoutes);
+
+// ✅ News routes (mirror blogs; mount /news/faqs before /news)
+router.use("/cms/news-categories", newsCategoryRoutes);
+router.use("/cms/news/faqs", newsFaqRoutes);
+router.use("/cms/news", newsRoutes);
 
 // ✅ Author routes
 router.use("/cms/authors", authorRoutes);
