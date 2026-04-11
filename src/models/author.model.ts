@@ -1,3 +1,15 @@
+export type AuthorContentItem = {
+  h1_tag: string | null;
+  short_description: string | null;
+  thumbnail: string | null;
+  slug: string | null;
+  verified: boolean | null;
+  updated_at: Date | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  category_title: string | null;
+};
+
 export interface Author {
   id: number;
   author_name: string;
@@ -12,7 +24,8 @@ export interface Author {
   education_background: string | null;
   created_at: Date;
   updated_at: Date;
-  author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null }[];
+  author_blogs?: AuthorContentItem[];
+  author_news?: AuthorContentItem[];
 }
 
 export interface CreateAuthorDto {

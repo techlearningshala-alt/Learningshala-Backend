@@ -1,6 +1,5 @@
 import pool from "../config/db";
 import { Author, CreateAuthorDto, UpdateAuthorDto } from "../models/author.model";
-import { Blog } from "../models/blogs/blog.model";
 
 export class AuthorRepository {
   async findAll(page = 1, limit = 10) {
@@ -19,19 +18,76 @@ export class AuthorRepository {
     }
 
   async findBySlug(slug: string): Promise<Author | null> {
-    const [rows]: any = await pool.query("SELECT authors.id, authors.author_name, authors.image, authors.author_details, authors.label, authors.author_slug, authors.meta_title, authors.meta_description, authors.linkedin_profile_link, authors.designation, authors.education_background, b.h1_tag as blog_title, b.short_description as blog_short_description, b.thumbnail as blog_thumbnail , b.slug as blog_slug,b.verified as blog_verified, b.updated_at as blog_updated_at, b.meta_title as blog_meta_title, b.meta_description as blog_meta_description, bc.title as category_title FROM authors left join blogs b on authors.id = b.author_id left join blog_categories bc on b.category_id = bc.id WHERE author_slug = ?", [slug]);
-    const author_blogs: { title: string | null, short_description: string | null, thumbnail: string | null, slug: string | null, verified: boolean | null, updated_at: Date | null, meta_title: string | null, meta_description: string | null, category_title: string | null}[] = rows.map((row: any) => ({
+    const [authorRows]: any = await pool.query("SELECT * FROM authors WHERE author_slug = ?", [slug]);
+    if (!authorRows.length) return null;
+
+    const a = authorRows[0];
+
+    const [blogRows]: any = await pool.query(
+      `SELECT b.h1_tag AS blog_title, b.short_description AS blog_short_description, b.thumbnail AS blog_thumbnail,
+              b.slug AS blog_slug, b.verified AS blog_verified, b.updated_at AS blog_updated_at,
+              b.meta_title AS blog_meta_title, b.meta_description AS blog_meta_description,
+              bc.title AS category_title
+       FROM blogs b
+       LEFT JOIN blog_categories bc ON b.category_id = bc.id
+       WHERE b.author_id = ?
+       ORDER BY b.id DESC`,
+      [a.id]
+    );
+
+    const [newsRows]: any = await pool.query(
+      `SELECT n.h1_tag AS news_h1_tag, n.short_description AS news_short_description, n.thumbnail AS news_thumbnail,
+              n.slug AS news_slug, n.verified AS news_verified, n.updated_at AS news_updated_at,
+              n.meta_title AS news_meta_title, n.meta_description AS news_meta_description,
+              nc.title AS category_title
+       FROM news n
+       LEFT JOIN news_categories nc ON n.category_id = nc.id
+       WHERE n.author_id = ?
+       ORDER BY n.id DESC`,
+      [a.id]
+    );
+
+    const author_blogs = (blogRows as any[]).map((row) => ({
       h1_tag: row.blog_title,
       short_description: row.blog_short_description,
       thumbnail: row.blog_thumbnail,
       slug: row.blog_slug,
-      verified: row.blog_verified,
+      verified: row.blog_verified == null ? null : Boolean(row.blog_verified),
       updated_at: row.blog_updated_at,
       meta_title: row.blog_meta_title,
       meta_description: row.blog_meta_description,
       category_title: row.category_title,
     }));
-    return rows.length ? { id: rows[0].id, author_name: rows[0].author_name, image: rows[0].image, author_details: rows[0].author_details, label: rows[0].label, author_slug: rows[0].author_slug, meta_title: rows[0].meta_title, meta_description: rows[0].meta_description, linkedin_profile_link: rows[0].linkedin_profile_link, designation: rows[0].designation, education_background: rows[0].education_background, created_at: rows[0].created_at, updated_at: rows[0].updated_at, author_blogs } : null;
+
+    const author_news = (newsRows as any[]).map((row) => ({
+      h1_tag: row.news_h1_tag,
+      short_description: row.news_short_description,
+      thumbnail: row.news_thumbnail,
+      slug: row.news_slug,
+      verified: row.news_verified == null ? null : Boolean(row.news_verified),
+      updated_at: row.news_updated_at,
+      meta_title: row.news_meta_title,
+      meta_description: row.news_meta_description,
+      category_title: row.category_title,
+    }));
+
+    return {
+      id: a.id,
+      author_name: a.author_name,
+      image: a.image,
+      author_details: a.author_details,
+      label: a.label,
+      author_slug: a.author_slug,
+      meta_title: a.meta_title,
+      meta_description: a.meta_description,
+      linkedin_profile_link: a.linkedin_profile_link,
+      designation: a.designation,
+      education_background: a.education_background,
+      created_at: a.created_at,
+      updated_at: a.updated_at,
+      author_blogs,
+      author_news,
+    };
   }
 
   async create(item: CreateAuthorDto): Promise<Author> {
