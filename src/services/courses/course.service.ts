@@ -311,6 +311,33 @@ export const toggleCourseMenuVisibility = async (
 
 export const getCoursesByDomain = async () => {
   const courses = await repo.findByDomainGrouped();
+
+  const courseIds = courses.map((course: any) => Number(course.id)).filter((id: number) => !Number.isNaN(id));
+  const specializationsByCourseId = new Map<number, Array<{ specialization_id: number; slug: string; name: string }>>();
+
+  if (courseIds.length > 0) {
+    const [specializationRows]: any = await pool.query(
+      `SELECT id AS specialization_id, course_id, slug, name
+       FROM specializations
+       WHERE course_id IN (?)
+         AND is_active = 1
+         AND menu_visibility = 1
+       ORDER BY priority ASC, id ASC`, 
+      [courseIds]
+    );
+
+    (specializationRows || []).forEach((row: any) => {
+      const courseId = Number(row.course_id);
+      if (!specializationsByCourseId.has(courseId)) {
+        specializationsByCourseId.set(courseId, []);
+      }
+      specializationsByCourseId.get(courseId)!.push({
+        specialization_id: Number(row.specialization_id),
+        slug: row.slug || "",
+        name: row.name || "",
+      });
+    });
+  }
   
   // Group courses by domain name
   const grouped: Record<string, any[]> = {};
@@ -332,6 +359,7 @@ export const getCoursesByDomain = async () => {
       course_id: course.id,
       specialization_count: course.specialization_count || 0,
       university_count: course.university_count || 0,
+      specializations: specializationsByCourseId.get(Number(course.id)) || [],
     });
   });
   
