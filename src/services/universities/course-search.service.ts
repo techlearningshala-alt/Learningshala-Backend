@@ -295,6 +295,7 @@ export async function searchUniversitiesByCourseSlug(
  * Returns the same payload shape as course slug search.
  */
 export async function searchUniversitiesBySpecializationSlug(
+  courseSlug: string,
   specializationSlug: string
 ): Promise<CourseSearchResult[]> {
   try {
@@ -322,12 +323,13 @@ export async function searchUniversitiesBySpecializationSlug(
       INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
       INNER JOIN universities u ON uc.university_id = u.id
       LEFT JOIN university_types ut ON u.university_type_id = ut.id
-      WHERE LOWER(ucs.compare_page_slug) LIKE LOWER(?)
+      WHERE LOWER(uc.compare_page_slug) LIKE LOWER(?)
+        AND LOWER(ucs.compare_page_slug) LIKE LOWER(?)
         AND ucs.is_active = 1
         AND uc.is_active = 1
         AND u.is_active = 1
       ORDER BY u.university_name ASC, ucs.id ASC`,
-      [specializationSlug.trim()]
+      [courseSlug.trim(), specializationSlug.trim()]
     );
 
     const universityIds = [...new Set(rows.map((row: any) => row.university_id))];

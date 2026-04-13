@@ -37,12 +37,24 @@ export const searchByCourseSlug = async (req: Request, res: Response) => {
 
 /**
  * Search universities by specialization compare slug
- * GET /api/universities/search-by-specialization?specializationSlug=online-mba-finance
+ * GET /api/universities/search-by-specialization/:courseSlug/:specializationSlug
  */
 export const searchBySpecializationSlug = async (req: Request, res: Response) => {
   try {
-    const specializationSlug = (req.query.specializationSlug ||
-      req.query.universityCourseSpecializationSlug) as string;
+    const courseSlug = (req.params.courseSlug || req.query.courseSlug) as string;
+    const specializationSlug = (
+      req.params.specializationSlug ||
+      req.query.specializationSlug ||
+      req.query.universityCourseSpecializationSlug
+    ) as string;
+
+    if (!courseSlug || typeof courseSlug !== "string" || courseSlug.trim().length === 0) {
+      return errorResponse(
+        res,
+        "Course slug is required",
+        400
+      );
+    }
 
     if (
       !specializationSlug ||
@@ -57,6 +69,7 @@ export const searchBySpecializationSlug = async (req: Request, res: Response) =>
     }
 
     const results = await searchUniversitiesBySpecializationSlug(
+      courseSlug.trim(),
       specializationSlug.trim()
     );
 
