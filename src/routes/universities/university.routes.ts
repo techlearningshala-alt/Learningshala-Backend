@@ -8,6 +8,10 @@ const router = express.Router();
 
 // Public route for course search (no auth required)
 router.get("/search-by-course", CourseSearchController.searchByCourseSlug);
+router.get(
+  "/search-by-specialization",
+  CourseSearchController.searchBySpecializationSlug
+);
 
 // Apply auth middleware to all other routes
 router.use(authMiddleware);

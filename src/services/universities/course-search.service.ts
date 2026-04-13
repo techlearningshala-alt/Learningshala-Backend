@@ -290,3 +290,259 @@ export async function searchUniversitiesByCourseSlug(
   }
 }
 
+/**
+ * Search universities by university course specialization slug
+ * Returns the same payload shape as course slug search.
+ */
+export async function searchUniversitiesBySpecializationSlug(
+  specializationSlug: string
+): Promise<CourseSearchResult[]> {
+  try {
+    const [rows]: any = await pool.query(
+      `SELECT 
+        u.id AS university_id,
+        u.university_name,
+        u.university_logo,
+        u.university_type_id,
+        u.approval_id,
+        u.placement_partner_ids,
+        u.emi_partner_ids,
+        u.university_slug,
+        ut.name AS university_type,
+        uc.slug AS course_slug,
+        ucs.slug AS specialization_slug,
+        ucs.duration,
+        ucs.emi_duration,
+        ucs.label,
+        ucs.syllabus_file,
+        ucs.brochure_file,
+        ucs.fee_type_values, 
+        ucs.compare_page_slug
+      FROM university_course_specialization ucs
+      INNER JOIN university_courses uc ON ucs.university_course_id = uc.id
+      INNER JOIN universities u ON uc.university_id = u.id
+      LEFT JOIN university_types ut ON u.university_type_id = ut.id
+      WHERE LOWER(ucs.compare_page_slug) LIKE LOWER(?)
+        AND ucs.is_active = 1
+        AND uc.is_active = 1
+        AND u.is_active = 1
+      ORDER BY u.university_name ASC, ucs.id ASC`,
+      [specializationSlug.trim()]
+    );
+
+    const universityIds = [...new Set(rows.map((row: any) => row.university_id))];
+
+    const allApprovalIds = new Set<number>();
+    rows.forEach((row: any) => {
+      try {
+        const approvalIds = JSON.parse(row.approval_id || "[]");
+        if (Array.isArray(approvalIds)) {
+          approvalIds.forEach((id: number) => allApprovalIds.add(id));
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    });
+
+    let approvalsMap: Record<number, any> = {};
+    if (allApprovalIds.size > 0) {
+      const [approvals]: any = await pool.query(
+        `SELECT id, title, logo, description FROM university_approvals WHERE id IN (?)`,
+        [Array.from(allApprovalIds)]
+      );
+      approvals.forEach((approval: any) => {
+        approvalsMap[approval.id] = approval;
+      });
+    }
+
+    const allPlacementPartnerIds = new Set<number>();
+    rows.forEach((row: any) => {
+      try {
+        const partnerIds = JSON.parse(row.placement_partner_ids || "[]");
+        if (Array.isArray(partnerIds)) {
+          partnerIds.forEach((id: number) => allPlacementPartnerIds.add(id));
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    });
+
+    let placementPartnersMap: Record<number, any> = {};
+    if (allPlacementPartnerIds.size > 0) {
+      const [partners]: any = await pool.query(
+        `SELECT id, name, logo FROM placement_partners WHERE id IN (?)`,
+        [Array.from(allPlacementPartnerIds)]
+      );
+      partners.forEach((partner: any) => {
+        placementPartnersMap[partner.id] = partner;
+      });
+    }
+
+    const allEmiPartnerIds = new Set<number>();
+    rows.forEach((row: any) => {
+      try {
+        const emiIds = JSON.parse(row.emi_partner_ids || "[]");
+        if (Array.isArray(emiIds)) {
+          emiIds.forEach((id: number) => allEmiPartnerIds.add(id));
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    });
+
+    let emiPartnersMap: Record<number, any> = {};
+    if (allEmiPartnerIds.size > 0) {
+      const [emiPartners]: any = await pool.query(
+        `SELECT id, name, logo FROM emi_partners WHERE id IN (?)`,
+        [Array.from(allEmiPartnerIds)]
+      );
+      emiPartners.forEach((partner: any) => {
+        emiPartnersMap[partner.id] = partner;
+      });
+    }
+
+    let studentRatingsMap: Record<number, any[]> = {};
+    if (universityIds.length > 0) {
+      (universityIds as number[]).forEach((id: number) => {
+        studentRatingsMap[id] = [];
+      });
+
+      const [sectionsRows]: any = await pool.query(
+        `SELECT university_id, props, section_key
+         FROM university_sections 
+         WHERE university_id IN (?) AND (section_key = 'Student_Ratings' OR section_key = 'student_ratings')`,
+        [universityIds]
+      );
+
+      sectionsRows.forEach((sectionRow: any) => {
+        try {
+          const props =
+            typeof sectionRow.props === "string"
+              ? JSON.parse(sectionRow.props || "{}")
+              : sectionRow.props || {};
+
+          let ratingsArray: any[] = [];
+
+          if (Array.isArray(props)) {
+            ratingsArray = props;
+          } else if (props.content && Array.isArray(props.content)) {
+            ratingsArray = props.content;
+          } else if (props.Student_Ratings && Array.isArray(props.Student_Ratings)) {
+            ratingsArray = props.Student_Ratings;
+          } else if (typeof props === "object" && Object.keys(props).length > 0) {
+            const firstKey = Object.keys(props)[0];
+            if (Array.isArray(props[firstKey])) {
+              ratingsArray = props[firstKey];
+            }
+          }
+
+          const validRatings = ratingsArray.filter(
+            (rating: any) => rating && rating.name && rating.name.trim() !== ""
+          );
+
+          studentRatingsMap[sectionRow.university_id] = validRatings;
+        } catch (e) {
+          console.error(
+            "Error parsing Student_Ratings for university:",
+            sectionRow.university_id,
+            e
+          );
+          studentRatingsMap[sectionRow.university_id] = [];
+        }
+      });
+    }
+
+    const results: CourseSearchResult[] = rows.map((row: any) => {
+      let feeTypes: Record<string, number> | null = null;
+      if (row.fee_type_values) {
+        try {
+          feeTypes =
+            typeof row.fee_type_values === "string"
+              ? JSON.parse(row.fee_type_values)
+              : row.fee_type_values;
+        } catch (e) {
+          feeTypes = null;
+        }
+      }
+
+      let approvals: any[] = [];
+      try {
+        const approvalIds = JSON.parse(row.approval_id || "[]");
+        if (Array.isArray(approvalIds)) {
+          approvals = approvalIds
+            .map((id: number) => approvalsMap[id])
+            .filter((approval: any) => approval !== undefined);
+        }
+      } catch (e) {
+        approvals = [];
+      }
+
+      let placementPartners: any[] = [];
+      try {
+        const partnerIds = JSON.parse(row.placement_partner_ids || "[]");
+        if (Array.isArray(partnerIds)) {
+          placementPartners = partnerIds
+            .map((id: number) => placementPartnersMap[id])
+            .filter((partner: any) => partner !== undefined);
+        }
+      } catch (e) {
+        placementPartners = [];
+      }
+
+      let emiPartners: any[] = [];
+      try {
+        const emiIds = JSON.parse(row.emi_partner_ids || "[]");
+        if (Array.isArray(emiIds)) {
+          emiPartners = emiIds
+            .map((id: number) => emiPartnersMap[id])
+            .filter((partner: any) => partner !== undefined);
+        }
+      } catch (e) {
+        emiPartners = [];
+      }
+
+      const studentRatings = studentRatingsMap[row.university_id] || [];
+
+      return {
+        university_id: row.university_id,
+        university_name: row.university_name,
+        university_logo: row.university_logo,
+        university_slug: row.university_slug || "",
+        course_slug: row.course_slug || "",
+        duration: row.duration || null,
+        emi_duration: row.emi_duration || null,
+        compare_page_slug: row.compare_page_slug || null,
+        label: row.label || null,
+        syllabus_file: row.syllabus_file || null,
+        brochure_file: row.brochure_file || null,
+        fee_types: feeTypes,
+        approvals: approvals,
+        placement_partners: placementPartners,
+        emi_partners: emiPartners,
+        university_type_id: row.university_type_id || null,
+        university_type: row.university_type || null,
+        Student_Ratings: studentRatings,
+      } as CourseSearchResult;
+    });
+
+    const resultMap = new Map<string, CourseSearchResult>();
+    results.forEach((result) => {
+      const key = `${result.university_id}_${result.course_slug}`;
+      const existing = resultMap.get(key);
+      if (!existing) {
+        resultMap.set(key, result);
+      } else if (result.fee_types) {
+        existing.fee_types = {
+          ...existing.fee_types,
+          ...result.fee_types,
+        };
+      }
+    });
+
+    return Array.from(resultMap.values());
+  } catch (error) {
+    console.error("❌ Error searching universities by specialization slug:", error);
+    throw error;
+  }
+}
+

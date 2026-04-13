@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { successResponse, errorResponse } from "../../utills/response";
-import {searchUniversitiesByCourseSlug } from "../../services/universities/course-search.service";
+import {
+  searchUniversitiesByCourseSlug,
+  searchUniversitiesBySpecializationSlug,
+} from "../../services/universities/course-search.service";
 
 /**
  * Search universities by course slug
@@ -27,6 +30,47 @@ export const searchByCourseSlug = async (req: Request, res: Response) => {
     return errorResponse(
       res,
       error?.message || "Failed to search universities by course slug",
+      error?.statusCode || 500
+    );
+  }
+};
+
+/**
+ * Search universities by specialization compare slug
+ * GET /api/universities/search-by-specialization?specializationSlug=online-mba-finance
+ */
+export const searchBySpecializationSlug = async (req: Request, res: Response) => {
+  try {
+    const specializationSlug = (req.query.specializationSlug ||
+      req.query.universityCourseSpecializationSlug) as string;
+
+    if (
+      !specializationSlug ||
+      typeof specializationSlug !== "string" ||
+      specializationSlug.trim().length === 0
+    ) {
+      return errorResponse(
+        res,
+        "Specialization slug is required",
+        400
+      );
+    }
+
+    const results = await searchUniversitiesBySpecializationSlug(
+      specializationSlug.trim()
+    );
+
+    return successResponse(
+      res,
+      results,
+      "Universities fetched successfully!",
+      200
+    );
+  } catch (error: any) {
+    console.error("❌ Error in searchBySpecializationSlug:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to search universities by specialization slug",
       error?.statusCode || 500
     );
   }
