@@ -47,6 +47,7 @@ Thumbs.db
 .idea/
 *.swp
 
+src/migrations/
 # Optional: lock files (ignore if you want only one package manager)
 # yarn.lock
 # package-lock.json

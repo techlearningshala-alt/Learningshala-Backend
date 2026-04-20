@@ -44,6 +44,16 @@ const optionalOtp = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+const optionalInterestedUniversity = z
+  .union([
+    optionalTrimmed("Interested university", 255),
+    z
+      .array(z.string().trim().min(1).max(255))
+      .max(50, "Interested university supports max 50 items")
+      .optional(),
+  ])
+  .optional();
+
 export const createWebsiteLeadSchema = z
   .object({
     name: requiredName,
@@ -63,6 +73,7 @@ export const createWebsiteLeadSchema = z
     otp: optionalOtp,
     click_source: optionalTrimmed("Click source", 150),
     lead_url: optionalUrl,
+    interested_university: optionalInterestedUniversity,
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {
@@ -81,4 +92,8 @@ export const createWebsiteLeadSchema = z
 
 export const verifyOtpSchema = z.object({
   otp: z.string().trim().regex(/^\d{6}$/, "OTP must be exactly 6 digits"),
+});
+
+export const updateInterestedUniversitySchema = z.object({
+  interested_university: optionalInterestedUniversity,
 });

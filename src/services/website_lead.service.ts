@@ -10,6 +10,42 @@ const normalizePhone = (val?: string | null) => {
   return cleaned || null;
 };
 
+const normalizeInterestedUniversities = (
+  value?: string | string[] | null
+): string | null => {
+  if (Array.isArray(value)) {
+    const cleaned = value
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0);
+    return cleaned.length ? JSON.stringify(cleaned) : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return JSON.stringify([trimmed]);
+  }
+
+  return null;
+};
+
+const parseInterestedUniversities = (value: any): string[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter((item) => typeof item === "string" && item.trim());
+  if (typeof value !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item) => typeof item === "string" && item.trim());
+    }
+  } catch {
+    // Backward compatibility for old plain string rows
+    if (value.trim()) return [value.trim()];
+  }
+  return [];
+};
+
 export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLead> {
   // Normalize OTP - if provided, validate it's 6 digits, otherwise use default
   let otpValue = "123456"; // Default OTP
@@ -38,9 +74,14 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     otp: otpValue,
     click_source: normalizeString(payload.click_source),
     lead_url: normalizeString(payload.lead_url),
+    interested_university: normalizeInterestedUniversities(payload.interested_university),
   };
 
-  return WebsiteLeadRepository.create(normalized);
+  const created = await WebsiteLeadRepository.create(normalized);
+  return {
+    ...created,
+    interested_university: parseInterestedUniversities(created.interested_university),
+  };
 }
 
 export async function listWebsiteLeads(
@@ -48,10 +89,30 @@ export async function listWebsiteLeads(
   limit = 10,
   options: ListWebsiteLeadOptions = {}
 ) {
-  return WebsiteLeadRepository.findAll(page, limit, options);
+  const result = await WebsiteLeadRepository.findAll(page, limit, options);
+  result.data = (result.data || []).map((row: any) => ({
+    ...row,
+    interested_university: parseInterestedUniversities(row.interested_university),
+  }));
+  return result;
 }
 
 export async function verifyWebsiteLeadOtp(id: number, otp: string): Promise<boolean> {
   return WebsiteLeadRepository.verifyOtp(id, otp);
+}
+
+export async function updateInterestedUniversity(
+  id: number,
+  interestedUniversity?: string | string[] | null
+): Promise<WebsiteLead | null> {
+  const updated = await WebsiteLeadRepository.updateInterestedUniversity(
+    id,
+    normalizeInterestedUniversities(interestedUniversity)
+  );
+  if (!updated) return null;
+  return {
+    ...updated,
+    interested_university: parseInterestedUniversities(updated.interested_university),
+  };
 }
 

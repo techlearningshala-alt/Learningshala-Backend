@@ -51,6 +51,7 @@ export const WebsiteLeadRepository = {
         utm_ads,
         website_url,
         click_source,
+        interested_university,
         created_at
       FROM website_leads
       ${whereClause}
@@ -82,9 +83,9 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url, otp, click_source, lead_url
+        website_url, otp, click_source, lead_url, interested_university
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const params = [
@@ -105,6 +106,7 @@ export const WebsiteLeadRepository = {
       payload.otp ?? "123456",
       payload.click_source ?? null,
       payload.lead_url ?? null,
+      payload.interested_university ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);
@@ -119,6 +121,49 @@ export const WebsiteLeadRepository = {
     const sql = `SELECT id FROM website_leads WHERE id = ? AND otp = ?`;
     const [rows]: any = await pool.query(sql, [id, otp.trim()]);
     return rows.length > 0;
+  },
+
+  async updateInterestedUniversity(
+    id: number,
+    interestedUniversity: string | null = null
+  ): Promise<WebsiteLead | null> {
+    const [result]: any = await pool.query(
+      `UPDATE website_leads
+       SET interested_university = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [interestedUniversity, id]
+    );
+
+    if (!result?.affectedRows) return null;
+
+    const [rows]: any = await pool.query(
+      `SELECT
+        id,
+        name,
+        email,
+        phone,
+        course,
+        specialization,
+        state,
+        city,
+        lead_source,
+        sub_source,
+        utm_source,
+        utm_campaign,
+        utm_adgroup,
+        utm_ads,
+        website_url,
+        click_source,
+        lead_url,
+        interested_university,
+        created_at,
+        updated_at
+      FROM website_leads
+      WHERE id = ?`,
+      [id]
+    );
+
+    return rows?.[0] || null;
   },
 };
 

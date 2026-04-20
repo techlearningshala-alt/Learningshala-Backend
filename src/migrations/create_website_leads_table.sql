@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS `website_leads` (
   `email` VARCHAR(255) DEFAULT NULL,
   `phone` VARCHAR(20) DEFAULT NULL,
   `course` VARCHAR(255) DEFAULT NULL,
+  `interested_university` TEXT DEFAULT NULL,
   `specialization` VARCHAR(255) DEFAULT NULL,
   `state` VARCHAR(100) DEFAULT NULL,
   `city` VARCHAR(100) DEFAULT NULL,

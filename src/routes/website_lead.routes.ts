@@ -2,7 +2,11 @@ import { Router } from "express";
 import * as WebsiteLeadController from "../controllers/website_lead.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
-import { createWebsiteLeadSchema, verifyOtpSchema } from "../validators/website_lead.validator";
+import {
+  createWebsiteLeadSchema,
+  verifyOtpSchema,
+  updateInterestedUniversitySchema,
+} from "../validators/website_lead.validator";
 
 const router = Router();
 
@@ -15,6 +19,12 @@ router.post("/:id/verify-otp", validate(verifyOtpSchema), WebsiteLeadController.
 // Protected endpoint to list website leads (authenticated)
 router.get("/", authMiddleware, WebsiteLeadController.getAll);
 router.get("/export", authMiddleware, WebsiteLeadController.exportWebsiteLeads);
+router.patch(
+  "/:id/interested-university",
+  authMiddleware,
+  validate(updateInterestedUniversitySchema),
+  WebsiteLeadController.updateInterestedUniversityById
+);
 
 export default router;
 

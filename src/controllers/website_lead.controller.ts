@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { successResponse, errorResponse } from "../utills/response";
-import { createWebsiteLead, verifyWebsiteLeadOtp, listWebsiteLeads } from "../services/website_lead.service";
+import {
+  createWebsiteLead,
+  verifyWebsiteLeadOtp,
+  listWebsiteLeads,
+  updateInterestedUniversity,
+} from "../services/website_lead.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
 
@@ -72,6 +77,38 @@ export const verifyOtp = async (req: Request, res: Response) => {
   }
 };
 
+export const updateInterestedUniversityById = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id || Number.isNaN(id)) {
+      return errorResponse(res, "Valid lead ID is required", 400);
+    }
+
+    const updated = await updateInterestedUniversity(
+      id,
+      req.body?.interested_university
+    );
+
+    if (!updated) {
+      return errorResponse(res, "Website lead not found", 404);
+    }
+
+    const { otp, ...dataWithoutOtp } = updated as any;
+    return successResponse(
+      res,
+      dataWithoutOtp,
+      "Interested university updated successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error updating interested university:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to update interested university",
+      error?.statusCode || 400
+    );
+  }
+};
+
 export const exportWebsiteLeads = async (req: Request, res: Response) => {
   try {
     const search =
@@ -101,6 +138,17 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       { key: "utm_adgroup", header: "UTM Ad Group", width: 15 },
       { key: "utm_ads", header: "UTM Ads", width: 15 },
       { key: "website_url", header: "Website URL", width: 30 },
+      {
+        key: "interested_university",
+        header: "Interested University",
+        width: 30,
+        getValue: (row) => {
+          if (Array.isArray(row.interested_university)) {
+            return row.interested_university.join(", ");
+          }
+          return row.interested_university || "-";
+        },
+      },
       {
         key: "created_at",
         header: "Created On",
