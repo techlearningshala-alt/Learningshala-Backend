@@ -29,6 +29,7 @@ export interface UniversityCourse {
   fee_type_values?: Record<string, number> | null;
   fees_note?: string | null;
   credit_points?: string | null;
+  scholarship_provides?: string | null;
   why_choose?: string[] | null;
   banner?: {
     banner_image?: string | null;
@@ -75,6 +76,7 @@ export interface CreateUniversityCourseDto {
   fee_type_values?: Record<string, number> | null;
   fees_note?: string | null;
   credit_points?: string | null;
+  scholarship_provides?: string | null;
   why_choose?: string[] | null;
 }
 
@@ -102,6 +104,7 @@ export interface UpdateUniversityCourseDto {
   fee_type_values?: Record<string, number> | null;
   fees_note?: string | null;
   credit_points?: string | null;
+  scholarship_provides?: string | null;
   why_choose?: string[] | null;
   saveWithDate?: boolean;
 }

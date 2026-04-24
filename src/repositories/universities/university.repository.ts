@@ -6,8 +6,8 @@ export const UniversityRepo = {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
        (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
-        university_tag_line, establishment_year, emi_provides, university_features, education_mode, examination_mode, alumni_status, online_classes, placement_assistance, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        university_tag_line, establishment_year, emi_provides, university_features, education_mode, admission_mode, examination_mode, scholarship_provides, alumni_status, online_classes, placement_assistance, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -36,7 +36,9 @@ export const UniversityRepo = {
               : JSON.stringify(universityData.university_features))
           : null,
         universityData.education_mode || null,
+        universityData.admission_mode || null,
         universityData.examination_mode || null,
+        universityData.scholarship_provides || null,
         universityData.alumni_status || null,
         universityData.online_classes ? 1 : 0,
         universityData.placement_assistance ? 1 : 0,

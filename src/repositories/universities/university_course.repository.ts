@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, scholarship_provides, why_choose)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -132,6 +132,7 @@ export class UniversityCourseRepository {
         payload.fee_type_values ? JSON.stringify(payload.fee_type_values) : null,
         payload.fees_note ?? null,
         payload.credit_points ?? null,
+        payload.scholarship_provides ?? null,
         payload.why_choose ? JSON.stringify(payload.why_choose) : null,
       ]
     );
@@ -236,6 +237,14 @@ export class UniversityCourseRepository {
     if (payload.credit_points !== undefined) {
       fields.push("credit_points = ?");
       values.push(payload.credit_points && String(payload.credit_points).trim() ? String(payload.credit_points).trim() : null);
+    }
+    if (payload.scholarship_provides !== undefined) {
+      fields.push("scholarship_provides = ?");
+      values.push(
+        payload.scholarship_provides && String(payload.scholarship_provides).trim()
+          ? String(payload.scholarship_provides).trim()
+          : null
+      );
     }
     if (payload.why_choose !== undefined) {
       fields.push("why_choose = ?");

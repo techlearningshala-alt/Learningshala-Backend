@@ -64,6 +64,9 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
     fee_type_values: parseFeeTypeValues(payload.fee_type_values),
     fees_note: payload.fees_note ?? null,
     credit_points: payload.credit_points ? String(payload.credit_points).trim() : null,
+    scholarship_provides: payload.scholarship_provides
+      ? String(payload.scholarship_provides).trim()
+      : null,
     why_choose: payload.why_choose 
       ? (typeof payload.why_choose === 'string' ? JSON.parse(payload.why_choose) : payload.why_choose)
       : null,
@@ -486,6 +489,12 @@ export async function updateUniversityCourse(id: number, payload: any) {
     }
     if (payload.credit_points !== undefined) {
       normalized.credit_points = payload.credit_points && String(payload.credit_points).trim() ? String(payload.credit_points).trim() : null;
+    }
+    if (payload.scholarship_provides !== undefined) {
+      normalized.scholarship_provides =
+        payload.scholarship_provides && String(payload.scholarship_provides).trim()
+          ? String(payload.scholarship_provides).trim()
+          : null;
     }
     if (payload.why_choose !== undefined) {
       if (payload.why_choose && typeof payload.why_choose === 'string') {

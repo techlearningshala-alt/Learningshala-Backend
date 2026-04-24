@@ -24,6 +24,8 @@ export const createUniversitySchema = z.object({
   university_logo: z.string().optional(),
   university_location: z.string().optional(),
   university_brochure: z.string().optional(),
+  admission_mode: z.string().optional(),
+  scholarship_provides: z.string().optional(),
   author_name: z.string().optional(),
   university_type_id: z.number().int().positive().optional().nullable(),
   is_active: z
