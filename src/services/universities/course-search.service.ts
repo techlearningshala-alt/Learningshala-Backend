@@ -21,6 +21,17 @@ export interface CourseSearchResult {
   // student_rating: number | null;
 }
 
+const parseJsonArray = (value: unknown): any[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 /**
  * Search universities by course slug
  * Returns universities that offer the specified course with their logo and fee types
@@ -245,6 +256,7 @@ export async function searchUniversitiesByCourseSlug(
       
       // Get Student_Ratings for this university
       const studentRatings = studentRatingsMap[row.university_id] || [];
+      const universityFeatures = parseJsonArray(row.university_features);
 
       return {
         university_id: row.university_id,
@@ -253,7 +265,7 @@ export async function searchUniversitiesByCourseSlug(
         university_slug: row.university_slug || "",
         university_location: row.university_location || null,
         course_slug: row.course_slug || "",
-        university_features: row.university_features || null,
+        university_features: universityFeatures,
         duration: row.duration || null,
         emi_duration: row.emi_duration || null,
         compare_page_slug: row.compare_page_slug || null,
@@ -510,6 +522,7 @@ export async function searchUniversitiesBySpecializationSlug(
       }
 
       const studentRatings = studentRatingsMap[row.university_id] || [];
+      const universityFeatures = parseJsonArray(row.university_features);
 
       return {
         university_id: row.university_id,
@@ -518,7 +531,7 @@ export async function searchUniversitiesBySpecializationSlug(
         university_slug: row.university_slug || "",
         course_slug: row.course_slug || "",
         university_location: row.university_location || null,
-        university_features: row.university_features || null,
+        university_features: universityFeatures,
         duration: row.duration || null,
         emi_duration: row.emi_duration || null,
         compare_page_slug: row.compare_page_slug || null,
