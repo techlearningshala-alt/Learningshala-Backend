@@ -17,6 +17,34 @@ interface ListSpecializationOptions {
   courseSearch?: string;
 }
 
+const getAuthorSummaryByName = async (authorName?: string | null) => {
+  const normalizedName = String(authorName || "").trim();
+  if (!normalizedName) {
+    return {
+      author_image: null,
+      author_details: null,
+      author_slug: null,
+      author_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const author = rows?.[0] || {};
+  return {
+    author_image: author.image || null,
+    author_details: author.author_details || null,
+    author_slug: author.author_slug || null,
+    author_label: author.label || null,
+  };
+};
+
 const toBoolean = (value: unknown): boolean | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value === "boolean") return value;
@@ -316,6 +344,10 @@ export async function getUniversityCourseSpecializationByCourseSlugAndSpecializa
     sectionsData.sections_transformed?.exam_pattern ||
     null;
   (specialization as any).university_faqs = await getSpecializationFaqs(specialization.id);
+  Object.assign(
+    specialization as any,
+    await getAuthorSummaryByName((specialization as any).author_name)
+  );
   const lookup = await buildFeeTypeLookup();
   return enrichSpecializationFeeTypeValues(specialization, lookup);
 }

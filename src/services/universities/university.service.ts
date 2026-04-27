@@ -853,9 +853,14 @@ export const getUniversityBySlug = async (slug: string) => {
   const [rows]: any = await pool.query(
     `SELECT 
       u.*,
-      ut.name AS university_type
+      ut.name AS university_type,
+      a.image AS author_image,
+      a.author_details AS author_details,
+      a.author_slug AS author_slug,
+      a.label AS author_label
     FROM universities u
     LEFT JOIN university_types ut ON u.university_type_id = ut.id
+    LEFT JOIN authors a ON TRIM(LOWER(a.author_name)) = TRIM(LOWER(u.author_name))
     WHERE u.university_slug = ?`,
     [slug]
   );
@@ -1063,6 +1068,13 @@ export const getUniversityBySlug = async (slug: string) => {
   const result = {  data: {
     ...universityData,
     university_type: universityType, // Add university type name
+    // author: {
+    //   name: universityData.author_name || null,
+    //   image: universityData.author_image || null,
+    //   details: universityData.author_details || null,
+    //   slug: universityData.author_slug || null,
+    //   label: universityData.author_label || null,
+    // },
     approvals, // Add approval objects for website
     placement_partners: placementPartners, // Add placement partner objects
     emi_partners: emiPartners, // Add EMI partner objects

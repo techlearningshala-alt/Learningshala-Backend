@@ -46,7 +46,129 @@ const parseInterestedUniversities = (value: any): string[] => {
   return [];
 };
 
+const hasSequentialChars = (s: string, len = 5): boolean => {
+  const lower = String(s || "").toLowerCase();
+  const n = lower.length;
+  if (n < len) return false;
+
+  for (let i = 0; i <= n - len; i += 1) {
+    const sub = lower.slice(i, i + len);
+    if (sub.includes(" ")) continue;
+    if (!/^[a-z0-9]+$/.test(sub)) continue;
+
+    let ok = true;
+    for (let j = 1; j < len; j += 1) {
+      if (sub.charCodeAt(j) !== sub.charCodeAt(j - 1) + 1) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+  return false;
+};
+
+const isSequentialDigits = (digits: string, len = 6): boolean => {
+  const n = digits.length;
+  if (n < len) return false;
+  for (let i = 0; i <= n - len; i += 1) {
+    const sub = digits.slice(i, i + len);
+    let ok = true;
+    for (let j = 1; j < len; j += 1) {
+      if (sub.charCodeAt(j) !== sub.charCodeAt(j - 1) + 1) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+  return false;
+};
+
+const strictValidateWebsiteLeadPayload = (payload: WebsiteLead) => {
+  const errors: string[] = [];
+
+  const trimmedName = String(payload.name || "").trim();
+  const lowerName = trimmedName.toLowerCase();
+  const bannedDummyNames = [
+    "test", "testing", "demo", "user", "admin",
+    "name", "fullname", "sample", "temp", "trial",
+    "abc", "xyz", "qwerty", "asdf", "zxcv",
+    "random", "none", "na", "n/a",
+    "123456", "111111", "000000", "999999",
+  ];
+
+  let nameError: string | null = null;
+  if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 50) {
+    nameError = "Invalid name";
+  } else if (!/^[A-Za-z0-9 ]+$/.test(trimmedName)) {
+    nameError = "Invalid name";
+  } else if (bannedDummyNames.includes(lowerName)) {
+    nameError = "Invalid name";
+  } else if (/([a-z0-9])\1{3}/.test(lowerName)) {
+    nameError = "Invalid name";
+  } else if (hasSequentialChars(lowerName, 5)) {
+    nameError = "Invalid name";
+  }
+  if (nameError) errors.push(nameError);
+
+  const emailLower = String(payload.email || "").trim().toLowerCase();
+  const emailMatch = /^([^@]+)@([^@]+)$/.exec(emailLower);
+  const emailLocal = emailMatch ? emailMatch[1] : "";
+  const emailDomain = emailMatch ? emailMatch[2] : "";
+
+  const tempDomains = [
+    "mailinator.com", "10minutemail.com", "guerrillamail.com", "yopmail.com", "tempmail.com",
+    "throwawaymail.com", "fakeinbox.com", "getnada.com", "trashmail.com", "moakt.com",
+  ];
+  const allowedDomains = [
+    "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "live.com", "rediffmail.com",
+    "icloud.com", "ymail.com",
+  ];
+
+  let invalidEmail = false;
+  if (!emailLower || emailLower.length > 100) invalidEmail = true;
+  else if (emailLower.includes("..")) invalidEmail = true;
+  else if (!emailMatch) invalidEmail = true;
+  else if (!allowedDomains.includes(emailDomain)) invalidEmail = true;
+  else if (tempDomains.includes(emailDomain)) invalidEmail = true;
+  else {
+    if (!/[aeiou]/.test(emailLocal)) invalidEmail = true;
+    if (!invalidEmail && /([a-z0-9])\1{3,}/i.test(emailLocal)) invalidEmail = true;
+  }
+  if (invalidEmail) errors.push("Invalid email");
+
+  const phoneDigits = String(payload.phone || "").replace(/\D/g, "");
+  let invalidPhone = false;
+  if (phoneDigits.length !== 10) invalidPhone = true;
+  else if (!/^[6-9][0-9]{9}$/.test(phoneDigits)) invalidPhone = true;
+  else if (phoneDigits === "0000000000" || phoneDigits === "1234567890") invalidPhone = true;
+  else if (/^(\d)\1{9}$/.test(phoneDigits)) invalidPhone = true;
+  else {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < phoneDigits.length; i += 1) {
+      const d = phoneDigits[i];
+      counts[d] = (counts[d] || 0) + 1;
+    }
+    if (Object.values(counts).some((count) => count >= 7)) invalidPhone = true;
+    if (!invalidPhone && isSequentialDigits(phoneDigits, 6)) invalidPhone = true;
+  }
+  if (invalidPhone) errors.push("Invalid phone");
+
+  const state = String(payload.state || "").trim();
+  const course = String(payload.course || "").trim();
+  if (!state || state.length > 80) errors.push("Invalid state");
+  if (!course || course.length > 100) errors.push("Invalid course");
+
+  if (errors.length) {
+    const err: any = new Error(errors.join(", "));
+    err.statusCode = 400;
+    throw err;
+  }
+};
+
 export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLead> {
+  strictValidateWebsiteLeadPayload(payload);
   // Normalize OTP - if provided, validate it's 6 digits, otherwise use default
   let otpValue = "123456"; // Default OTP
   if (payload.otp) {

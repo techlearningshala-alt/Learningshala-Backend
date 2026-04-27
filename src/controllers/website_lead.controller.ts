@@ -9,9 +9,63 @@ import {
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
 
+const WEBSITE_LEAD_WEBHOOK_URL =
+  process.env.WEBSITE_LEAD_WEBHOOK_URL || "";
+
+const postLeadToWebhook = async (payload: Record<string, unknown>) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(WEBSITE_LEAD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`Webhook HTTP ${response.status}${text ? `: ${text}` : ""}`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 export const create = async (req: Request, res: Response) => {
   try {
     const lead = await createWebsiteLead(req.body);
+    const requestBody: any = req.body || {};
+
+    const webhookPayload = {
+      name: lead.name,
+      email: lead.email || "",
+      phone: lead.phone || "",
+      course: lead.course || "",
+      specialisation: lead.specialization || "Not Decided Yet",
+      state: lead.state || "",
+      city: lead.city || "",
+      lead_source: lead.lead_source || "ignou",
+      sub_source: lead.sub_source || requestBody.sub_source || "",
+      website_url:
+        lead.website_url || requestBody.website_url || process.env.WEBSITE_URL || "",
+      utm_source: requestBody.utm_source || lead.utm_source || "",
+      utm_medium: requestBody.utm_medium || "",
+      utm_campaign: requestBody.utm_campaign || lead.utm_campaign || "",
+      utm_content: requestBody.utm_content || "",
+      utm_term: requestBody.utm_term || "",
+      utm_matchtype: requestBody.utm_matchtype || "",
+      question_fills: requestBody.question_fills || "No",
+      university: requestBody.university || "No University",
+    };
+
+    // Non-blocking webhook: DB save succeeds even if webhook fails.
+    postLeadToWebhook(webhookPayload).catch((webhookErr) => {
+      console.error("⚠️ Website lead webhook failed:", webhookErr);
+    });
+
     // Exclude OTP from response for security
     const { otp, ...leadWithoutOtp } = lead;
     return successResponse(res, leadWithoutOtp, "Website lead created successfully", 201);

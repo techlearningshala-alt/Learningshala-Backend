@@ -152,7 +152,7 @@ console.log(body,"body")
     const files = req.files as any
 console.log(files,"filesbefore")
     // Get current university to delete old files from S3
-    const currentUniversity: any = await UniversityRepo.getUniversityById(Number(id));
+    const currentUniversity: any = await UniversityService.getUniversityById(Number(id));
 
     // 🎓 University-level files - upload to S3 or handle removal
     if (files?.university_logo?.[0]) {
@@ -316,6 +316,7 @@ console.log(files,"filesbefore")
     );
 
     if (!updated) return errorResponse(res, "University not found", 404);
+    const updatedFull: any = await UniversityService.getUniversityById(Number(id));
 
     // 🔍 Index university in Elasticsearch (async, don't wait)
     try {
@@ -336,7 +337,7 @@ console.log(files,"filesbefore")
       console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
     }
 
-    return successResponse(res, updated, "University updated successfully");
+    return successResponse(res, updatedFull || updated, "University updated successfully");
   } catch (err: any) {
     console.error("❌ University update error:", err);
     return errorResponse(res, err.message || "Failed to update university", 400);

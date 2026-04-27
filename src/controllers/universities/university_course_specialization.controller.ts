@@ -22,7 +22,6 @@ import {
   getUniversityCourseSpecializationSuggestions,
   getUniversityCourseSpecializationSpellSuggestions
 } from "../../services/elasticsearch/university-course-specialization.search.service";
-
 export const findAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
@@ -528,17 +527,18 @@ export const update = async (req: Request, res: Response) => {
     body.sections = sections;
 
     const specialization = await updateUniversityCourseSpecialization(id, body);
+    const updatedSpecialization = await getUniversityCourseSpecializationById(id);
 
     // 🔍 Index university course specialization in Elasticsearch (async, don't wait)
     try {
-      await indexUniversityCourseSpecialization(specialization);
+      await indexUniversityCourseSpecialization(updatedSpecialization || specialization);
     } catch (esError) {
       console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
     }
 
     return successResponse(
       res,
-      specialization,
+      updatedSpecialization || specialization,
       "University course specialization updated successfully"
     );
   } catch (error: any) {

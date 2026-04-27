@@ -22,7 +22,6 @@ import {
   getUniversityCourseSuggestions,
   getUniversityCourseSpellSuggestions
 } from "../../services/elasticsearch/university-course.search.service";
-
 export const findAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
@@ -509,15 +508,20 @@ export const update = async (req: Request, res: Response) => {
     body.sections = sections;
 
     const course = await updateUniversityCourse(id, body);
+    const updatedCourse = await getUniversityCourseById(id);
 
     // 🔍 Index university course in Elasticsearch (async, don't wait)
     try {
-      await indexUniversityCourse(course);
+      await indexUniversityCourse(updatedCourse || course);
     } catch (esError) {
       console.error('⚠️ Elasticsearch indexing error (non-blocking):', esError);
     }
 
-    return successResponse(res, course, "University course updated successfully");
+    return successResponse(
+      res,
+      updatedCourse || course,
+      "University course updated successfully"
+    );
   } catch (error: any) {
     console.error("❌ Error updating university course:", error);
     return errorResponse(
