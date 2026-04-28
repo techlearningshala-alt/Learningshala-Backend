@@ -258,19 +258,28 @@ export const listAdminActivityLogs = async (
 
   const [rows]: any = await pool.query(
     `SELECT
-      id,
-      admin_user_id,
-      actor_role,
-      action,
-      entity_type,
-      entity_id,
-      page_key,
-      changed_fields,
-      metadata,
-      created_at
-     FROM editor_activity_logs
+      l.id,
+      l.admin_user_id,
+      u.name AS admin_user_name,
+      l.actor_role,
+      l.action,
+      l.entity_type,
+      l.entity_id,
+      COALESCE(uni.university_name, uc.name, ucs.name) AS entity_name,
+      l.page_key,
+      l.changed_fields,
+      l.metadata,
+      l.created_at
+     FROM editor_activity_logs l
+     LEFT JOIN users u ON u.id = l.admin_user_id
+     LEFT JOIN universities uni
+       ON l.entity_type = 'university' AND uni.id = l.entity_id
+     LEFT JOIN university_courses uc
+       ON l.entity_type = 'university_course' AND uc.id = l.entity_id
+     LEFT JOIN university_course_specialization ucs
+       ON l.entity_type = 'university_course_specialization' AND ucs.id = l.entity_id
      ${whereClause}
-     ORDER BY id DESC
+     ORDER BY l.id DESC
      LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
