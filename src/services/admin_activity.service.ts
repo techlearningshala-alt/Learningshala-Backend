@@ -246,11 +246,13 @@ export const listAdminActivityLogs = async (
     params.push(filters.actorRole);
   }
   if (filters.fromDate) {
-    where.push("DATE(created_at) >= DATE(?)");
+    // Qualify with `l` to avoid ambiguous `created_at` after JOINs.
+    where.push("DATE(l.created_at) >= DATE(?)");
     params.push(filters.fromDate);
   }
   if (filters.toDate) {
-    where.push("DATE(created_at) <= DATE(?)");
+    // Qualify with `l` to avoid ambiguous `created_at` after JOINs.
+    where.push("DATE(l.created_at) <= DATE(?)");
     params.push(filters.toDate);
   }
 
@@ -286,7 +288,7 @@ export const listAdminActivityLogs = async (
 
   const [countRows]: any = await pool.query(
     `SELECT COUNT(*) AS total
-     FROM editor_activity_logs
+     FROM editor_activity_logs l
      ${whereClause}`,
     params
   );
