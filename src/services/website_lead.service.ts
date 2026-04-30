@@ -178,6 +178,9 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     }
   }
 
+  const normalizedUtmSource = normalizeString(payload.utm_source);
+  const resolvedLeadSource = normalizedUtmSource || "website";
+
   const normalized: WebsiteLead = {
     name: payload.name.trim(),
     email: normalizeString(payload.email),
@@ -186,9 +189,11 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     specialization: normalizeString(payload.specialization),
     state: normalizeString(payload.state),
     city: normalizeString(payload.city),
-    lead_source: normalizeString(payload.lead_source),
+    // Keep DB behavior in sync with webhook rule:
+    // use utm_source when available, otherwise default to "website".
+    lead_source: resolvedLeadSource,
     sub_source: normalizeString(payload.sub_source),
-    utm_source: normalizeString(payload.utm_source),
+    utm_source: normalizedUtmSource,
     utm_campaign: normalizeString(payload.utm_campaign),
     utm_adgroup: normalizeString(payload.utm_adgroup),
     utm_ads: normalizeString(payload.utm_ads),

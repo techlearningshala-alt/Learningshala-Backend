@@ -25,6 +25,34 @@ function generateSectionKey(title: string): string {
     .replace(/[^a-zA-Z0-9_]/g, ""); // Remove special characters except underscores
 }
 
+const getAuthorSummaryByName = async (authorName?: string | null) => {
+  const normalizedName = String(authorName || "").trim();
+  if (!normalizedName) {
+    return {
+      author_image: null,
+      author_details: null,
+      author_slug: null,
+      author_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const author = rows?.[0] || {};
+  return {
+    author_image: author.image || null,
+    author_details: author.author_details || null,
+    author_slug: author.author_slug || null,
+    author_label: author.label || null,
+  };
+};
+
 const attachRelations = async (course: any) => {
   if (!course) return null;
   const [banners, sections] = await Promise.all([
@@ -191,6 +219,8 @@ export const getCourseBySlug = async (slug: string) => {
     (course as any).placement_partners = [];
     (course as any).emi_partners = [];
   }
+
+  Object.assign(course as any, await getAuthorSummaryByName((course as any).author_name));
 
   return course;
 };

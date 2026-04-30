@@ -49,9 +49,10 @@ export const create = async (req: Request, res: Response) => {
       state: lead.state || "",
       city: lead.city || "",
       lead_source: resolvedUtmSource || "website",
-      sub_source: lead.sub_source || requestBody.sub_source || "",
+      sub_source: "LS-WEBSITE"    ,
       website_url:
         lead.website_url || requestBody.website_url || process.env.WEBSITE_URL || "",
+      lead_url: lead.lead_url || requestBody.lead_url || "",
       utm_source: resolvedUtmSource,
       utm_medium: requestBody.utm_medium || "",
       utm_campaign: requestBody.utm_campaign || lead.utm_campaign || "",
