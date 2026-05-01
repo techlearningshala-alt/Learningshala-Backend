@@ -13,6 +13,34 @@ const repo = new SpecializationRepo();
 const bannerRepo = specializationBannerRepo;
 const sectionRepo = specializationSectionRepo;
 
+const getAuthorSummaryByName = async (authorName?: string | null) => {
+  const normalizedName = String(authorName || "").trim();
+  if (!normalizedName) {
+    return {
+      author_image: null,
+      author_details: null,
+      author_slug: null,
+      author_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const author = rows?.[0] || {};
+  return {
+    author_image: author.image || null,
+    author_details: author.author_details || null,
+    author_slug: author.author_slug || null,
+    author_label: author.label || null,
+  };
+};
+
 function generateSectionKey(title: string): string {
   return String(title || "")
     .trim()
@@ -254,6 +282,11 @@ export const getSpecializationByCourseSlugAndSpecializationSlug = async (
     console.error("❌ [SPECIALIZATION] Error fetching placement partners for specialization slug:", specializationSlug, error);
     (specialization as any).placement_partners = [];
   }
+
+  Object.assign(
+    specialization as any,
+    await getAuthorSummaryByName((specialization as any).author_name)
+  );
 
   return specialization;
 };
