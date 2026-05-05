@@ -3,6 +3,18 @@ import { RowDataPacket } from "mysql2";
 import { UniversityRepo } from "../../repositories/universities/university.repository";
 import UniversitySectionService, { generateSectionKey } from "./university_section.service";
 
+const parseCompareInformation = (raw: any): Record<string, any> => {
+  if (!raw) return {};
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
+  if (typeof raw !== "string") return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
 export const UniversityService = {
   async addUniversity(body: any, banners: any[] = [], sections: any[] = []) {
     const conn = await pool.getConnection();
@@ -162,7 +174,8 @@ export const updateUniversity = async (
         alumni_status = ?,
         online_classes = ?,
         placement_assistance = ?,
-        why_choose = ?
+        why_choose = ?,
+        compare_information = ?
     `;
 
     const normalizeBool = (val: any): number =>
@@ -210,6 +223,9 @@ export const updateUniversity = async (
       normalizeBool(updateData.online_classes),
       normalizeBool(updateData.placement_assistance),
       serializeJsonField(updateData.why_choose),
+      updateData.compare_information === undefined
+        ? existing.compare_information || null
+        : serializeJsonField(updateData.compare_information),
     ];
 
     // ✅ Only include updated_at if saveWithDate = true
@@ -550,6 +566,7 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
     // Parse compare information JSON fields
     let universityFeatures: any[] = [];
     let whyChoose: any[] = [];
+    const compareInformation = parseCompareInformation(u.compare_information);
     try {
       if (u.university_features) {
         const parsed = JSON.parse(u.university_features);
@@ -622,6 +639,7 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
           ? false
           : Boolean(u.placement_assistance),
       why_choose: whyChoose,
+      compare_information: compareInformation,
       banners: [],
       sections: [],
     };
@@ -800,6 +818,7 @@ export const getUniversityById = async (id: number) => {
   }
 
   const universityData: any = { ...rows[0] };
+  universityData.compare_information = parseCompareInformation(universityData.compare_information);
   // Normalize booleans
   if (universityData.is_page_created !== undefined) {
     universityData.is_page_created = Boolean(universityData.is_page_created);
@@ -818,6 +837,8 @@ export const getUniversityById = async (id: number) => {
   }
 
   // Parse compare information JSON fields for admin form
+  universityData.compare_information = parseCompareInformation(universityData.compare_information);
+
   try {
     if (typeof universityData.university_features === "string") {
       const parsed = JSON.parse(universityData.university_features);

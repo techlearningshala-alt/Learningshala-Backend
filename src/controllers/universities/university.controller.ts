@@ -105,6 +105,14 @@ export const create = async (req: Request, res: Response) => {
       }
     }
 
+    if (body.compare_information && typeof body.compare_information === "string") {
+      try {
+        body.compare_information = JSON.parse(body.compare_information);
+      } catch {
+        body.compare_information = {};
+      }
+    }
+
     console.log("🟢 Final body:", body);
     console.log("🟢 Final banners:", banners);
 
@@ -294,6 +302,14 @@ console.log(files,"filesbefore")
         body.emi_partner_ids = Array.isArray(parsed) ? JSON.stringify(parsed) : "[]";
       } catch {
         body.emi_partner_ids = "[]";
+      }
+    }
+
+    if (body.compare_information && typeof body.compare_information === "string") {
+      try {
+        body.compare_information = JSON.parse(body.compare_information);
+      } catch {
+        body.compare_information = {};
       }
     }
 

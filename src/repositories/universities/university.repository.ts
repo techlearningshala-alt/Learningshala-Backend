@@ -6,8 +6,8 @@ export const UniversityRepo = {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
        (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
-        university_tag_line, establishment_year, emi_provides, university_features, education_mode, admission_mode, examination_mode, scholarship_provides, alumni_status, online_classes, placement_assistance, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        university_tag_line, establishment_year, emi_provides, university_features, education_mode, admission_mode, examination_mode, scholarship_provides, alumni_status, online_classes, placement_assistance, why_choose, compare_information)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -46,6 +46,11 @@ export const UniversityRepo = {
           ? (typeof universityData.why_choose === "string"
               ? universityData.why_choose
               : JSON.stringify(universityData.why_choose))
+          : null,
+        universityData.compare_information
+          ? (typeof universityData.compare_information === "string"
+              ? universityData.compare_information
+              : JSON.stringify(universityData.compare_information))
           : null,
       ]
     );
