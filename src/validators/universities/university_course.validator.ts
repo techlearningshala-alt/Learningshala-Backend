@@ -37,6 +37,12 @@ export const createUniversityCourseSchema = z.object({
       z.record(z.string(), z.any()),
     ])
     .optional(),
+  compare_information: z
+    .union([
+      z.string(),
+      z.record(z.string(), z.any()),
+    ])
+    .optional(),
   banners: z.string().optional(), // JSON string of banners array
 }).passthrough(); // Allow extra fields to pass through
 

@@ -1067,6 +1067,7 @@ export const getUniversityBySlug = async (slug: string) => {
   }
 
   const universityData: any = { ...rows[0] };
+  universityData.compare_information = parseCompareInformation(universityData.compare_information);
   // Normalize booleans
   if (universityData.is_page_created !== undefined) {
     universityData.is_page_created = Boolean(universityData.is_page_created);

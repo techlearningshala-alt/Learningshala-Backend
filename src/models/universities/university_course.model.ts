@@ -31,6 +31,7 @@ export interface UniversityCourse {
   credit_points?: string | null;
   scholarship_provides?: string | null;
   why_choose?: string[] | null;
+  compare_information?: Record<string, any> | null;
   banner?: {
     banner_image?: string | null;
     brochure_file?: string | null;
@@ -78,6 +79,7 @@ export interface CreateUniversityCourseDto {
   credit_points?: string | null;
   scholarship_provides?: string | null;
   why_choose?: string[] | null;
+  compare_information?: Record<string, any> | null;
 }
 
 export interface UpdateUniversityCourseDto {
@@ -106,6 +108,7 @@ export interface UpdateUniversityCourseDto {
   credit_points?: string | null;
   scholarship_provides?: string | null;
   why_choose?: string[] | null;
+  compare_information?: Record<string, any> | null;
   saveWithDate?: boolean;
 }
 

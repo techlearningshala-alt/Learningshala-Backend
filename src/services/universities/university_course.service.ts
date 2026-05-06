@@ -98,6 +98,11 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
     why_choose: payload.why_choose 
       ? (typeof payload.why_choose === 'string' ? JSON.parse(payload.why_choose) : payload.why_choose)
       : null,
+    compare_information: payload.compare_information
+      ? (typeof payload.compare_information === "string"
+          ? JSON.parse(payload.compare_information)
+          : payload.compare_information)
+      : null,
   };
 };
 
@@ -537,6 +542,27 @@ export async function updateUniversityCourse(id: number, payload: any) {
         normalized.why_choose = payload.why_choose;
       } else {
         normalized.why_choose = null;
+      }
+    }
+    if (payload.compare_information !== undefined) {
+      if (payload.compare_information && typeof payload.compare_information === "string") {
+        try {
+          const parsed = JSON.parse(payload.compare_information);
+          normalized.compare_information =
+            parsed && typeof parsed === "object" && !Array.isArray(parsed)
+              ? parsed
+              : null;
+        } catch {
+          normalized.compare_information = null;
+        }
+      } else if (
+        payload.compare_information &&
+        typeof payload.compare_information === "object" &&
+        !Array.isArray(payload.compare_information)
+      ) {
+        normalized.compare_information = payload.compare_information;
+      } else {
+        normalized.compare_information = null;
       }
     }
     if (payload.saveWithDate !== undefined) {

@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, scholarship_provides, why_choose)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, scholarship_provides, why_choose, compare_information)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -134,6 +134,9 @@ export class UniversityCourseRepository {
         payload.credit_points ?? null,
         payload.scholarship_provides ?? null,
         payload.why_choose ? JSON.stringify(payload.why_choose) : null,
+        payload.compare_information
+          ? JSON.stringify(payload.compare_information)
+          : null,
       ]
     );
 
@@ -255,6 +258,16 @@ export class UniversityCourseRepository {
         values.push(null);
       }
     }
+    if (payload.compare_information !== undefined) {
+      fields.push("compare_information = ?");
+      values.push(
+        payload.compare_information &&
+          typeof payload.compare_information === "object" &&
+          !Array.isArray(payload.compare_information)
+          ? JSON.stringify(payload.compare_information)
+          : null
+      );
+    }
 
     if (!fields.length) {
       return this.findById(id);
@@ -336,6 +349,11 @@ export class UniversityCourseRepository {
         : null,
       why_choose: row.why_choose
         ? (typeof row.why_choose === 'string' ? JSON.parse(row.why_choose) : row.why_choose)
+        : null,
+      compare_information: row.compare_information
+        ? (typeof row.compare_information === "string"
+            ? JSON.parse(row.compare_information)
+            : row.compare_information)
         : null,
       is_active:
         row.is_active === null || row.is_active === undefined
