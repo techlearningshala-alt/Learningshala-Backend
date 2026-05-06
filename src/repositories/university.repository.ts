@@ -15,15 +15,15 @@ export class UniversityRepository {
 
   async create(item: Omit<University, "id" | "created_at" | "updated_at">): Promise<void> {
     await pool.query(
-      "INSERT INTO universities (name, university_logo, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
-      [item.name, item.university_logo]
+      "INSERT INTO universities (university_name, university_logo, created_at, updated_at) VALUES (?, ?, NOW(), NOW())",
+      [item.university_name, item.university_logo]
     );
   }
 
   async update(id: number, item: Partial<University>): Promise<void> {
     await pool.query(
-      "UPDATE universities SET name=?, university_logo=?, updated_at=NOW() WHERE id=?",
-      [item.name, item.university_logo, id]
+      "UPDATE universities SET university_name=?, university_logo=?, updated_at=NOW() WHERE id=?",
+      [item.university_name, item.university_logo, id]
     );
   }
 

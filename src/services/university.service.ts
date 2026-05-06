@@ -12,14 +12,20 @@ export const getUniversity = async (id: number) => {
 };
 
 export const addUniversity = async (name: string, university_logo: string) => {
-  await repo.create({ name, university_logo });
+  await repo.create({ university_name: name, university_logo });
   return { message: "University created successfully" };
 };
 
-export const updateUniversity = async (id: number, validated: { name?: string | undefined; university_logo?: string | undefined; }, saveDateFlag: boolean, name?: string, university_logo?: string) => {
+export const updateUniversity = async (
+  id: number,
+  validated: { name?: string | undefined; university_logo?: string | undefined },
+  saveDateFlag: boolean,
+  name?: string,
+  university_logo?: string
+) => {
   const uni = await repo.findById(id);
   if (!uni) throw new AppError("University not found", 404);
-  await repo.update(id, { name, university_logo });
+  await repo.update(id, { university_name: name, university_logo });
   return { message: "University updated successfully" };
 };
 
