@@ -139,8 +139,22 @@ export class UniversityCourseSpecializationRepository {
   }
 
   private mapRowToModel(row: any): UniversityCourseSpecialization {
+    let durationForSchema: any = null;
+    if (row.duration_for_schema) {
+      if (typeof row.duration_for_schema === "string") {
+        try {
+          durationForSchema = JSON.parse(row.duration_for_schema);
+        } catch {
+          durationForSchema = row.duration_for_schema;
+        }
+      } else {
+        durationForSchema = row.duration_for_schema;
+      }
+    }
+
     return {
       ...row,
+      duration_for_schema: durationForSchema,
       fee_type_values: row.fee_type_values
         ? JSON.parse(row.fee_type_values)
         : null,
