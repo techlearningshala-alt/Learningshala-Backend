@@ -161,7 +161,7 @@ async function getSpecializationSections(specializationId: number) {
     const sectionKey = s.section_key || "";
     
     // Determine the value for the section_key
-    // Priority: content > first prop value > empty string
+    // Priority: content > first non-heading prop value > empty string
     let titleValue: any = "";
     let titleValueKey: string | null = null;
     let contentUsedForTitle = false;
@@ -171,10 +171,12 @@ async function getSpecializationSections(specializationId: number) {
       titleValueKey = "content";
       contentUsedForTitle = true;
     } else if (Object.keys(props).length > 0) {
-      // Use first prop value if no content
-      const firstKey = Object.keys(props)[0];
-      titleValue = props[firstKey];
-      titleValueKey = firstKey;
+      // Use first non-heading prop value if no content
+      const firstKey = Object.keys(props).find((k) => k !== "heading");
+      if (firstKey) {
+        titleValue = props[firstKey];
+        titleValueKey = firstKey;
+      }
     }
     
     // Set section_key as a key with its value
@@ -182,16 +184,20 @@ async function getSpecializationSections(specializationId: number) {
       acc[sectionKey] = titleValue;
     }
     
-    // Flatten ALL props into the same object (excluding content/prop if it was used for section_key)
-    // This preserves all props like videoID, videoTitle, gridContent, faculties, etc.
+    // Flatten props into the same object (excluding content/prop if it was used for section_key).
+    // Section headings are namespaced as `${sectionKey}.heading` so they do not collide at the root.
     Object.keys(props).forEach((key) => {
       // Skip content/prop if it was already used as the section_key value to avoid duplication
       if ((key === "content" && contentUsedForTitle) || key === titleValueKey) {
         return; // Skip adding content/prop since it's already the section_key value
       }
+      if (key === "heading" && sectionKey) {
+        acc[`${sectionKey}.heading`] = props[key];
+        return;
+      }
       acc[key] = props[key];
     });
-    
+
     return acc;
   }, {});
   
