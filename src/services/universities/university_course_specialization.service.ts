@@ -269,14 +269,18 @@ async function getSpecializationFaqs(specializationId: number) {
               f.title,
               f.description,
               f.category_id,
-              c.heading AS category_heading
+              c.heading AS category_heading,
+              c.priority AS category_priority
        FROM university_course_specialization_faqs f
        LEFT JOIN university_faq_categories c ON f.category_id = c.id
        WHERE f.specialization_id = ?
        ORDER BY 
+         CASE WHEN c.priority IS NULL THEN 1 ELSE 0 END,
+         c.priority ASC,
          CASE WHEN c.heading IS NULL THEN 1 ELSE 0 END,
-         c.heading,
-         f.created_at DESC`,
+         c.heading ASC,
+         f.created_at ASC,
+         f.id ASC`,
       [specializationId]
     );
 
@@ -284,20 +288,20 @@ async function getSpecializationFaqs(specializationId: number) {
       return [];
     }
 
-    const grouped = rows.reduce((acc: Record<string, any>, faq: any) => {
+    const grouped = rows.reduce((acc: Map<number, any>, faq: any) => {
       const categoryId = faq.category_id || 0;
       const heading = faq.category_heading || "Uncategorized";
       const slug = heading.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
 
-      if (!acc[categoryId]) {
-        acc[categoryId] = {
+      if (!acc.has(categoryId)) {
+        acc.set(categoryId, {
           category: heading,
           cat_id: slug || `category-${categoryId || "uncategorized"}`,
           items: [],
-        };
+        });
       }
 
-      acc[categoryId].items.push({
+      acc.get(categoryId).items.push({
         id: faq.id,
         question: faq.title,
         answer: faq.description,
@@ -305,9 +309,9 @@ async function getSpecializationFaqs(specializationId: number) {
       });
 
       return acc;
-    }, {});
+    }, new Map<number, any>());
 
-    return Object.values(grouped);
+    return Array.from(grouped.values());
   } catch (error) {
     console.error(`❌ [SPECIALIZATION FAQ] Error fetching specialization FAQs for specialization_id ${specializationId}:`, error);
     return [];
