@@ -77,7 +77,7 @@ export class UniversityCourseSpecializationRepository {
 
   async findOptionsByCourse(universityCourseId: number) {
     const [rows]: any = await pool.query(
-      `SELECT id, name, slug, label, emi_duration, duration, course_thumbnail, fee_type_values, is_page_created
+      `SELECT id, name, slug, label, emi_duration, duration, course_thumbnail, fee_type_values, is_page_created, updated_at, created_at
          FROM university_course_specialization
         WHERE university_course_id = ? AND is_active = 1
         ORDER BY name ASC`,
@@ -95,6 +95,8 @@ export class UniversityCourseSpecializationRepository {
         ? (typeof row.fee_type_values === 'string' ? JSON.parse(row.fee_type_values) : row.fee_type_values)
         : null,
       is_page_created: row.is_page_created,
+      updated_at: row.updated_at || null,
+      created_at: row.created_at || null,
     }));
   }
 
