@@ -343,11 +343,11 @@ export const getCoursesByDomain = async () => {
   const courses = await repo.findByDomainGrouped();
 
   const courseIds = courses.map((course: any) => Number(course.id)).filter((id: number) => !Number.isNaN(id));
-  const specializationsByCourseId = new Map<number, Array<{ specialization_id: number; slug: string; name: string }>>();
+  const specializationsByCourseId = new Map<number, Array<{ specialization_id: number; slug: string; name: string; updated_at: Date | null; created_at: Date | null }>>();
 
   if (courseIds.length > 0) {
     const [specializationRows]: any = await pool.query(
-      `SELECT id AS specialization_id, course_id, slug, name
+      `SELECT id AS specialization_id, course_id, slug, name, updated_at, created_at
        FROM specializations
        WHERE course_id IN (?)
          AND is_active = 1
@@ -365,6 +365,8 @@ export const getCoursesByDomain = async () => {
         specialization_id: Number(row.specialization_id),
         slug: row.slug || "",
         name: row.name || "",
+        updated_at: row.updated_at || null,
+        created_at: row.created_at || null,
       });
     });
   }
@@ -390,6 +392,8 @@ export const getCoursesByDomain = async () => {
       specialization_count: course.specialization_count || 0,
       university_count: course.university_count || 0,
       specializations: specializationsByCourseId.get(Number(course.id)) || [],
+      updated_at: course.updated_at || null,
+      created_at: course.created_at || null,
     });
   });
   

@@ -158,6 +158,8 @@ export default class CourseRepo {
         c.slug,
         c.course_duration,
         c.label,
+        c.updated_at,
+        c.created_at,
         d.slug AS domain_slug,
         d.name AS domain_name,
         d.label AS domain_label,
@@ -170,7 +172,7 @@ export default class CourseRepo {
         ON uc.compare_page_slug = c.slug
         AND uc.is_active = 1
       WHERE c.is_active = 1 AND c.menu_visibility = 1
-      GROUP BY c.id, c.name, c.thumbnail, c.slug, c.course_duration, c.label, d.slug, d.name, d.label 
+      GROUP BY c.id, c.name, c.thumbnail, c.slug, c.course_duration, c.label, c.updated_at, c.created_at, d.slug, d.name, d.label 
       ORDER BY d.priority ASC, c.priority ASC, c.name ASC`
     );
     return rows;
