@@ -53,6 +53,18 @@ const toBoolean = (value: unknown): boolean | undefined => {
   throw new Error("Invalid boolean value provided");
 };
 
+const parseCompareInformation = (raw: any): Record<string, any> | null => {
+  if (raw === undefined || raw === null || raw === "") return null;
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
+  if (typeof raw !== "string") return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
 const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
   if (!payload.university_id) {
     throw new Error("university_id is required");
@@ -98,6 +110,7 @@ const normaliseCoursePayload = (payload: any): CreateUniversityCourseDto => {
     why_choose: payload.why_choose 
       ? (typeof payload.why_choose === 'string' ? JSON.parse(payload.why_choose) : payload.why_choose)
       : null,
+    compare_information: parseCompareInformation(payload.compare_information),
   };
 };
 
@@ -546,6 +559,9 @@ export async function updateUniversityCourse(id: number, payload: any) {
       } else {
         normalized.why_choose = null;
       }
+    }
+    if (payload.compare_information !== undefined) {
+      normalized.compare_information = parseCompareInformation(payload.compare_information);
     }
     if (payload.saveWithDate !== undefined) {
       normalized.saveWithDate =
