@@ -126,6 +126,12 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
     utm_adgroup: normalizeString(mappedPayload.utm_adgroup),
     utm_ads: normalizeString(mappedPayload.utm_ads),
     website_url: normalizeString(mappedPayload.website_url),
+    schedule_date: mappedPayload.schedule_date
+      ? mappedPayload.schedule_date instanceof Date
+        ? mappedPayload.schedule_date
+        : new Date(mappedPayload.schedule_date)
+      : null,
+    schedule_time: normalizeString(mappedPayload.schedule_time),
   };
 
   const createdOnValue = mappedPayload.created_on;
@@ -236,6 +242,22 @@ const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
   }
   if (mappedPayload.website_url !== undefined) {
     normalized.website_url = normalizeString(mappedPayload.website_url);
+  }
+
+  if (mappedPayload.schedule_date !== undefined) {
+    if (mappedPayload.schedule_date) {
+      const dateValue =
+        mappedPayload.schedule_date instanceof Date
+          ? mappedPayload.schedule_date
+          : new Date(mappedPayload.schedule_date);
+      normalized.schedule_date = Number.isNaN(dateValue.getTime()) ? null : dateValue;
+    } else {
+      normalized.schedule_date = null;
+    }
+  }
+
+  if (mappedPayload.schedule_time !== undefined) {
+    normalized.schedule_time = normalizeString(mappedPayload.schedule_time);
   }
 
   if (mappedPayload.created_on !== undefined) {

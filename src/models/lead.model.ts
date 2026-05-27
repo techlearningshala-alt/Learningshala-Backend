@@ -23,6 +23,8 @@ export interface Lead {
   utm_adgroup: string | null;
   utm_ads: string | null;
   created_on: Date | null;
+  schedule_date: Date | null;
+  schedule_time: string | null;
   website_url: string | null;
 }
 
@@ -50,6 +52,8 @@ export interface CreateLeadDto {
   utm_adgroup?: string | null;
   utm_ads?: string | null;
   created_on?: Date | null;
+  schedule_date?: Date | null;
+  schedule_time?: string | null;
   website_url?: string | null;
 }
 

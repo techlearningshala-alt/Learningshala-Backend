@@ -772,14 +772,14 @@ async function getUniversitySections(universityId: number) {
     }
     
     // Flatten props into the same object (excluding content/prop if it was used for section_key).
-    // Section headings are namespaced as `${sectionKey}.heading` so they do not collide at the root.
+    // Section headings are namespaced as `${sectionKey}_heading` so they do not collide at the root.
     Object.keys(props).forEach((key) => {
       // Skip content/prop if it was already used as the section_key value to avoid duplication
       if ((key === "content" && contentUsedForTitle) || key === titleValueKey) {
         return; // Skip adding content/prop since it's already the section_key value
       }
       if (key === "heading" && sectionKey) {
-        acc[`${sectionKey}.heading`] = props[key];
+        acc[`${sectionKey}_heading`] = props[key];
         return;
       }
       acc[key] = props[key];

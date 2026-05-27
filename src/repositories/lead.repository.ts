@@ -81,6 +81,8 @@ class LeadRepository {
         utm_campaign,
         utm_adgroup,
         utm_ads,
+        schedule_date,
+        schedule_time,
         created_on,
         website_url
       FROM leads
@@ -131,6 +133,8 @@ class LeadRepository {
       "utm_campaign",
       "utm_adgroup",
       "utm_ads",
+      "schedule_date",
+      "schedule_time",
       "created_on",
       "website_url",
     ];
@@ -168,6 +172,8 @@ class LeadRepository {
         utm_campaign,
         utm_adgroup,
         utm_ads,
+        schedule_date,
+        schedule_time,
         created_on,
         website_url
       FROM leads
@@ -211,6 +217,8 @@ class LeadRepository {
         utm_campaign,
         utm_adgroup,
         utm_ads,
+        schedule_date,
+        schedule_time,
         created_on,
         website_url
       FROM leads
@@ -266,6 +274,8 @@ class LeadRepository {
         utm_campaign,
         utm_adgroup,
         utm_ads,
+        schedule_date,
+        schedule_time,
         created_on,
         website_url
       FROM leads
@@ -305,6 +315,8 @@ class LeadRepository {
       "utm_campaign",
       "utm_adgroup",
       "utm_ads",
+      "schedule_date",
+      "schedule_time",
       "website_url",
     ];
 
@@ -361,6 +373,8 @@ class LeadRepository {
         utm_campaign,
         utm_adgroup,
         utm_ads,
+        schedule_date,
+        schedule_time,
         created_on,
         website_url
       FROM leads

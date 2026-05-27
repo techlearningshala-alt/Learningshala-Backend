@@ -150,6 +150,32 @@ const optionalDate = z
   )
   .optional();
 
+// ✅ Schedule date: allow future dates (only validate it's a valid date)
+const optionalScheduleDate = z
+  .preprocess((v: any) => {
+    if (!v) return null;
+    const date = new Date(v);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  }, z.union([z.date(), z.null()]))
+  .optional();
+
+// ✅ Time in HH:MM (24-hour) format
+const optionalTime = (fieldName: string) =>
+  z
+    .preprocess(
+      (v) => trimToNull(v),
+      z.union([
+        z
+          .string()
+          .regex(
+            /^([01]?\d|2[0-3]):[0-5]\d$/,
+            `${fieldName} must be in HH:MM format`
+          ),
+        z.null(),
+      ])
+    )
+    .optional();
+
 // ✅ Final validated schema
 export const createLeadSchema = z
   .object({
@@ -193,6 +219,9 @@ export const createLeadSchema = z
     utm_campaign: optionalTrimmedString("UTM campaign", 150),
     utm_adgroup: optionalTrimmedString("UTM ad group", 150),
     utm_ads: optionalTrimmedString("UTM ads", 150),
+
+    schedule_date: optionalScheduleDate,
+    schedule_time: optionalTime("Schedule time"),
 
     created_on: z.preprocess(
       (v) => (v === undefined || v === null ? null : String(v)),
@@ -258,6 +287,9 @@ export const updateLeadSchema = z
     utm_campaign: optionalTrimmedString("UTM campaign", 150),
     utm_adgroup: optionalTrimmedString("UTM ad group", 150),
     utm_ads: optionalTrimmedString("UTM ads", 150),
+
+    schedule_date: optionalScheduleDate,
+    schedule_time: optionalTime("Schedule time"),
 
     created_on: z.preprocess(
       (v) => (v === undefined || v === null ? null : String(v)),
