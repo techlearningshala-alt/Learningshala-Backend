@@ -267,6 +267,7 @@ export class BlogRepository {
       linkedin_profile_link: row.linkedin_profile_link,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
+      is_active: Boolean(row.verified),
       update_date: row.update_date,
       content: row.content,
       created_at: row.created_at,
