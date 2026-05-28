@@ -22,3 +22,4 @@ router.patch("/:id/toggle-verified", BlogController.toggleVerified);
 router.delete("/:id", BlogController.remove);
 
 export default router;
+
