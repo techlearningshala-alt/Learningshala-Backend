@@ -1038,6 +1038,7 @@ export const getUniversityBySlug = async (slug: string) => {
         uc.fee_type_values,
         uc.is_page_created,
         uc.compare_page_slug,
+        uc.comapre_information,
         COUNT(ucs.id) as specialization_count,
         uc.updated_at,
         uc.created_at
@@ -1068,6 +1069,7 @@ export const getUniversityBySlug = async (slug: string) => {
         fees: fees,
         is_page_created: course.is_page_created == 1 ? true : false,
         compare_page_slug: course.compare_page_slug,
+        compare_information: course.comapre_information,
         updated_at: course.updated_at,
         created_at: course.created_at,
       };
