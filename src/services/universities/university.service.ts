@@ -1043,6 +1043,7 @@ export const getUniversityBySlug = async (slug: string) => {
         uc.credit_points,
         uc.eligibility,
         uc.eligibility_info,
+        uc.brochure_file,
         COUNT(ucs.id) as specialization_count,
         uc.updated_at,
         uc.created_at
@@ -1078,6 +1079,7 @@ export const getUniversityBySlug = async (slug: string) => {
         credit_points: course.credit_points,
         eligibility: course.eligibility,
         eligibility_info: course.eligibility_info,
+        brochure_file: course.brochure_file,
         updated_at: course.updated_at,
         created_at: course.created_at,
       };
