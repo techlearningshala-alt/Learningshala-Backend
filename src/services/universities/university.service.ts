@@ -1039,6 +1039,10 @@ export const getUniversityBySlug = async (slug: string) => {
         uc.is_page_created,
         uc.compare_page_slug,
         uc.compare_information,
+        uc.syllabus_file,
+        uc.credit_points,
+        uc.eligibility,
+        uc.eligibility_info,
         COUNT(ucs.id) as specialization_count,
         uc.updated_at,
         uc.created_at
@@ -1070,6 +1074,10 @@ export const getUniversityBySlug = async (slug: string) => {
         is_page_created: course.is_page_created == 1 ? true : false,
         compare_page_slug: course.compare_page_slug,
         compare_information: course.compare_information ? parseCompareInformation(course.compare_information) : null, 
+        syllabus_file: course.syllabus_file,
+        credit_points: course.credit_points,
+        eligibility: course.eligibility,
+        eligibility_info: course.eligibility_info,
         updated_at: course.updated_at,
         created_at: course.created_at,
       };
