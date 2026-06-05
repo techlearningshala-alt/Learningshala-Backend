@@ -6,6 +6,13 @@ const trimToNull = (value: unknown) => {
   return trimmed.length ? trimmed : null;
 };
 
+const optionalReferenceNumber = z
+  .preprocess(
+    (v) => trimToNull(v),
+    z.union([z.string().max(100, "Reference number must be at most 100 characters"), z.null()])
+  )
+  .optional();
+
 // ✅ Required trimmed string with only letters, spaces, hyphens
 const requiredTrimmedString = (fieldName: string, max = 255) =>
   z.preprocess(
@@ -228,7 +235,7 @@ export const createLeadSchema = z
       z.string().optional().nullable()
     ),
     website_url: optionalUrl("Website URL"),
-    reference_number: optionalTrimmedString("Reference number", 100),
+    reference_number: optionalReferenceNumber,
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {
@@ -297,7 +304,7 @@ export const updateLeadSchema = z
       z.string().optional().nullable()
     ),
     website_url: optionalUrl("Website URL"),
-    reference_number: optionalTrimmedString("Reference number", 100),
+    reference_number: optionalReferenceNumber,
   })
   .superRefine((data, ctx) => {
     // For update, we need either phone or email to identify the lead

@@ -139,6 +139,7 @@ export const exportLeads = async (req: Request, res: Response) => {
       { key: "utm_adgroup", header: "UTM Ad Group", width: 15 },
       { key: "utm_ads", header: "UTM Ads", width: 15 },
       { key: "website_url", header: "Website URL", width: 30 },
+      { key: "reference_number", header: "Reference Number", width: 20 },
       {
         key: "created_on",
         header: "Created On",
