@@ -26,6 +26,7 @@ export interface Lead {
   schedule_date: Date | null;
   schedule_time: string | null;
   website_url: string | null;
+  reference_number: string | null;
 }
 
 export interface CreateLeadDto {
@@ -55,6 +56,7 @@ export interface CreateLeadDto {
   schedule_date?: Date | null;
   schedule_time?: string | null;
   website_url?: string | null;
+  reference_number?: string | null;
 }
 
 

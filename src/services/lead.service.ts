@@ -126,6 +126,7 @@ const normalizeCreatePayload = (payload: any): CreateLeadDto => {
     utm_adgroup: normalizeString(mappedPayload.utm_adgroup),
     utm_ads: normalizeString(mappedPayload.utm_ads),
     website_url: normalizeString(mappedPayload.website_url),
+    reference_number: normalizeString(mappedPayload.reference_number),
     schedule_date: mappedPayload.schedule_date
       ? mappedPayload.schedule_date instanceof Date
         ? mappedPayload.schedule_date
@@ -242,6 +243,9 @@ const normalizeUpdatePayload = (payload: any): Partial<CreateLeadDto> => {
   }
   if (mappedPayload.website_url !== undefined) {
     normalized.website_url = normalizeString(mappedPayload.website_url);
+  }
+  if (mappedPayload.reference_number !== undefined) {
+    normalized.reference_number = normalizeString(mappedPayload.reference_number);
   }
 
   if (mappedPayload.schedule_date !== undefined) {

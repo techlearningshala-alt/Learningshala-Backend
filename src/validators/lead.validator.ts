@@ -228,6 +228,7 @@ export const createLeadSchema = z
       z.string().optional().nullable()
     ),
     website_url: optionalUrl("Website URL"),
+    reference_number: optionalTrimmedString("Reference number", 100),
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {
@@ -296,6 +297,7 @@ export const updateLeadSchema = z
       z.string().optional().nullable()
     ),
     website_url: optionalUrl("Website URL"),
+    reference_number: optionalTrimmedString("Reference number", 100),
   })
   .superRefine((data, ctx) => {
     // For update, we need either phone or email to identify the lead

@@ -84,7 +84,8 @@ class LeadRepository {
         schedule_date,
         schedule_time,
         created_on,
-        website_url
+        website_url,
+        reference_number
       FROM leads
       ${whereClause}
       ORDER BY created_on DESC, id DESC
@@ -137,6 +138,7 @@ class LeadRepository {
       "schedule_time",
       "created_on",
       "website_url",
+      "reference_number",
     ];
 
     const values = columns.map((column) => (payload as any)[column] ?? null);
@@ -175,7 +177,8 @@ class LeadRepository {
         schedule_date,
         schedule_time,
         created_on,
-        website_url
+        website_url,
+        reference_number
       FROM leads
       WHERE id = ?
       LIMIT 1`,
@@ -220,7 +223,8 @@ class LeadRepository {
         schedule_date,
         schedule_time,
         created_on,
-        website_url
+        website_url,
+        reference_number
       FROM leads
       WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
       ORDER BY created_on DESC, id DESC`,
@@ -277,7 +281,8 @@ class LeadRepository {
         schedule_date,
         schedule_time,
         created_on,
-        website_url
+        website_url,
+        reference_number
       FROM leads
       ${whereClause}
       LIMIT 1`,
@@ -318,6 +323,7 @@ class LeadRepository {
       "schedule_date",
       "schedule_time",
       "website_url",
+      "reference_number",
     ];
 
     updateableFields.forEach((field) => {
@@ -376,7 +382,8 @@ class LeadRepository {
         schedule_date,
         schedule_time,
         created_on,
-        website_url
+        website_url,
+        reference_number
       FROM leads
       WHERE id = ?
       LIMIT 1`,
