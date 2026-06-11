@@ -50,7 +50,7 @@ export const create = async (req: Request, res: Response) => {
       city: lead.city || "",
       lead_source: "Organic",
       sub_source_new: "LS-WEBSITE",
-      website_url: "https://learning-shala.com",
+      website_url: "https://learningshala.com",
       lead_url: lead.lead_url || requestBody.lead_url || "",
       utm_source: "Organic",
       utm_medium: "",
