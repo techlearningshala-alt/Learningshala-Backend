@@ -1,5 +1,28 @@
 import pool from "../../config/db";
-import { Domain } from "../../models/courses/domains.model";
+import { Domain, DomainQuestion } from "../../models/courses/domains.model";
+
+function serializeQuestions(questions: unknown): string | null {
+  if (!Array.isArray(questions) || questions.length === 0) return null;
+  return JSON.stringify(questions);
+}
+
+function parseQuestions(value: unknown): DomainQuestion[] {
+  if (Array.isArray(value)) return value as DomainQuestion[];
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function mapRow(row: any) {
+  if (!row) return row;
+  return { ...row, questions: parseQuestions(row.questions) };
+}
 
 export default class DomainRepo {
   async findAll(page = 1, limit = 10, onlyVisible = false) {
@@ -12,18 +35,27 @@ export default class DomainRepo {
 
     const [rows]: any = await pool.query(query, [limit, offset]);
     const [[{ "FOUND_ROWS()": total }]]: any = await pool.query("SELECT FOUND_ROWS()");
-    return { data: rows, page, pages: Math.ceil(total / limit), total };
+    return { data: (rows as any[]).map(mapRow), page, pages: Math.ceil(total / limit), total };
   }
 
   async findById(id: number) {
     const [rows]: any = await pool.query("SELECT * FROM domains WHERE id = ?", [id]);
-    return rows.length ? rows[0] : null;
+    return rows.length ? mapRow(rows[0]) : null;
   }
 
   async create(item: Omit<Domain, "id" | "created_at" | "updated_at">) {
     const [result]: any = await pool.query(
-      `INSERT INTO domains (name, priority, is_active, menu_visibility, slug, description, label) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [item.name, item.priority, item.is_active, item.menu_visibility, item.slug, item.description, item.label || null]
+      `INSERT INTO domains (name, priority, is_active, menu_visibility, slug, description, label, questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        item.name,
+        item.priority,
+        item.is_active,
+        item.menu_visibility,
+        item.slug,
+        item.description,
+        item.label || null,
+        serializeQuestions(item.questions),
+      ]
     );
     return { id: result.insertId, ...item };
   }
@@ -38,6 +70,7 @@ export default class DomainRepo {
     if (item.is_active !== undefined) { fields.push("is_active = ?"); values.push(item.is_active); }
     if (item.menu_visibility !== undefined) { fields.push("menu_visibility = ?"); values.push(item.menu_visibility); }
     if (item.slug !== undefined) { fields.push("slug = ?"); values.push(item.slug); }
+    if (item.questions !== undefined) { fields.push("questions = ?"); values.push(serializeQuestions(item.questions)); }
     if (saveWithDate) fields.push("updated_at = NOW()");
     if (!fields.length) return null;
 

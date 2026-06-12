@@ -191,17 +191,17 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     city: normalizeString(payload.city),
     // Keep DB behavior in sync with webhook rule:
     // use utm_source when available, otherwise default to "website".
-    lead_source: resolvedLeadSource,
+    lead_source: "Organic",
     sub_source: normalizeString(payload.sub_source),
-    utm_source: normalizedUtmSource,
-    utm_campaign: normalizeString(payload.utm_campaign),
-    utm_adgroup: normalizeString(payload.utm_adgroup),
-    utm_ads: normalizeString(payload.utm_ads),
-    website_url: normalizeString(payload.website_url),
+    utm_source: "Organic",
+    utm_campaign: "",
+    utm_adgroup: "",
+    utm_ads: "",
+    website_url: "https://learningshala.com",
     otp: otpValue,
-    click_source: normalizeString(payload.click_source),
-    lead_url: normalizeString(payload.lead_url),
-    interested_university: normalizeInterestedUniversities(payload.interested_university),
+    click_source: "",
+    lead_url: "",
+    interested_university: "",
   };
 
   const created = await WebsiteLeadRepository.create(normalized);

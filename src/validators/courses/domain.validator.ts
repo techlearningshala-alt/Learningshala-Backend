@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+// Question block: question + note, with 4 answers each having its own note
+const domainQuestionAnswerSchema = z.object({
+  answer: z.string().trim().default(""),
+  note: z.string().trim().default(""),
+});
+
+const domainQuestionSchema = z.object({
+  question: z.string().trim().min(1, "Question is required"),
+  note: z.string().trim().default(""),
+  answers: z
+    .array(domainQuestionAnswerSchema)
+    .length(4, "Each question must have exactly 4 answers"),
+});
+
+const optionalQuestions = z.array(domainQuestionSchema).optional();
+
 // Domains
 export const createDomainSchema = z.object({
   name: z.string().min(1),
@@ -7,7 +23,8 @@ export const createDomainSchema = z.object({
   description: z.string().min(1),
   priority: z.number().int().nonnegative().default(999),
   is_active: z.boolean().default(true),
-  menu_visibility: z.boolean().default(true)
+  menu_visibility: z.boolean().default(true),
+  questions: optionalQuestions
 });
 
 export const updateDomainSchema = z.object({
@@ -16,7 +33,8 @@ export const updateDomainSchema = z.object({
   description: z.string().optional(),
   priority: z.number().int().nonnegative().default(999),
   is_active: z.boolean().default(true),
-  menu_visibility: z.boolean().default(true)
+  menu_visibility: z.boolean().default(true),
+  questions: optionalQuestions
 });
 
 // Create Specialization
