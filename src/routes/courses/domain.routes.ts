@@ -11,6 +11,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", DomainController.getAll);
+// Must come before /:id so "questions" is not treated as an id
+router.get("/questions", DomainController.getQuestionsByDomainName);
 router.get("/:id", DomainController.getById);
 router.post("/", upload.single("thumbnail"), DomainController.create);
 router.put("/:id", upload.single("thumbnail"), DomainController.update);

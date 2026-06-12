@@ -12,6 +12,10 @@ export default class DomainService {
     return repo.findById(id);
   }
 
+  static async getDomainByNameOrSlug(name: string) {
+    return repo.findByNameOrSlug(name);
+  }
+
   static async addDomain(data: Omit<Domain, "id" | "created_at" | "updated_at">) {
     return repo.create(data);
   }

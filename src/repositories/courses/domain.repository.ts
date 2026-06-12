@@ -43,6 +43,15 @@ export default class DomainRepo {
     return rows.length ? mapRow(rows[0]) : null;
   }
 
+  // Matches by exact name or slug
+  async findByNameOrSlug(name: string) {
+    const [rows]: any = await pool.query(
+      "SELECT * FROM domains WHERE name = ? OR slug = ? LIMIT 1",
+      [name, name]
+    );
+    return rows.length ? mapRow(rows[0]) : null;
+  }
+
   async create(item: Omit<Domain, "id" | "created_at" | "updated_at">) {
     const [result]: any = await pool.query(
       `INSERT INTO domains (name, priority, is_active, menu_visibility, slug, description, label, questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,

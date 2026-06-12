@@ -58,6 +58,29 @@ export const getAll = async (req: Request, res: Response) => {
   }
 };
 
+export const getQuestionsByDomainName = async (req: Request, res: Response) => {
+  try {
+    const name = String(req.query.name || "").trim();
+    if (!name) return errorResponse(res, "Domain name is required (query param: name)", 400);
+
+    const domain = await DomainService.getDomainByNameOrSlug(name);
+    if (!domain) return errorResponse(res, "Domain not found", 404);
+
+    return successResponse(
+      res,
+      {
+        domain_id: domain.id,
+        domain_name: domain.name,
+        domain_slug: domain.slug,
+        questions: domain.questions || [],
+      },
+      "Domain questions fetched successfully"
+    );
+  } catch (err: any) {
+    return errorResponse(res, err.message || "Failed to fetch domain questions", 400);
+  }
+};
+
 export const getById = async (req: Request, res: Response) => {
   try {
     const data = await DomainService.getDomainById(Number(req.params.id));
