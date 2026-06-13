@@ -8,6 +8,7 @@ import {
 } from "../services/website_lead.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
+import { mapCourseForCrm } from "../utills/crm-course-mapper";
 
 const WEBSITE_LEAD_WEBHOOK_URL =
   process.env.WEBSITE_LEAD_WEBHOOK_URL || "";
@@ -39,12 +40,13 @@ export const create = async (req: Request, res: Response) => {
     const lead = await createWebsiteLead(req.body);
     const requestBody: any = req.body || {};
     const resolvedUtmSource = String(requestBody.utm_source || lead.utm_source || "").trim();
+    const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
 
     const webhookPayload = {
       name: lead.name,
       email: lead.email || "",
       phone: lead.phone || "",
-      course: lead.course || "",
+      course: crmCourse,
       specialisation: lead.specialization || "Not Decided Yet",
       state: lead.state || "",
       city: lead.city || "",
