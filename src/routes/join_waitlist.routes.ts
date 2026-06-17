@@ -1,12 +1,16 @@
 import { Router } from "express";
 import * as JoinWaitlistController from "../controllers/join_waitlist.controller";
 import { validate } from "../middlewares/validate.middleware";
+import { externalFormsApiKeyMiddleware } from "../middlewares/external-forms-api-key.middleware";
 import { createJoinWaitlistSchema } from "../validators/join_waitlist.validator";
-import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// Public endpoint
-router.post("/", authMiddleware, validate(createJoinWaitlistSchema), JoinWaitlistController.create);
+router.post(
+  "/",
+  externalFormsApiKeyMiddleware,
+  validate(createJoinWaitlistSchema),
+  JoinWaitlistController.create
+);
 
 export default router;
