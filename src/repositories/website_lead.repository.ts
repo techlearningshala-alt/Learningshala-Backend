@@ -51,6 +51,7 @@ export const WebsiteLeadRepository = {
         utm_ads,
         website_url,
         click_source,
+        lead_url,
         interested_university,
         created_at
       FROM website_leads
