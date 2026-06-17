@@ -199,8 +199,8 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     utm_ads: "",
     website_url: "https://learningshala.com",
     otp: otpValue,
-    click_source: "",
-    lead_url: "",
+    click_source: payload.click_source,
+    lead_url: payload.lead_url,
     interested_university: "",
   };
 
