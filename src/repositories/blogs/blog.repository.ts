@@ -247,6 +247,7 @@ export class BlogRepository {
       slug: row.slug,
       thumbnail: row.thumbnail,
       short_description: row.short_description,
+      is_active: Boolean(row.verified),
       updated_at: row.updated_at,
     }));
 
