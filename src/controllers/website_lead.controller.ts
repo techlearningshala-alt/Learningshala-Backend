@@ -50,7 +50,7 @@ export const create = async (req: Request, res: Response) => {
       specialisation: lead.specialization || "Not Decided Yet",
       state: lead.state || "",
       city: lead.city || "",
-      lead_source: "Organic",
+      source: "Organic",
       sub_source_new: "LS-WEBSITE",
       website_url: "https://learningshala.com",
       lead_url: lead.lead_url || requestBody.lead_url || "",
