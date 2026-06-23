@@ -22,6 +22,8 @@ export interface WebsiteLead {
   click_source?: string | null;
   lead_url?: string | null;
   interested_university?: string | string[] | null;
+  questions?: unknown | string | null;
+  university?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }

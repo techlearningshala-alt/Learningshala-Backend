@@ -29,6 +29,29 @@ const normalizeInterestedUniversities = (
   return null;
 };
 
+const normalizeQuestions = (value?: unknown): string | null => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || null;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+};
+
+const parseQuestions = (value: unknown): unknown => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
 const parseInterestedUniversities = (value: any): string[] => {
   if (!value) return [];
   if (Array.isArray(value)) return value.filter((item) => typeof item === "string" && item.trim());
@@ -201,13 +224,16 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     otp: otpValue,
     click_source: payload.click_source,
     lead_url: payload.lead_url,
-    interested_university: "",
+    interested_university: normalizeInterestedUniversities(payload.interested_university),
+    questions: normalizeQuestions(payload.questions),
+    university: normalizeString(payload.university),
   };
 
   const created = await WebsiteLeadRepository.create(normalized);
   return {
     ...created,
     interested_university: parseInterestedUniversities(created.interested_university),
+    questions: parseQuestions(created.questions),
   };
 }
 
@@ -220,6 +246,7 @@ export async function listWebsiteLeads(
   result.data = (result.data || []).map((row: any) => ({
     ...row,
     interested_university: parseInterestedUniversities(row.interested_university),
+    questions: parseQuestions(row.questions),
   }));
   return result;
 }
@@ -240,6 +267,7 @@ export async function updateInterestedUniversity(
   return {
     ...updated,
     interested_university: parseInterestedUniversities(updated.interested_university),
+    questions: parseQuestions(updated.questions),
   };
 }
 

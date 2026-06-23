@@ -53,6 +53,8 @@ export const WebsiteLeadRepository = {
         click_source,
         lead_url,
         interested_university,
+        questions,
+        university,
         created_at
       FROM website_leads
       ${whereClause}
@@ -84,9 +86,9 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url, otp, click_source, lead_url, interested_university
+        website_url, otp, click_source, lead_url, interested_university, questions, university
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const params = [
@@ -108,6 +110,8 @@ export const WebsiteLeadRepository = {
       payload.click_source ?? null,
       payload.lead_url ?? null,
       payload.interested_university ?? null,
+      payload.questions ?? null,
+      payload.university ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);
@@ -157,6 +161,8 @@ export const WebsiteLeadRepository = {
         click_source,
         lead_url,
         interested_university,
+        questions,
+        university,
         created_at,
         updated_at
       FROM website_leads

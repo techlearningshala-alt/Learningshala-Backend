@@ -54,6 +54,15 @@ const optionalInterestedUniversity = z
   ])
   .optional();
 
+const optionalQuestions = z
+  .union([
+    z.string().trim().max(10000, "Questions payload is too long"),
+    z.array(z.unknown()),
+    z.record(z.string(), z.unknown()),
+  ])
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 export const createWebsiteLeadSchema = z
   .object({
     name: requiredName,
@@ -78,6 +87,8 @@ export const createWebsiteLeadSchema = z
     click_source: optionalTrimmed("Click source", 150),
     lead_url: optionalUrl,
     interested_university: optionalInterestedUniversity,
+    questions: optionalQuestions,
+    university: optionalTrimmed("University", 255),
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {
