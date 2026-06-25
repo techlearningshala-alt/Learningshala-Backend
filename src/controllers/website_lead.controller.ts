@@ -5,6 +5,7 @@ import {
   verifyWebsiteLeadOtp,
   listWebsiteLeads,
   updateInterestedUniversity,
+  resolveCompareUniversities,
 } from "../services/website_lead.service";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
@@ -63,7 +64,10 @@ export const create = async (req: Request, res: Response) => {
       question_fills: "No",
       questions: lead.questions ?? requestBody.questions ?? null,
       university: lead.university || requestBody.university || "",
-      compare_universities: lead.interested_university || requestBody.interested_university || [],
+      compare_universities: resolveCompareUniversities(
+        lead.interested_university,
+        requestBody.interested_university
+      ),
     };
 
     // Non-blocking webhook: DB save succeeds even if webhook fails.

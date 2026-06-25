@@ -10,12 +10,22 @@ const normalizePhone = (val?: string | null) => {
   return cleaned || null;
 };
 
-const normalizeInterestedUniversities = (
-  value?: string | string[] | null
-): string | null => {
+const extractUniversityLabel = (item: unknown): string => {
+  if (typeof item === "string") return item.trim();
+  if (item && typeof item === "object" && !Array.isArray(item)) {
+    const obj = item as Record<string, unknown>;
+    for (const key of ["name", "university", "title", "label", "value"]) {
+      const value = obj[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  }
+  return "";
+};
+
+const normalizeInterestedUniversities = (value?: unknown): string | null => {
   if (Array.isArray(value)) {
     const cleaned = value
-      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .map(extractUniversityLabel)
       .filter((item) => item.length > 0);
     return cleaned.length ? JSON.stringify(cleaned) : null;
   }
@@ -23,6 +33,15 @@ const normalizeInterestedUniversities = (
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.map(extractUniversityLabel).filter(Boolean);
+        return cleaned.length ? JSON.stringify(cleaned) : null;
+      }
+    } catch {
+      // plain university name string
+    }
     return JSON.stringify([trimmed]);
   }
 
@@ -54,17 +73,27 @@ const parseQuestions = (value: unknown): unknown => {
 
 const parseInterestedUniversities = (value: any): string[] => {
   if (!value) return [];
-  if (Array.isArray(value)) return value.filter((item) => typeof item === "string" && item.trim());
+  if (Array.isArray(value)) {
+    return value.map(extractUniversityLabel).filter(Boolean);
+  }
   if (typeof value !== "string") return [];
 
   try {
     const parsed = JSON.parse(value);
     if (Array.isArray(parsed)) {
-      return parsed.filter((item) => typeof item === "string" && item.trim());
+      return parsed.map(extractUniversityLabel).filter(Boolean);
     }
   } catch {
     // Backward compatibility for old plain string rows
     if (value.trim()) return [value.trim()];
+  }
+  return [];
+};
+
+export const resolveCompareUniversities = (...sources: unknown[]): string[] => {
+  for (const source of sources) {
+    const parsed = parseInterestedUniversities(source);
+    if (parsed.length > 0) return parsed;
   }
   return [];
 };

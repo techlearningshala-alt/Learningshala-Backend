@@ -51,6 +51,10 @@ const optionalInterestedUniversity = z
       .array(z.string().trim().min(1).max(255))
       .max(50, "Interested university supports max 50 items")
       .optional(),
+    z
+      .array(z.record(z.string(), z.unknown()))
+      .max(50, "Interested university supports max 50 items")
+      .optional(),
   ])
   .optional();
 
