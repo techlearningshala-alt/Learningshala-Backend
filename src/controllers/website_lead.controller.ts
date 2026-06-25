@@ -61,9 +61,9 @@ export const create = async (req: Request, res: Response) => {
       utm_term: "",
       utm_matchtype: "",
       question_fills: "No",
-      // questions: lead.questions ?? requestBody.questions ?? null,
-      // university: lead.university || requestBody.university || "",
-      // compare_universities: lead.interested_university || [],
+      questions: lead.questions ?? requestBody.questions ?? null,
+      university: lead.university || requestBody.university || "",
+      compare_universities: lead.interested_university || [],
     };
 
     // Non-blocking webhook: DB save succeeds even if webhook fails.
