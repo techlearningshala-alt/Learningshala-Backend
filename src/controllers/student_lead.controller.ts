@@ -7,9 +7,65 @@ import {
   updateStudentLead,
 } from "../services/student_lead.service";
 
+const STUDENT_LEAD_WEBHOOK_URL =
+  process.env.WEBSITE_LEAD_WEBHOOK_URL_STUDENT_LEADS || "";
+
+const postStudentLeadToWebhook = async (payload: Record<string, unknown>) => {
+  if (!STUDENT_LEAD_WEBHOOK_URL) {
+    console.warn("⚠️ WEBSITE_LEAD_WEBHOOK_URL_STUDENT_LEADS is not configured — skipping webhook");
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(STUDENT_LEAD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`Webhook HTTP ${response.status}${text ? `: ${text}` : ""}`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+function buildStudentLeadWebhookPayload(lead: Awaited<ReturnType<typeof createStudentLead>>) {
+  return {
+    id: lead.id,
+    name: lead.name,
+    email: lead.email || "",
+    phone: lead.phone || "",
+    course: lead.chosenProgramme || "",
+    qualification: lead.qualification || "",
+    specialization: lead.specialization || "",
+    goal: lead.goal || "",
+    experience: lead.experience || "",
+    budget: lead.budget || "",
+    video_counselling_slot: lead.videoCounsellingSlot || null,
+    preferred_callback_time: lead.preferredCallbackTime || "",
+    admission_expert_requested: Boolean(lead.admissionExpertRequested),
+    source: "Google",
+    sub_source_new: "LS-Chatbot",
+  };
+}
+
 export const create = async (req: Request, res: Response) => {
   try {
     const lead = await createStudentLead(req.body);
+
+    const webhookPayload = buildStudentLeadWebhookPayload(lead);
+    postStudentLeadToWebhook(webhookPayload).catch((webhookErr) => {
+      console.error("⚠️ Student lead webhook failed:", webhookErr);
+    });
+
     return successResponse(res, lead, "Student lead created successfully", 201);
   } catch (error: any) {
     console.error("❌ Error creating student lead:", error);
