@@ -35,6 +35,7 @@ import websiteLeadRoutes from "./website_lead.routes";
 import contactUsRoutes from "./contact_us.routes";
 import joinWaitlistRoutes from "./join_waitlist.routes";
 import partnerWithUsRoutes from "./partner_with_us.routes";
+import studentLeadRoutes from "./student_lead.routes";
 import dashboardRoutes from "./dashboard/dashboard.routes";
 import blogCategoryRoutes from "./blogs/blog_category.routes";
 import blogRoutes from "./blogs/blog.routes";
@@ -99,6 +100,7 @@ router.use("/cms/contact-us", contactUsRoutes);
 // ✅ Join waitlist & Partner with us
 router.use("/cms/join-waitlist", joinWaitlistRoutes);
 router.use("/cms/partner-with-us", partnerWithUsRoutes);
+router.use("/cms/student-leads", studentLeadRoutes);
 
 // ✅ Dashboard routes
 router.use("/cms/dashboard", dashboardRoutes);

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS student_leads (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  qualification VARCHAR(255) NULL,
+  specialization VARCHAR(255) NULL,
+  goal VARCHAR(500) NULL,
+  phone VARCHAR(20) NULL,
+  experience VARCHAR(100) NULL,
+  budget VARCHAR(100) NULL,
+  email VARCHAR(255) NULL,
+  chosen_programme VARCHAR(255) NULL,
+  video_counselling_slot JSON NULL,
+  preferred_callback_time VARCHAR(100) NULL,
+  admission_expert_requested TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_student_leads_email (email),
+  INDEX idx_student_leads_phone (phone),
+  INDEX idx_student_leads_created_at (created_at)
+);
