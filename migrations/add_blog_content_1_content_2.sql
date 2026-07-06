@@ -1,0 +1,3 @@
+ALTER TABLE blogs
+  ADD COLUMN content_1 LONGTEXT NULL AFTER content,
+  ADD COLUMN content_2 LONGTEXT NULL AFTER content_1;

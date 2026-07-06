@@ -19,6 +19,8 @@ export const createBlogSchema = z.object({
   verified: z.boolean().optional(),
   update_date: z.string().optional().nullable(),
   content: z.string().optional().nullable(),
+  content_1: z.string().optional().nullable(),
+  content_2: z.string().optional().nullable(),
 });
 
 export const updateBlogSchema = z.object({
@@ -43,5 +45,7 @@ export const updateBlogSchema = z.object({
   verified: z.boolean().optional(),
   update_date: z.string().optional().nullable(),
   content: z.string().optional().nullable(),
+  content_1: z.string().optional().nullable(),
+  content_2: z.string().optional().nullable(),
   saveWithDate: z.coerce.boolean().optional(),
 });

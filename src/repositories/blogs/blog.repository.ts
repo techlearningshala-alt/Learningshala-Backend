@@ -59,6 +59,8 @@ export class BlogRepository {
         b.verified,
         b.update_date,
         b.content,
+        b.content_1,
+        b.content_2,
         b.created_at,
         b.updated_at,
         bc.title as category_title,
@@ -91,6 +93,8 @@ export class BlogRepository {
       is_active: Boolean(row.verified),
       update_date: row.update_date,
       content: row.content,
+      content_1: row.content_1,
+      content_2: row.content_2,
       created_at: row.created_at,
       updated_at: row.updated_at,
       category_title: row.category_title,
@@ -156,6 +160,8 @@ export class BlogRepository {
         b.verified,
         b.update_date,
         b.content,
+        b.content_1,
+        b.content_2,
         b.created_at,
         b.updated_at,
         bc.title as category_title,
@@ -189,6 +195,8 @@ export class BlogRepository {
       is_active: Boolean(row.verified),
       update_date: row.update_date,
       content: row.content,
+      content_1: row.content_1,
+      content_2: row.content_2,
       created_at: row.created_at,
       updated_at: row.updated_at,
       category_title: row.category_title,
@@ -226,6 +234,8 @@ export class BlogRepository {
         b.verified,
         b.update_date,
         b.content,
+        b.content_1,
+        b.content_2,
         b.created_at,
         b.updated_at,
         bc.title as category_title,
@@ -273,6 +283,8 @@ export class BlogRepository {
       is_active: Boolean(row.verified),
       update_date: row.update_date,
       content: row.content,
+      content_1: row.content_1,
+      content_2: row.content_2,
       created_at: row.created_at,
       updated_at: row.updated_at,
       category_title: row.category_title,
@@ -303,6 +315,8 @@ export class BlogRepository {
         b.verified,
         b.update_date,
         b.content,
+        b.content_1,
+        b.content_2,
         b.created_at,
         b.updated_at,
         bc.title as category_title,
@@ -337,6 +351,8 @@ export class BlogRepository {
       is_active: Boolean(row.verified),
       update_date: row.update_date,
       content: row.content,
+      content_1: row.content_1,
+      content_2: row.content_2,
       created_at: row.created_at,
       updated_at: row.updated_at,
       category_title: row.category_title,
@@ -348,8 +364,8 @@ export class BlogRepository {
     const [result]: any = await pool.query(
       `INSERT INTO blogs (
         category_id, h1_tag, slug, meta_title, meta_description, author_id,
-        title, short_description, author_name, thumbnail, verified, update_date, content, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,NOW(), NOW())`,
+        title, short_description, author_name, thumbnail, verified, update_date, content, content_1, content_2, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.category_id,
         item.h1_tag ?? null,
@@ -364,6 +380,8 @@ export class BlogRepository {
         item.verified ? 1 : 0,
         item.update_date ?? null,
         item.content ?? null,
+        item.content_1 ?? null,
+        item.content_2 ?? null,
       ]
     );
     const [rows]: any = await pool.query("SELECT * FROM blogs WHERE id=?", [result.insertId]);
@@ -393,6 +411,8 @@ export class BlogRepository {
       "verified",
       "update_date",
       "content",
+      "content_1",
+      "content_2",
     ]);
 
     for (const [key, value] of Object.entries(item)) {

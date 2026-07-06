@@ -36,6 +36,8 @@ export class BlogService {
     verified?: boolean;
     update_date?: string | null;
     content?: string | null;
+    content_1?: string | null;
+    content_2?: string | null;
   }): Promise<Blog> {
     // Validate category_id exists
     if (!data.category_id) {
@@ -70,6 +72,8 @@ export class BlogService {
       verified: data.verified ?? false,
       update_date: updateDate,
       content: data.content ?? null,
+      content_1: data.content_1 ?? null,
+      content_2: data.content_2 ?? null,
     });
   }
 
@@ -91,6 +95,8 @@ export class BlogService {
       verified: boolean;
       update_date: string | null;
       content: string | null;
+      content_1: string | null;
+      content_2: string | null;
     }> & { saveWithDate?: boolean | string }
   ): Promise<boolean> {
     const updateData: any = { ...data };

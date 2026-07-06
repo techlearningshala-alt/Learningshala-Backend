@@ -15,6 +15,8 @@ export interface Blog {
   verified: boolean;
   update_date: Date | null;
   content: string | null;
+  content_1: string | null;
+  content_2: string | null;
   created_at: Date;
   updated_at: Date;
   category_title?: string;
