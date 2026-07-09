@@ -47,6 +47,7 @@ import authorRoutes from "./author.routes";
 import websiteBannerRoutes from "./website_banner.routes";
 import redirectionRoutes from "./redirections/redirection.routes";
 import uploadRoutes from "./upload/upload.routes";
+import postAdmissionTeamRoutes from "./post_admission_team.routes";
 import adminActivityRoutes from "./admin_activity.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
@@ -56,6 +57,7 @@ const router = Router();
 router.use("/cms/faqs", faqRoutes);
 router.use("/cms/media-spotlight", mediaRoutes);
 router.use("/cms/mentors", mentorRoutes);
+router.use("/cms/post-admission-team", postAdmissionTeamRoutes);
 router.use("/cms/student-testimonials", testimonialRoutes);
 router.use("/cms/leads", leadRoutes);
 // ✅ IMPORTANT: More specific routes must come BEFORE general routes
