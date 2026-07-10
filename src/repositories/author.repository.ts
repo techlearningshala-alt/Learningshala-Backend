@@ -2,14 +2,24 @@ import pool from "../config/db";
 import { Author, CreateAuthorDto, UpdateAuthorDto } from "../models/author.model";
 
 export class AuthorRepository {
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, tag?: string | null) {
     const offset = (page - 1) * limit;
+    const params: any[] = [];
+    let where = "";
+
+    if (tag && ["writer", "verifier"].includes(tag)) {
+      where = " WHERE tag = ?";
+      params.push(tag);
+    }
+
+    params.push(limit, offset);
+
     const [rows]: any = await pool.query(
-      "SELECT SQL_CALC_FOUND_ROWS * FROM authors ORDER BY id DESC LIMIT ? OFFSET ?",
-      [limit, offset]
+      `SELECT SQL_CALC_FOUND_ROWS * FROM authors${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      params
     );
     const [[{ "FOUND_ROWS()": total }]]: any = await pool.query("SELECT FOUND_ROWS()");
-    return { data: rows as Author[], page, pages: Math.ceil(total / limit), total };
+    return { data: rows as Author[], page, pages: Math.ceil(total / limit) || 1, total };
   }
 
   async findById(id: number): Promise<Author | null> {
@@ -79,6 +89,7 @@ export class AuthorRepository {
       image: a.image,
       author_details: a.author_details,
       label: a.label,
+      tag: a.tag ?? null,
       author_slug: a.author_slug,
       meta_title: a.meta_title,
       meta_description: a.meta_description,
@@ -94,8 +105,8 @@ export class AuthorRepository {
 
   async create(item: CreateAuthorDto): Promise<Author> {
     const [result]: any = await pool.query(
-      `INSERT INTO authors (author_name, image, author_details, label, author_slug, meta_title, meta_description, linkedin_profile_link, designation, education_background) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [item.author_name, item.image, item.author_details, item.label, item.author_slug, item.meta_title, item.meta_description, item.linkedin_profile_link, item.designation, item.education_background]
+      `INSERT INTO authors (author_name, image, author_details, label, tag, author_slug, meta_title, meta_description, linkedin_profile_link, designation, education_background) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [item.author_name, item.image, item.author_details, item.label, item.tag, item.author_slug, item.meta_title, item.meta_description, item.linkedin_profile_link, item.designation, item.education_background]
     );
     const created = await this.findById(result.insertId);
     if (!created) {
@@ -123,6 +134,10 @@ export class AuthorRepository {
     if (item.label !== undefined) {
       fields.push("label = ?");
       values.push(item.label);
+    }
+    if (item.tag !== undefined) {
+      fields.push("tag = ?");
+      values.push(item.tag);
     }
     if (item.author_slug !== undefined) {
       fields.push("author_slug = ?");

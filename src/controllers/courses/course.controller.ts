@@ -164,6 +164,7 @@ const normalizeCoursePayload = (body: any) => {
     eligibility_info: body.eligibility_info ?? null,
     upload_brochure: body.upload_brochure ?? null,
     author_name: body.author_name ?? null,
+    verifier_name: body.verifier_name ?? null,
     learning_mode: body.learning_mode ?? null,
     podcast_embed: body.podcast_embed ?? null,
     emi_facility: body.emi_facility !== undefined ? toBoolean(body.emi_facility, false) : undefined,

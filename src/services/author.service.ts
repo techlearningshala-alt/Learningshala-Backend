@@ -1,8 +1,8 @@
 import repo from "../repositories/author.repository";
 import { CreateAuthorDto, UpdateAuthorDto, Author } from "../models/author.model";
 
-export const listAuthors = async (page = 1, limit = 10) => {
-  return await repo.findAll(page, limit);
+export const listAuthors = async (page = 1, limit = 10, tag?: string | null) => {
+  return await repo.findAll(page, limit, tag);
 };
 
 export const getAuthor = async (id: number): Promise<Author | null> => {

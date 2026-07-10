@@ -10,12 +10,15 @@ export type AuthorContentItem = {
   category_title: string | null;
 };
 
+export type AuthorTag = "writer" | "verifier";
+
 export interface Author {
   id: number;
   author_name: string;
   image: string | null;
   author_details: string | null;
   label: string | null;
+  tag: AuthorTag | null;
   author_slug: string | null;
   meta_title: string | null;
   meta_description: string | null;
@@ -33,6 +36,7 @@ export interface CreateAuthorDto {
   image: string | null;
   author_details: string | null;
   label: string | null;
+  tag: AuthorTag | null;
   author_slug: string | null;
   meta_title: string | null;
   meta_description: string | null;

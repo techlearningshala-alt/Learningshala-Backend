@@ -11,8 +11,12 @@ export const getAll = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const tag =
+      typeof req.query.tag === "string" && ["writer", "verifier"].includes(req.query.tag)
+        ? req.query.tag
+        : null;
 
-    const result = await AuthorService.listAuthors(page, limit);
+    const result = await AuthorService.listAuthors(page, limit, tag);
     return successResponse(res, result, "Authors fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch authors", 500);
@@ -90,12 +94,17 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       typeof req.body.education_background === "string" && req.body.education_background.trim().length
         ? req.body.education_background.trim()
         : null;
+    const tag =
+      typeof req.body.tag === "string" && ["writer", "verifier"].includes(req.body.tag.trim())
+        ? (req.body.tag.trim() as "writer" | "verifier")
+        : null;
 
     const body = {
       author_name: rawAuthorName,
       image: imageUrl ?? null,
       author_details: req.body.author_details ?? null,
       label: req.body.label ?? null,
+      tag,
       author_slug: normalizedSlug ?? null,
       meta_title: metaTitle,
       meta_description: metaDescription,
@@ -111,6 +120,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       image: validatedData.image ?? null,
       author_details: validatedData.author_details ?? null,
       label: validatedData.label ?? null,
+      tag: validatedData.tag ?? null,
       author_slug: validatedData.author_slug ?? null,
       meta_title: validatedData.meta_title ?? null,
       meta_description: validatedData.meta_description ?? null,
@@ -150,6 +160,12 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (updates.linkedin_profile_link === "") updates.linkedin_profile_link = null;
     if (updates.designation === "") updates.designation = null;
     if (updates.education_background === "") updates.education_background = null;
+    if (updates.tag === "" || updates.tag === undefined) {
+      // keep as-is if missing; empty string -> null
+      if (updates.tag === "") updates.tag = null;
+    } else if (!["writer", "verifier"].includes(String(updates.tag))) {
+      updates.tag = null;
+    }
 
     // Handle image upload
     const imageFile = files?.image?.[0] || files?.image;
@@ -183,6 +199,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (validatedData.image !== undefined) updateData.image = validatedData.image ?? null;
     if (validatedData.author_details !== undefined) updateData.author_details = validatedData.author_details ?? null;
     if (validatedData.label !== undefined) updateData.label = validatedData.label ?? null;
+    if (validatedData.tag !== undefined) updateData.tag = validatedData.tag ?? null;
     if (validatedData.author_slug !== undefined) updateData.author_slug = validatedData.author_slug ?? null;
     if (validatedData.meta_title !== undefined) updateData.meta_title = validatedData.meta_title ?? null;
     if (validatedData.meta_description !== undefined) updateData.meta_description = validatedData.meta_description ?? null;

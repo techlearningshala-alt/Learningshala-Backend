@@ -27,6 +27,7 @@ export interface Course {
   eligibility_info?: string | null;
   upload_brochure?: string | null;
   author_name?: string | null;
+  verifier_name?: string | null;
   learning_mode?: string | null;
   podcast_embed?: string | null;
   emi_facility?: boolean | null;
@@ -203,8 +204,8 @@ export default class CourseRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO courses 
-        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, emi_facility, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (domain_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, verifier_name, learning_mode, podcast_embed, emi_facility, priority, menu_visibility, is_active, placement_partner_ids, emi_partner_ids)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.domain_id,
         item.name,
@@ -221,6 +222,7 @@ export default class CourseRepo {
         item.eligibility_info ?? null,
         item.upload_brochure ?? null,
         item.author_name ?? null,
+        item.verifier_name ?? null,
         item.learning_mode ?? null,
         item.podcast_embed ?? null,
         item.emi_facility ?? null,
@@ -303,6 +305,10 @@ export default class CourseRepo {
     if (item.author_name !== undefined) {
       fields.push("author_name = ?");
       values.push(item.author_name ?? null);
+    }
+    if (item.verifier_name !== undefined) {
+      fields.push("verifier_name = ?");
+      values.push(item.verifier_name ?? null);
     }
     if (item.learning_mode !== undefined) {
       fields.push("learning_mode = ?");

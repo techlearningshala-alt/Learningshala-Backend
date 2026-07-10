@@ -53,6 +53,35 @@ const getAuthorSummaryByName = async (authorName?: string | null) => {
   };
 };
 
+const getVerifierSummaryByName = async (verifierName?: string | null) => {
+  const normalizedName = String(verifierName || "").trim();
+  if (!normalizedName) {
+    return {
+      verifier_image: null,
+      verifier_details: null,
+      verifier_slug: null,
+      verifier_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+       AND tag = 'verifier'
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const verifier = rows?.[0] || {};
+  return {
+    verifier_image: verifier.image || null,
+    verifier_details: verifier.author_details || null,
+    verifier_slug: verifier.author_slug || null,
+    verifier_label: verifier.label || null,
+  };
+};
+
 const attachRelations = async (course: any) => {
   if (!course) return null;
   const [banners, sections] = await Promise.all([
@@ -221,6 +250,7 @@ export const getCourseBySlug = async (slug: string) => {
   }
 
   Object.assign(course as any, await getAuthorSummaryByName((course as any).author_name));
+  Object.assign(course as any, await getVerifierSummaryByName((course as any).verifier_name));
 
   return course;
 };
