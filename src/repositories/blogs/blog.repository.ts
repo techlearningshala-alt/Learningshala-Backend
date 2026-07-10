@@ -224,12 +224,17 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
+        b.verifier_name,
         a.author_name,
         a.author_details,
         a.image as author_image,
         a.author_slug,
         a.label,
         a.linkedin_profile_link,
+        v.image as verifier_image,
+        v.author_details as verifier_details,
+        v.author_slug as verifier_slug,
+        v.label as verifier_label,
         b.thumbnail,
         b.verified,
         b.update_date,
@@ -243,6 +248,9 @@ export class BlogRepository {
       FROM blogs b
       LEFT JOIN blog_categories bc ON b.category_id = bc.id
       LEFT JOIN authors a ON b.author_id = a.id
+      LEFT JOIN authors v
+        ON TRIM(LOWER(v.author_name)) = TRIM(LOWER(b.verifier_name))
+       AND v.tag = 'verifier'
       WHERE b.slug = ?`,
       [slug]
     );
@@ -273,11 +281,16 @@ export class BlogRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
+      verifier_name: row.verifier_name || null,
       author_details: row.author_details || row.author_details,
       author_image: row.author_image,
       author_slug: row.author_slug,
       label: row.label,
       linkedin_profile_link: row.linkedin_profile_link,
+      verifier_image: row.verifier_image || null,
+      verifier_details: row.verifier_details || null,
+      verifier_slug: row.verifier_slug || null,
+      verifier_label: row.verifier_label || null,
       thumbnail: row.thumbnail,
       verified: Boolean(row.verified),
       is_active: Boolean(row.verified),
@@ -305,6 +318,7 @@ export class BlogRepository {
         b.author_id,
         b.title,
         b.short_description,
+        b.verifier_name,
         a.author_name,
         a.author_details,
         a.image as author_image,
@@ -341,6 +355,7 @@ export class BlogRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
+      verifier_name: row.verifier_name || null,
       author_details: row.author_details || row.author_details,
       author_image: row.image || row.author_image,
       author_slug: row.author_slug,
@@ -364,8 +379,8 @@ export class BlogRepository {
     const [result]: any = await pool.query(
       `INSERT INTO blogs (
         category_id, h1_tag, slug, meta_title, meta_description, author_id,
-        title, short_description, author_name, thumbnail, verified, update_date, content, content_1, content_2, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        title, short_description, author_name, verifier_name, thumbnail, verified, update_date, content, content_1, content_2, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.category_id,
         item.h1_tag ?? null,
@@ -376,6 +391,7 @@ export class BlogRepository {
         item.title,
         item.short_description ?? null,
         item.author_name ?? null,
+        item.verifier_name ?? null,
         item.thumbnail ?? null,
         item.verified ? 1 : 0,
         item.update_date ?? null,
@@ -405,6 +421,7 @@ export class BlogRepository {
       "title",
       "short_description",
       "author_name",
+      "verifier_name",
       "author_details",
       "author_image",
       "thumbnail",

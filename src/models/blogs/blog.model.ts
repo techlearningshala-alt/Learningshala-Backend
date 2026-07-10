@@ -9,6 +9,7 @@ export interface Blog {
   title: string;
   short_description: string | null;
   author_name: string | null;
+  verifier_name: string | null;
   author_details: string | null;
   author_image: string | null;
   thumbnail: string | null;
