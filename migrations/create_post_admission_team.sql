@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS post_admission_team (
   experience INT NOT NULL DEFAULT 0,
   verified TINYINT(1) NOT NULL DEFAULT 0,
   assist_student INT NOT NULL DEFAULT 0,
+  qualification VARCHAR(500) DEFAULT NULL,
   connection_link VARCHAR(500) DEFAULT NULL,
   label VARCHAR(255) DEFAULT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

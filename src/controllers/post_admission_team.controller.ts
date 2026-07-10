@@ -8,6 +8,18 @@ import { generateFileName } from "../config/multer";
 
 const S3_FOLDER = "post-admission-team";
 
+const parseAssistStudent = (value: unknown): number => {
+  if (value === "" || value == null || value === undefined) return 0;
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : n;
+};
+
+const parseOptionalString = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+};
+
 export const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -40,10 +52,12 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       name: req.body.name,
       experience: Number(req.body.experience),
       verified: req.body.verified === "true" || req.body.verified === true,
-      assist_student: Number(req.body.assist_student),
-      connection_link: req.body.connection_link,
-      label: req.body.label,
+      assist_student: parseAssistStudent(req.body.assist_student),
+      qualification: parseOptionalString(req.body.qualification),
+      connection_link: parseOptionalString(req.body.connection_link) ?? "",
+      label: parseOptionalString(req.body.label) ?? "",
     };
+
     const validatedData = createPostAdmissionTeamSchema.parse(body);
 
     const result = await addPostAdmissionTeamMember({
@@ -65,8 +79,19 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
     const current = await PostAdmissionTeamService.getPostAdmissionTeamMember(Number(id));
 
-    const updates: any = { ...rest };
+    const updates: Record<string, unknown> = { ...rest };
     updates.verified = Boolean(updates.verified);
+    updates.assist_student = parseAssistStudent(updates.assist_student);
+
+    if (Object.prototype.hasOwnProperty.call(rest, "qualification")) {
+      updates.qualification = parseOptionalString(updates.qualification);
+    }
+    if (Object.prototype.hasOwnProperty.call(rest, "connection_link")) {
+      updates.connection_link = parseOptionalString(updates.connection_link) ?? "";
+    }
+    if (Object.prototype.hasOwnProperty.call(rest, "label")) {
+      updates.label = parseOptionalString(updates.label) ?? "";
+    }
 
     if (req.file) {
       const fileName = generateFileName(req.file.originalname);
@@ -89,7 +114,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 
     const result = await PostAdmissionTeamService.updatePostAdmissionTeamMember(
       Number(id),
-      updates,
+      updates as any,
       saveDateFlag
     );
 

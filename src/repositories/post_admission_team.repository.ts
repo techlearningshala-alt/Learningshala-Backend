@@ -1,6 +1,17 @@
 import pool from "../config/db";
 import { PostAdmissionTeamMember } from "../models/post_admission_team.model";
 
+const UPDATE_KEYS = new Set([
+  "name",
+  "thumbnail",
+  "experience",
+  "verified",
+  "assist_student",
+  "qualification",
+  "connection_link",
+  "label",
+]);
+
 export class PostAdmissionTeamRepository {
   async findAll(limit: number, offset: number): Promise<PostAdmissionTeamMember[]> {
     const [rows] = await pool.query(
@@ -24,20 +35,19 @@ export class PostAdmissionTeamRepository {
   async create(
     item: Omit<PostAdmissionTeamMember, "id" | "created_at" | "updated_at">
   ): Promise<PostAdmissionTeamMember> {
-    const createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     const [result] = await pool.query<any>(
       `INSERT INTO post_admission_team
-      (name, thumbnail, experience, verified, assist_student, connection_link, label, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      (name, thumbnail, experience, verified, assist_student, qualification, connection_link, label, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.name,
         item.thumbnail,
         item.experience,
-        item.verified,
-        item.assist_student,
-        item.connection_link,
-        item.label,
-        createdAt,
+        item.verified ? 1 : 0,
+        item.assist_student ?? 0,
+        item.qualification ?? null,
+        item.connection_link ?? null,
+        item.label ?? null,
       ]
     );
 
@@ -55,7 +65,7 @@ export class PostAdmissionTeamRepository {
     const fields: string[] = [];
     const values: any[] = [];
 
-    const toMySQLDateTime = (val: any) => {
+    const toMySQLDateTime = (val: unknown) => {
       if (typeof val === "string" && val.includes("T")) {
         const date = new Date(val);
         if (!isNaN(date.getTime())) {
@@ -66,8 +76,13 @@ export class PostAdmissionTeamRepository {
     };
 
     for (const [key, value] of Object.entries(item)) {
+      if (!UPDATE_KEYS.has(key)) continue;
       fields.push(`${key} = ?`);
-      values.push(toMySQLDateTime(value));
+      let v: unknown = value;
+      if (key === "verified") v = value ? 1 : 0;
+      if (key === "assist_student" && (value === "" || value == null)) v = 0;
+      if (key === "qualification" && value === "") v = null;
+      values.push(toMySQLDateTime(v));
     }
 
     if (fields.length === 0) return false;
