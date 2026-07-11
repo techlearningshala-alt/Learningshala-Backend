@@ -14,6 +14,10 @@ export const getUploadByFilePath = (filePath: string) => {
 };
 
 export const createUpload = (item: CreateUploadDto) => {
+  const name = item.name?.trim() || "";
+  if (!name) {
+    throw new Error("Name is required");
+  }
   if (!item.file_path || !item.file_path.trim()) {
     throw new Error("File path is required");
   }
@@ -22,7 +26,7 @@ export const createUpload = (item: CreateUploadDto) => {
   }
 
   return uploadRepo.create({
-    name: item.name?.trim() || null,
+    name,
     file_path: item.file_path.trim(),
     file_type: item.file_type,
   });
@@ -32,7 +36,11 @@ export const updateUpload = (id: number, item: UpdateUploadDto) => {
   const updateData: UpdateUploadDto = {};
 
   if (item.name !== undefined) {
-    updateData.name = item.name?.trim() ?? null;
+    const name = item.name?.trim() || "";
+    if (!name) {
+      throw new Error("Name is required");
+    }
+    updateData.name = name;
   }
   if (item.file_path !== undefined) {
     if (!item.file_path || !item.file_path.trim()) {

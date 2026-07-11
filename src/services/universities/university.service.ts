@@ -158,6 +158,7 @@ export const updateUniversity = async (
         university_brochure = ?, 
         author_name = ?, 
         university_type_id = ?,
+        priority = ?,
         is_active = ?, 
         approval_id = ?,
         placement_partner_ids = ?,
@@ -191,6 +192,11 @@ export const updateUniversity = async (
       }
     };
 
+    const priorityValue =
+      updateData.priority !== undefined && updateData.priority !== null && updateData.priority !== ""
+        ? Number(updateData.priority)
+        : existing.priority ?? 999;
+
     const params = [
       updateData.university_name,
       updateData.university_slug,
@@ -201,6 +207,7 @@ export const updateUniversity = async (
       universityBrochure,
       updateData.author_name || null,
       updateData.university_type_id ?? null,
+      Number.isFinite(priorityValue) ? priorityValue : 999,
 
       // ✅ Convert string/boolean to numeric flag
       updateData.is_active === "false" || updateData.is_active === false ? 0 : 1,
@@ -589,6 +596,7 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
       university_name: u.university_name,
       university_slug: u.university_slug,
       university_type_id: u.university_type_id,
+      priority: u.priority !== undefined && u.priority !== null ? Number(u.priority) : 999,
       meta_title: u.meta_title,
       meta_description: u.meta_description,
       university_logo: u.university_logo,

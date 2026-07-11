@@ -68,7 +68,7 @@ export async function searchUniversitiesByCourseSlug(
       WHERE LOWER(uc.compare_page_slug) LIKE LOWER(?)
         AND uc.is_active = 1
         AND u.is_active = 1
-      ORDER BY u.university_name ASC, uc.id ASC`,
+      ORDER BY u.priority ASC, u.id ASC, uc.id ASC`,
       [courseSlug.trim()]
     );
 
@@ -346,7 +346,7 @@ export async function searchUniversitiesBySpecializationSlug(
         AND ucs.is_active = 1
         AND uc.is_active = 1
         AND u.is_active = 1
-      ORDER BY u.university_name ASC, ucs.id ASC`,
+      ORDER BY u.priority ASC, u.id ASC, ucs.id ASC`,
       [courseSlug.trim(), specializationSlug.trim()]
     );
 

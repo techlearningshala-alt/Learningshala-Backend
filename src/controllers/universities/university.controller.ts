@@ -47,6 +47,9 @@ export const create = async (req: Request, res: Response) => {
 
     body.university_slug = slugify(body.university_slug, { lower: true, strict: true });
     body.is_active = Boolean(body.is_active);
+    if (body.priority !== undefined && body.priority !== null && body.priority !== "") {
+      body.priority = Number(body.priority);
+    }
 
     // ✅ Parse banners & sections safely
     const banners = body.banners ? JSON.parse(body.banners) : [];
@@ -314,6 +317,9 @@ console.log(files,"filesbefore")
     }
 
     body.university_slug = slugify(body.university_slug, { lower: true, strict: true });
+    if (body.priority !== undefined && body.priority !== null && body.priority !== "") {
+      body.priority = Number(body.priority);
+    }
     // ✅ Validate and prepare update
     const validated: any =({
       ...body,

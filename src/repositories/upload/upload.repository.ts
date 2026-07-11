@@ -14,7 +14,9 @@ export class UploadRepository {
     const offset = (page - 1) * limit;
 
     const [rows]: any = await pool.query(
-      `SELECT SQL_CALC_FOUND_ROWS * FROM uploads ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT SQL_CALC_FOUND_ROWS * FROM uploads
+       WHERE name IS NOT NULL AND TRIM(name) <> ''
+       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [limit, offset]
     );
 

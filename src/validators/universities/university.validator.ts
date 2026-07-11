@@ -40,6 +40,7 @@ export const createUniversitySchema = z.object({
     .optional(),
   author_name: z.string().optional(),
   university_type_id: z.number().int().positive().optional().nullable(),
+  priority: z.coerce.number().int().min(1, "Priority must be at least 1").optional(),
   is_active: z
     .union([z.string(), z.boolean()])
     .transform((val) => val === "true" || val === true)

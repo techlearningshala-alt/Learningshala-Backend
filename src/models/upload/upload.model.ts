@@ -12,13 +12,13 @@ export interface Upload {
 }
 
 export interface CreateUploadDto {
-  name?: string | null;
+  name: string;
   file_path: string;
   file_type: "image" | "pdf" | "video";
 }
 
 export interface UpdateUploadDto {
-  name?: string | null;
+  name?: string;
   file_path?: string;
   file_type?: "image" | "pdf" | "video";
 }

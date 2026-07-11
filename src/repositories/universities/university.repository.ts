@@ -5,9 +5,9 @@ export const UniversityRepo = {
   async createUniversity(universityData: any) {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
-       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
+       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, priority, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
         university_tag_line, establishment_year, emi_provides, university_features, education_mode, admission_mode, examination_mode, scholarship_provides, alumni_status, online_classes, placement_assistance, why_choose, compare_information)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -18,6 +18,9 @@ export const UniversityRepo = {
         universityData.university_brochure || null,
         universityData.author_name || null,
         universityData.university_type_id ?? null,
+        universityData.priority !== undefined && universityData.priority !== null && universityData.priority !== ""
+          ? Number(universityData.priority)
+          : 999,
         universityData.is_active ?? true,
         universityData.is_page_created !== undefined ? (universityData.is_page_created ? 1 : 0) : 1,
         universityData.menu_visibility !== undefined ? (universityData.menu_visibility ? 1 : 0) : 1,
@@ -118,6 +121,7 @@ export const UniversityRepo = {
         u.updated_at,
         u.created_at,
         u.university_type_id,
+        u.priority,
         ut.name AS university_type,
         COALESCE(COUNT(DISTINCT uc.id), 0) AS course_count,
         COALESCE(COUNT(DISTINCT ucs.id), 0) AS specialization_count
@@ -126,8 +130,8 @@ export const UniversityRepo = {
        LEFT JOIN university_courses uc ON u.id = uc.university_id
        LEFT JOIN university_course_specialization ucs ON uc.id = ucs.university_course_id
        WHERE u.is_active = 1
-       GROUP BY u.id, u.university_slug, u.university_name, u.university_logo, u.is_page_created, u.menu_visibility, u.is_active, u.university_type_id, ut.name
-       ORDER BY u.id ASC`
+       GROUP BY u.id, u.university_slug, u.university_name, u.university_logo, u.is_page_created, u.menu_visibility, u.is_active, u.university_type_id, u.priority, ut.name
+       ORDER BY u.priority ASC, u.id ASC`
     );
     universities.forEach((item: any) => {
       item.is_active = Boolean(item.is_active);
