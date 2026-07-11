@@ -41,6 +41,35 @@ const getAuthorSummaryByName = async (authorName?: string | null) => {
   };
 };
 
+const getVerifierSummaryByName = async (verifierName?: string | null) => {
+  const normalizedName = String(verifierName || "").trim();
+  if (!normalizedName) {
+    return {
+      verifier_image: null,
+      verifier_details: null,
+      verifier_slug: null,
+      verifier_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+       AND tag = 'verifier'
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const verifier = rows?.[0] || {};
+  return {
+    verifier_image: verifier.image || null,
+    verifier_details: verifier.author_details || null,
+    verifier_slug: verifier.author_slug || null,
+    verifier_label: verifier.label || null,
+  };
+};
+
 function generateSectionKey(title: string): string {
   return String(title || "")
     .trim()
@@ -286,6 +315,10 @@ export const getSpecializationByCourseSlugAndSpecializationSlug = async (
   Object.assign(
     specialization as any,
     await getAuthorSummaryByName((specialization as any).author_name)
+  );
+  Object.assign(
+    specialization as any,
+    await getVerifierSummaryByName((specialization as any).verifier_name)
   );
 
   return specialization;

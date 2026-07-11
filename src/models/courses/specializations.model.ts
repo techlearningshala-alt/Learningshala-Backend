@@ -15,6 +15,7 @@ export interface Specialization {
   eligibility_info?: string | null; // Eligibility with info button
   upload_brochure?: string | null;
   author_name?: string | null;
+  verifier_name?: string | null;
   learning_mode?: string | null;
   podcast_embed?: string | null;
   emi_facility?: boolean | null;

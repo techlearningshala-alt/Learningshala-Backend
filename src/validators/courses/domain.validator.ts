@@ -53,6 +53,7 @@ export const createSpecializationSchema = z.object({
   eligibility_info: z.string().optional().nullable(),
   upload_brochure: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
+  verifier_name: z.string().optional().nullable(),
   learning_mode: z.string().optional().nullable(),
   podcast_embed: z.string().optional().nullable(),
   emi_facility: z.boolean().optional().nullable(),

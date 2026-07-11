@@ -118,8 +118,8 @@ export default class SpecializationRepo {
 
     const [result]: any = await executor.query(
       `INSERT INTO specializations 
-        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_facility)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (course_id, name, slug, h1Tag, meta_title, meta_description, label, thumbnail, description, course_duration, duration_for_schema, eligibility, eligibility_info, upload_brochure, author_name, verifier_name, learning_mode, podcast_embed, priority, menu_visibility, is_active, placement_partner_ids, emi_facility)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.course_id,
         item.name,
@@ -136,6 +136,7 @@ export default class SpecializationRepo {
         item.eligibility_info ?? null,
         item.upload_brochure ?? null,
         item.author_name ?? null,
+        item.verifier_name ?? null,
         item.learning_mode ?? null,
         item.podcast_embed ?? null,
         item.priority ?? 0,
@@ -168,6 +169,7 @@ export default class SpecializationRepo {
     if (item.eligibility_info !== undefined) { fields.push("eligibility_info = ?"); values.push(item.eligibility_info ?? null); }
     if (item.upload_brochure !== undefined) { fields.push("upload_brochure = ?"); values.push(item.upload_brochure ?? null); }
     if (item.author_name !== undefined) { fields.push("author_name = ?"); values.push(item.author_name ?? null); }
+    if (item.verifier_name !== undefined) { fields.push("verifier_name = ?"); values.push(item.verifier_name ?? null); }
     if (item.emi_facility !== undefined) { fields.push("emi_facility = ?"); values.push(item.emi_facility === null ? 0 : (item.emi_facility ? 1 : 0)); }
     if (item.learning_mode !== undefined) { fields.push("learning_mode = ?"); values.push(item.learning_mode ?? null); }
     if (item.podcast_embed !== undefined) { fields.push("podcast_embed = ?"); values.push(item.podcast_embed ?? null); }

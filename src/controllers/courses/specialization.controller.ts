@@ -161,6 +161,7 @@ const normalizeSpecializationPayload = (body: any) => {
     course_duration: durationValue ?? null,
     upload_brochure: body.upload_brochure ?? null,
     author_name: body.author_name ?? null,
+    verifier_name: body.verifier_name ?? null,
     learning_mode: body.learning_mode ?? null,
     podcast_embed: body.podcast_embed ?? null,
     priority: priority ?? 0,

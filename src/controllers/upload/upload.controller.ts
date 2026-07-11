@@ -95,10 +95,7 @@ export const create = async (req: Request, res: Response) => {
       return errorResponse(res, "File is required", 400);
     }
 
-    const name = (req.body.name as string)?.trim() || "";
-    if (!name) {
-      return errorResponse(res, "Name is required", 400);
-    }
+    const name = (req.body.name as string)?.trim() || null;
     const fileType = (req.body.file_type as string)?.toLowerCase() === "pdf" ? "pdf" : "image";
 
     const folder = "uploads";
@@ -131,14 +128,10 @@ export const update = async (req: Request, res: Response) => {
     const files = normalizeFilesArray(req.files);
     const file = files.find((f) => f.fieldname === "file");
 
-    const updateData: { name?: string; file_path?: string; file_type?: "image" | "pdf" | "video" } = {};
+    const updateData: { name?: string | null; file_path?: string; file_type?: "image" | "pdf" | "video" } = {};
 
     if (req.body.name !== undefined) {
-      const name = (req.body.name as string)?.trim() || "";
-      if (!name) {
-        return errorResponse(res, "Name is required", 400);
-      }
-      updateData.name = name;
+      updateData.name = (req.body.name as string)?.trim() || null;
     }
 
     if (req.body.file_type !== undefined) {
