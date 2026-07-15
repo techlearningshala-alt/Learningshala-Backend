@@ -98,7 +98,12 @@ export const getAll = async (req: Request, res: Response) => {
       typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
     const toDate =
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
-    const data = await listWebsiteLeads(page, limit, { search, fromDate, toDate });
+    const trafficTypeRaw =
+      typeof req.query.trafficType === "string" ? req.query.trafficType.trim().toLowerCase() : "";
+    const trafficType = ["paid", "organic", "referral"].includes(trafficTypeRaw)
+      ? trafficTypeRaw
+      : undefined;
+    const data = await listWebsiteLeads(page, limit, { search, fromDate, toDate, trafficType });
     return successResponse(res, data, "Website leads fetched successfully");
   } catch (error: any) {
     console.error("❌ Error fetching website leads:", error);
@@ -180,9 +185,14 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
     const toDate =
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
+    const trafficTypeRaw =
+      typeof req.query.trafficType === "string" ? req.query.trafficType.trim().toLowerCase() : "";
+    const trafficType = ["paid", "organic", "referral"].includes(trafficTypeRaw)
+      ? trafficTypeRaw
+      : undefined;
 
     // Fetch all website leads with filters
-    const data = await listWebsiteLeads(1, 100000, { search, fromDate, toDate });
+    const data = await listWebsiteLeads(1, 100000, { search, fromDate, toDate, trafficType });
     const leads = data.data || [];
 
     // Define Excel columns
@@ -196,6 +206,7 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       { key: "city", header: "City", width: 15 },
       { key: "lead_source", header: "Lead Source", width: 15 },
       { key: "sub_source", header: "Sub Source", width: 15 },
+      { key: "traffic_type", header: "Traffic Type", width: 12 },
       { key: "utm_source", header: "UTM Source", width: 15 },
       { key: "utm_campaign", header: "UTM Campaign", width: 15 },
       { key: "utm_adgroup", header: "UTM Ad Group", width: 15 },

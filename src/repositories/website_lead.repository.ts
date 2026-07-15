@@ -5,6 +5,7 @@ export interface ListWebsiteLeadOptions {
   search?: string;
   fromDate?: string;
   toDate?: string;
+  trafficType?: string;
 }
 
 export const WebsiteLeadRepository = {
@@ -31,6 +32,11 @@ export const WebsiteLeadRepository = {
       params.push(options.toDate);
     }
 
+    if (options.trafficType) {
+      where.push("traffic_type = ?");
+      params.push(options.trafficType);
+    }
+
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await pool.query(
@@ -52,6 +58,7 @@ export const WebsiteLeadRepository = {
         website_url,
         click_source,
         lead_url,
+        traffic_type,
         interested_university,
         questions,
         university,
@@ -86,9 +93,9 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url, otp, click_source, lead_url, interested_university, questions, university
+        website_url, otp, click_source, lead_url, traffic_type, interested_university, questions, university
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const params = [
@@ -109,6 +116,7 @@ export const WebsiteLeadRepository = {
       payload.otp ?? "123456",
       payload.click_source ?? null,
       payload.lead_url ?? null,
+      payload.traffic_type ?? "organic",
       payload.interested_university ?? null,
       payload.questions ?? null,
       payload.university ?? null,
@@ -160,6 +168,7 @@ export const WebsiteLeadRepository = {
         website_url,
         click_source,
         lead_url,
+        traffic_type,
         interested_university,
         questions,
         university,

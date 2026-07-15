@@ -1,5 +1,6 @@
 import { WebsiteLead } from "../models/website_lead.model";
 import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/website_lead.repository";
+import { deriveTrafficTypeFromLeadUrl } from "../utills/traffic-type";
 
 const normalizeString = (val?: string | null) =>
   typeof val === "string" ? val.trim() || null : val ?? null;
@@ -253,6 +254,7 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     otp: otpValue,
     click_source: payload.click_source,
     lead_url: payload.lead_url,
+    traffic_type: deriveTrafficTypeFromLeadUrl(payload.lead_url),
     interested_university: normalizeInterestedUniversities(payload.interested_university),
     questions: normalizeQuestions(payload.questions),
     university: normalizeString(payload.university),

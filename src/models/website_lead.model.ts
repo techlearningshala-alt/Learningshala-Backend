@@ -21,6 +21,7 @@ export interface WebsiteLead {
   otp?: string | null;
   click_source?: string | null;
   lead_url?: string | null;
+  traffic_type?: "paid" | "organic" | "referral" | string | null;
   interested_university?: string | string[] | null;
   questions?: unknown | string | null;
   university?: string | null;
