@@ -8,6 +8,7 @@ import {
 interface ListCourseFilters {
   universityId?: number;
   search?: string;
+  is_page_created?: boolean;
 }
 
 export class UniversityCourseRepository {
@@ -24,6 +25,11 @@ export class UniversityCourseRepository {
     if (filters.search) {
       where.push("(uc.name LIKE ? OR uc.slug LIKE ?)");
       params.push(`%${filters.search}%`, `%${filters.search}%`);
+    }
+
+    if (filters.is_page_created === true || filters.is_page_created === false) {
+      where.push("uc.is_page_created = ?");
+      params.push(filters.is_page_created ? 1 : 0);
     }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";

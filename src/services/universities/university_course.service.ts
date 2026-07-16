@@ -13,6 +13,7 @@ import UniversityCourseSectionService, { generateSectionKey } from "./university
 interface ListCourseOptions {
   universityId?: number;
   search?: string;
+  is_page_created?: boolean;
 }
 
 const getAuthorSummaryByName = async (authorName?: string | null) => {
