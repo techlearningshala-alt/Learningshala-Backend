@@ -15,6 +15,46 @@ const parseCompareInformation = (raw: any): Record<string, any> => {
   }
 };
 
+/** Resolve author/verifier profile fields; COLLATE avoids utf8mb4_unicode_ci vs general_ci mix errors. */
+const getAuthorSummaryByName = async (authorName?: string | null) => {
+  const normalizedName = String(authorName || "").trim();
+  if (!normalizedName) {
+    return {
+      author_image: null,
+      author_details: null,
+      author_slug: null,
+      author_label: null,
+    };
+  }
+
+  const [rows]: any = await pool.query(
+    `SELECT image, author_details, author_slug, label
+     FROM authors
+     WHERE TRIM(LOWER(author_name)) COLLATE utf8mb4_unicode_ci
+       = TRIM(LOWER(?)) COLLATE utf8mb4_unicode_ci
+     LIMIT 1`,
+    [normalizedName]
+  );
+
+  const author = rows?.[0] || {};
+  return {
+    author_image: author.image || null,
+    author_details: author.author_details || null,
+    author_slug: author.author_slug || null,
+    author_label: author.label || null,
+  };
+};
+
+const getVerifierSummaryByName = async (verifierName?: string | null) => {
+  const summary = await getAuthorSummaryByName(verifierName);
+  return {
+    verifier_image: summary.author_image,
+    verifier_details: summary.author_details,
+    verifier_slug: summary.author_slug,
+    verifier_label: summary.author_label,
+  };
+};
+
 export const UniversityService = {
   async addUniversity(body: any, banners: any[] = [], sections: any[] = []) {
     const conn = await pool.getConnection();
@@ -157,6 +197,7 @@ export const updateUniversity = async (
         university_location = ?, 
         university_brochure = ?, 
         author_name = ?, 
+        verifier_name = ?,
         university_type_id = ?,
         priority = ?,
         is_active = ?, 
@@ -206,6 +247,9 @@ export const updateUniversity = async (
       updateData.university_location || null,
       universityBrochure,
       updateData.author_name || null,
+      updateData.verifier_name !== undefined
+        ? updateData.verifier_name || null
+        : existing.verifier_name || null,
       updateData.university_type_id ?? null,
       Number.isFinite(priorityValue) ? priorityValue : 999,
 
@@ -391,7 +435,13 @@ export const updateUniversity = async (
   }
 };
 
-export const getAllUniversities = async (page = 1, limit = 10, university_type_id?: number, search?: string) => {
+export const getAllUniversities = async (
+  page = 1,
+  limit = 10,
+  university_type_id?: number,
+  search?: string,
+  is_page_created?: boolean
+) => {
   const offset = (page - 1) * limit;
 
   // 1️⃣ Fetch universities with latest first
@@ -412,6 +462,12 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
   if (search && search.trim()) {
     conditions.push(`university_name LIKE ?`);
     queryParams.push(`%${search.trim()}%`);
+  }
+
+  // Page Live filter
+  if (is_page_created !== undefined) {
+    conditions.push(`is_page_created = ?`);
+    queryParams.push(is_page_created ? 1 : 0);
   }
 
   // Add WHERE clause if there are any conditions
@@ -623,6 +679,7 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
           ? false
           : Boolean(u.compare),
       author_name: u.author_name,
+      verifier_name: u.verifier_name ?? null,
       created_at: u.created_at,
       updated_at: u.updated_at,
       approval_id: u.approval_id, // Keep for admin frontend
@@ -695,6 +752,11 @@ export const getAllUniversities = async (page = 1, limit = 10, university_type_i
   if (search && search.trim()) {
     countConditions.push(`university_name LIKE ?`);
     countParams.push(`%${search.trim()}%`);
+  }
+
+  if (is_page_created !== undefined) {
+    countConditions.push(`is_page_created = ?`);
+    countParams.push(is_page_created ? 1 : 0);
   }
   
   if (countConditions.length > 0) {
@@ -873,6 +935,9 @@ export const getUniversityById = async (id: number) => {
     universityData.why_choose = [];
   }
 
+  Object.assign(universityData, await getAuthorSummaryByName(universityData.author_name));
+  Object.assign(universityData, await getVerifierSummaryByName(universityData.verifier_name));
+
   // For admin, return plain object with sections as ARRAY (sections_array),
   // plus flattened sections object for optional uses.
   return {
@@ -892,10 +957,20 @@ export const getUniversityBySlug = async (slug: string) => {
       a.image AS author_image,
       a.author_details AS author_details,
       a.author_slug AS author_slug,
-      a.label AS author_label
+      a.label AS author_label,
+      v.image AS verifier_image,
+      v.author_details AS verifier_details,
+      v.author_slug AS verifier_slug,
+      v.label AS verifier_label
     FROM universities u
     LEFT JOIN university_types ut ON u.university_type_id = ut.id
-    LEFT JOIN authors a ON TRIM(LOWER(a.author_name)) = TRIM(LOWER(u.author_name))
+    LEFT JOIN authors a
+      ON TRIM(LOWER(a.author_name)) COLLATE utf8mb4_unicode_ci
+       = TRIM(LOWER(u.author_name)) COLLATE utf8mb4_unicode_ci
+    LEFT JOIN authors v
+      ON u.verifier_name IS NOT NULL
+      AND TRIM(LOWER(v.author_name)) COLLATE utf8mb4_unicode_ci
+        = TRIM(LOWER(u.verifier_name)) COLLATE utf8mb4_unicode_ci
     WHERE u.university_slug = ?`,
     [slug]
   );

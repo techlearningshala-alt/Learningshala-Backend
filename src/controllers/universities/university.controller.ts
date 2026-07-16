@@ -372,7 +372,23 @@ export const findAll = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const university_type_id = req.query.university_type_id ? parseInt(req.query.university_type_id as string) : undefined;
     const search = req.query.search as string | undefined;
-    const result = await UniversityService.getAllUniversities(page, limit, university_type_id, search);
+    const pageCreatedRaw =
+      typeof req.query.is_page_created === "string"
+        ? req.query.is_page_created.trim().toLowerCase()
+        : "";
+    const is_page_created =
+      pageCreatedRaw === "true" || pageCreatedRaw === "1"
+        ? true
+        : pageCreatedRaw === "false" || pageCreatedRaw === "0"
+          ? false
+          : undefined;
+    const result = await UniversityService.getAllUniversities(
+      page,
+      limit,
+      university_type_id,
+      search,
+      is_page_created
+    );
     return successResponse(res, result, "Universities fetched successfully");
   } catch (err: any) {
     return errorResponse(res, err.message || "Failed to fetch universities", 400);

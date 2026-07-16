@@ -31,7 +31,8 @@ const getAuthorSummaryByName = async (authorName?: string | null) => {
   const [rows]: any = await pool.query(
     `SELECT image, author_details, author_slug, label
      FROM authors
-     WHERE TRIM(LOWER(author_name)) = TRIM(LOWER(?))
+     WHERE TRIM(LOWER(author_name)) COLLATE utf8mb4_unicode_ci
+       = TRIM(LOWER(?)) COLLATE utf8mb4_unicode_ci
      LIMIT 1`,
     [normalizedName]
   );
@@ -42,6 +43,16 @@ const getAuthorSummaryByName = async (authorName?: string | null) => {
     author_details: author.author_details || null,
     author_slug: author.author_slug || null,
     author_label: author.label || null,
+  };
+};
+
+const getVerifierSummaryByName = async (verifierName?: string | null) => {
+  const summary = await getAuthorSummaryByName(verifierName);
+  return {
+    verifier_image: summary.author_image,
+    verifier_details: summary.author_details,
+    verifier_slug: summary.author_slug,
+    verifier_label: summary.author_label,
   };
 };
 
@@ -91,6 +102,7 @@ const normaliseSpecializationPayload = (payload: any): CreateUniversityCourseSpe
     label: payload.label ?? null,
     course_thumbnail: payload.course_thumbnail ?? null,
     author_name: payload.author_name ?? null,
+    verifier_name: payload.verifier_name ?? null,
     is_active: toBoolean(payload.is_active) ?? true,
     compare: toBoolean(payload.compare) ?? false,
     syllabus_file: payload.syllabus_file ?? null,
@@ -323,11 +335,12 @@ export async function getUniversityCourseSpecializationByCourseSlugAndSpecializa
   courseSlug: string,
   specializationSlug: string
 ) {
-  // First, get the university by slug to find its ID
-  const { getUniversityBySlug } = await import("./university.service");
-  const university = await getUniversityBySlug(universitySlug);
-  
-  if (!university || !university.data?.id) {
+  // Only need university id here — avoid loading full university (author/verifier joins).
+  const [universityRows]: any = await pool.query(
+    `SELECT id FROM universities WHERE university_slug = ? LIMIT 1`,
+    [universitySlug]
+  );
+  if (!universityRows.length) {
     return null;
   }
 
@@ -357,6 +370,10 @@ export async function getUniversityCourseSpecializationByCourseSlugAndSpecializa
   Object.assign(
     specialization as any,
     await getAuthorSummaryByName((specialization as any).author_name)
+  );
+  Object.assign(
+    specialization as any,
+    await getVerifierSummaryByName((specialization as any).verifier_name)
   );
   const lookup = await buildFeeTypeLookup();
   return enrichSpecializationFeeTypeValues(specialization, lookup);
@@ -500,6 +517,9 @@ export async function updateUniversityCourseSpecialization(
     }
     if (payload.author_name !== undefined) {
       normalized.author_name = payload.author_name ?? null;
+    }
+    if (payload.verifier_name !== undefined) {
+      normalized.verifier_name = payload.verifier_name ?? null;
     }
     if (payload.is_active !== undefined) {
       const boolValue = toBoolean(payload.is_active);

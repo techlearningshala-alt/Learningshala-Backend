@@ -50,6 +50,11 @@ export class NewsRepository {
         n.title,
         n.short_description,
         a.author_name,
+        n.verifier_name,
+        v.image as verifier_image,
+        v.author_details as verifier_details,
+        v.author_slug as verifier_slug,
+        v.label as verifier_label,
         a.author_details,
         a.image ,
         n.author_image,
@@ -64,6 +69,9 @@ export class NewsRepository {
       FROM news n
       LEFT JOIN news_categories nc ON n.category_id = nc.id
       LEFT JOIN authors a ON n.author_id = a.id
+      LEFT JOIN authors v ON n.verifier_name IS NOT NULL
+        AND TRIM(LOWER(v.author_name)) COLLATE utf8mb4_unicode_ci
+          = TRIM(LOWER(n.verifier_name)) COLLATE utf8mb4_unicode_ci
       ${whereClause}
       ORDER BY n.id DESC
       LIMIT ? OFFSET ?`,
@@ -81,6 +89,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
+      verifier_name: row.verifier_name ?? null,
+      verifier_image: row.verifier_image ?? null,
+      verifier_details: row.verifier_details ?? null,
+      verifier_slug: row.verifier_slug ?? null,
+      verifier_label: row.verifier_label ?? null,
       author_details: row.author_details || row.author_details,
       author_image: row.image,
       thumbnail: row.thumbnail,
@@ -144,6 +157,11 @@ export class NewsRepository {
         n.title,
         n.short_description,
         a.author_name,
+        n.verifier_name,
+        v.image as verifier_image,
+        v.author_details as verifier_details,
+        v.author_slug as verifier_slug,
+        v.label as verifier_label,
         a.author_details,
         a.image as author_image,
         n.thumbnail,
@@ -157,7 +175,10 @@ export class NewsRepository {
         nc.category_summary as category_summary
       FROM news n
       INNER JOIN news_categories nc ON n.category_id = nc.id
-      LEFT JOIN authors a ON n.author_id = a.id 
+      LEFT JOIN authors a ON n.author_id = a.id
+      LEFT JOIN authors v ON n.verifier_name IS NOT NULL
+        AND TRIM(LOWER(v.author_name)) COLLATE utf8mb4_unicode_ci
+          = TRIM(LOWER(n.verifier_name)) COLLATE utf8mb4_unicode_ci
       ${whereClause}
       ORDER BY n.id DESC
       LIMIT ? OFFSET ?`,
@@ -175,6 +196,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
+      verifier_name: row.verifier_name ?? null,
+      verifier_image: row.verifier_image ?? null,
+      verifier_details: row.verifier_details ?? null,
+      verifier_slug: row.verifier_slug ?? null,
+      verifier_label: row.verifier_label ?? null,
       author_details: row.author_details || row.author_details,
       author_image: row.image || row.author_image,
       thumbnail: row.thumbnail,
@@ -210,6 +236,11 @@ export class NewsRepository {
         n.title,
         n.short_description,
         a.author_name,
+        n.verifier_name,
+        v.image as verifier_image,
+        v.author_details as verifier_details,
+        v.author_slug as verifier_slug,
+        v.label as verifier_label,
         a.author_details,
         a.image as author_image,
         a.author_slug,
@@ -225,6 +256,9 @@ export class NewsRepository {
       FROM news n
       LEFT JOIN news_categories nc ON n.category_id = nc.id
       LEFT JOIN authors a ON n.author_id = a.id
+      LEFT JOIN authors v ON n.verifier_name IS NOT NULL
+        AND TRIM(LOWER(v.author_name)) COLLATE utf8mb4_unicode_ci
+          = TRIM(LOWER(n.verifier_name)) COLLATE utf8mb4_unicode_ci
       WHERE n.slug = ?`,
       [slug]
     );
@@ -254,6 +288,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
+      verifier_name: row.verifier_name ?? null,
+      verifier_image: row.verifier_image ?? null,
+      verifier_details: row.verifier_details ?? null,
+      verifier_slug: row.verifier_slug ?? null,
+      verifier_label: row.verifier_label ?? null,
       author_details: row.author_details || row.author_details,
       author_image: row.author_image,
       author_slug: row.author_slug,
@@ -284,6 +323,11 @@ export class NewsRepository {
         n.title,
         n.short_description,
         a.author_name,
+        n.verifier_name,
+        v.image as verifier_image,
+        v.author_details as verifier_details,
+        v.author_slug as verifier_slug,
+        v.label as verifier_label,
         a.author_details,
         a.image as author_image,
         a.author_slug,
@@ -299,6 +343,9 @@ export class NewsRepository {
       FROM news n
       LEFT JOIN news_categories nc ON n.category_id = nc.id
       LEFT JOIN authors a ON n.author_id = a.id
+      LEFT JOIN authors v ON n.verifier_name IS NOT NULL
+        AND TRIM(LOWER(v.author_name)) COLLATE utf8mb4_unicode_ci
+          = TRIM(LOWER(n.verifier_name)) COLLATE utf8mb4_unicode_ci
       WHERE n.id = ?`,
       [id]
     );
@@ -316,6 +363,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
+      verifier_name: row.verifier_name ?? null,
+      verifier_image: row.verifier_image ?? null,
+      verifier_details: row.verifier_details ?? null,
+      verifier_slug: row.verifier_slug ?? null,
+      verifier_label: row.verifier_label ?? null,
       author_details: row.author_details || row.author_details,
       author_image: row.image || row.author_image,
       author_slug: row.author_slug,
@@ -336,8 +388,8 @@ export class NewsRepository {
     const [result]: any = await pool.query(
       `INSERT INTO news (
         category_id, h1_tag, slug, meta_title, meta_description, author_id,
-        title, short_description, author_name, thumbnail, verified, update_date, content, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,NOW(), NOW())`,
+        title, short_description, author_name, verifier_name, thumbnail, verified, update_date, content, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         item.category_id,
         item.h1_tag ?? null,
@@ -348,6 +400,7 @@ export class NewsRepository {
         item.title,
         item.short_description ?? null,
         item.author_name ?? null,
+        item.verifier_name ?? null,
         item.thumbnail ?? null,
         item.verified ? 1 : 0,
         item.update_date ?? null,
@@ -375,6 +428,7 @@ export class NewsRepository {
       "title",
       "short_description",
       "author_name",
+      "verifier_name",
       "author_details",
       "author_image",
       "thumbnail",

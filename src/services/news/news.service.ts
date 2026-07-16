@@ -30,6 +30,7 @@ export class NewsService {
     title: string;
     short_description?: string | null;
     author_name?: string | null;
+    verifier_name?: string | null;
     author_details?: string | null;
     author_image?: string | null;
     thumbnail?: string | null;
@@ -61,6 +62,7 @@ export class NewsService {
       title: data.title,
       short_description: data.short_description ?? null,
       author_name: data.author_name ?? null,
+      verifier_name: data.verifier_name ?? null,
       author_details: data.author_details ?? null,
       author_image: data.author_image ?? null,
       thumbnail: data.thumbnail ?? null,
@@ -82,6 +84,7 @@ export class NewsService {
       title: string;
       short_description: string | null;
       author_name: string | null;
+      verifier_name: string | null;
       author_details: string | null;
       author_image: string | null;
       thumbnail: string | null;

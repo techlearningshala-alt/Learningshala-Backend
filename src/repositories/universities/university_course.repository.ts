@@ -106,8 +106,8 @@ export class UniversityCourseRepository {
   async create(payload: CreateUniversityCourseDto) {
     const [result]: any = await pool.query(
       `INSERT INTO university_courses
-        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, scholarship_provides, why_choose, compare_information)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (university_id, name, slug, h1Tag, meta_title, meta_description, compare_page_slug, duration, emi_duration, duration_for_schema, eligibility, eligibility_info, label, course_thumbnail, author_name, verifier_name, is_active, is_page_created, \`compare\`, syllabus_file, brochure_file, fee_type_values, fees_note, credit_points, scholarship_provides, why_choose, compare_information)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.university_id,
         payload.name,
@@ -124,6 +124,7 @@ export class UniversityCourseRepository {
         payload.label ?? null,
         payload.course_thumbnail ?? null,
         payload.author_name ?? null,
+        payload.verifier_name ?? null,
         payload.is_active !== undefined ? (payload.is_active ? 1 : 0) : 1,
         payload.is_page_created !== undefined ? (payload.is_page_created ? 1 : 0) : 1,
         payload.compare !== undefined ? (payload.compare ? 1 : 0) : 0,
@@ -206,6 +207,10 @@ export class UniversityCourseRepository {
     if (payload.author_name !== undefined) {
       fields.push("author_name = ?");
       values.push(payload.author_name ?? null);
+    }
+    if (payload.verifier_name !== undefined) {
+      fields.push("verifier_name = ?");
+      values.push(payload.verifier_name ?? null);
     }
     if (payload.is_active !== undefined) {
       fields.push("is_active = ?");

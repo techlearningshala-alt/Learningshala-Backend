@@ -53,6 +53,7 @@ export interface DashboardData {
     yesterday: number;
     thisMonth: number;
     total: number;
+    organic: number;
   };
 }
 
@@ -403,7 +404,7 @@ export class DashboardService {
   }
 
   /**
-   * Get website leads overview (today, yesterday, current month, total)
+   * Get website leads overview (today, yesterday, current month, total, organic)
    */
   static async getWebsiteLeadsOverview() {
     try {
@@ -424,6 +425,7 @@ export class DashboardService {
         [yesterdayRows],
         [monthRows],
         [totalRows],
+        [organicRows],
       ]: any = await Promise.all([
         pool.query(
           `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
@@ -438,6 +440,9 @@ export class DashboardService {
           [monthStartStr]
         ),
         pool.query(`SELECT COUNT(*) as count FROM website_leads`),
+        pool.query(
+          `SELECT COUNT(*) as count FROM website_leads WHERE traffic_type = 'organic' OR traffic_type IS NULL OR traffic_type = ''`
+        ),
       ]);
 
       return {
@@ -445,6 +450,7 @@ export class DashboardService {
         yesterday: (yesterdayRows as any[])[0]?.count || 0,
         thisMonth: (monthRows as any[])[0]?.count || 0,
         total: (totalRows as any[])[0]?.count || 0,
+        organic: (organicRows as any[])[0]?.count || 0,
       };
     } catch (error) {
       console.error("❌ Error fetching website leads overview:", error);

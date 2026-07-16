@@ -5,9 +5,9 @@ export const UniversityRepo = {
   async createUniversity(universityData: any) {
     const [result]: any = await pool.query(
       `INSERT INTO universities 
-       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, university_type_id, priority, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
+       (university_name, university_slug, meta_title, meta_description, university_logo, university_location, university_brochure, author_name, verifier_name, university_type_id, priority, is_active, is_page_created, menu_visibility, \`compare\`, approval_id, placement_partner_ids, emi_partner_ids,
         university_tag_line, establishment_year, emi_provides, university_features, education_mode, admission_mode, examination_mode, scholarship_provides, alumni_status, online_classes, placement_assistance, why_choose, compare_information)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         universityData.university_name,
         universityData.university_slug,
@@ -17,6 +17,7 @@ export const UniversityRepo = {
         universityData.university_location || null,
         universityData.university_brochure || null,
         universityData.author_name || null,
+        universityData.verifier_name || null,
         universityData.university_type_id ?? null,
         universityData.priority !== undefined && universityData.priority !== null && universityData.priority !== ""
           ? Number(universityData.priority)

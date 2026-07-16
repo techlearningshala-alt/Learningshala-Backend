@@ -9,6 +9,11 @@ export interface News {
   title: string;
   short_description: string | null;
   author_name: string | null;
+  verifier_name?: string | null;
+  verifier_image?: string | null;
+  verifier_details?: string | null;
+  verifier_slug?: string | null;
+  verifier_label?: string | null;
   author_details: string | null;
   author_image: string | null;
   author_slug?: string | null;

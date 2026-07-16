@@ -23,6 +23,7 @@ export const createUniversityCourseSchema = z.object({
   label: z.string().optional(),
   course_thumbnail: z.string().optional(),
   author_name: z.string().optional(),
+  verifier_name: z.string().max(255).optional().nullable(),
   is_active: z
     .union([z.string(), z.boolean(), z.number()])
     .optional(),

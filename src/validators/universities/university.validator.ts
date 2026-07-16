@@ -39,6 +39,7 @@ export const createUniversitySchema = z.object({
     ])
     .optional(),
   author_name: z.string().optional(),
+  verifier_name: z.string().max(255).optional().nullable(),
   university_type_id: z.number().int().positive().optional().nullable(),
   priority: z.coerce.number().int().min(1, "Priority must be at least 1").optional(),
   is_active: z

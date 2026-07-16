@@ -21,6 +21,7 @@ export interface UniversityCourseSpecialization {
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;
+  verifier_name?: string | null;
   is_active: boolean;
   is_page_created: boolean;
   compare: boolean;
@@ -51,6 +52,7 @@ export interface CreateUniversityCourseSpecializationDto {
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;
+  verifier_name?: string | null;
   is_active?: boolean;
   is_page_created?: boolean;
   compare?: boolean;
@@ -79,6 +81,7 @@ export interface UpdateUniversityCourseSpecializationDto {
   label?: string | null;
   course_thumbnail?: string | null;
   author_name?: string | null;
+  verifier_name?: string | null;
   is_active?: boolean;
   is_page_created?: boolean;
   compare?: boolean;
