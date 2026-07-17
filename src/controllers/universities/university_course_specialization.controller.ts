@@ -37,12 +37,23 @@ export const findAll = async (req: Request, res: Response) => {
       typeof req.query.search === "string" ? req.query.search.trim() : undefined;
     const courseSearch =
       typeof req.query.course_search === "string" ? req.query.course_search.trim() : undefined;
+    const pageCreatedRaw =
+      typeof req.query.is_page_created === "string"
+        ? req.query.is_page_created.trim().toLowerCase()
+        : "";
+    const is_page_created =
+      pageCreatedRaw === "true" || pageCreatedRaw === "1"
+        ? true
+        : pageCreatedRaw === "false" || pageCreatedRaw === "0"
+          ? false
+          : undefined;
 
     const result = await listUniversityCourseSpecializations(page, limit, {
       universityId,
       universityCourseId,
       search,
       courseSearch,
+      is_page_created,
     });
 
     return successResponse(

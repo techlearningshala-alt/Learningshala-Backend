@@ -15,6 +15,7 @@ interface ListSpecializationOptions {
   universityCourseId?: number;
   search?: string;
   courseSearch?: string;
+  is_page_created?: boolean;
 }
 
 const getAuthorSummaryByName = async (authorName?: string | null) => {

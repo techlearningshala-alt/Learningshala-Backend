@@ -10,6 +10,7 @@ interface ListSpecializationFilters {
   universityCourseId?: number;
   search?: string;
   courseSearch?: string;
+  is_page_created?: boolean;
 }
 
 export class UniversityCourseSpecializationRepository {
@@ -39,6 +40,10 @@ export class UniversityCourseSpecializationRepository {
     if (filters.courseSearch) {
       where.push("uc.name LIKE ?");
       params.push(`%${filters.courseSearch}%`);
+    }
+    if (filters.is_page_created === true || filters.is_page_created === false) {
+      where.push("ucs.is_page_created = ?");
+      params.push(filters.is_page_created ? 1 : 0);
     }
 
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
