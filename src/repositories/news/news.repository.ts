@@ -6,6 +6,13 @@ export interface ListNewsOptions {
   category_id?: number;
 }
 
+/** Empty string / whitespace → null for API responses */
+const nullIfEmpty = (value: unknown): string | null => {
+  if (value === null || value === undefined) return null;
+  const trimmed = String(value).trim();
+  return trimmed ? trimmed : null;
+};
+
 export class NewsRepository {
   async findAll(
     page: number,
@@ -89,11 +96,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
-      verifier_name: row.verifier_name ?? null,
-      verifier_image: row.verifier_image ?? null,
-      verifier_details: row.verifier_details ?? null,
-      verifier_slug: row.verifier_slug ?? null,
-      verifier_label: row.verifier_label ?? null,
+      verifier_name: nullIfEmpty(row.verifier_name),
+      verifier_image: nullIfEmpty(row.verifier_image),
+      verifier_details: nullIfEmpty(row.verifier_details),
+      verifier_slug: nullIfEmpty(row.verifier_slug),
+      verifier_label: nullIfEmpty(row.verifier_label),
       author_details: row.author_details || row.author_details,
       author_image: row.image,
       thumbnail: row.thumbnail,
@@ -196,11 +203,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name,
-      verifier_name: row.verifier_name ?? null,
-      verifier_image: row.verifier_image ?? null,
-      verifier_details: row.verifier_details ?? null,
-      verifier_slug: row.verifier_slug ?? null,
-      verifier_label: row.verifier_label ?? null,
+      verifier_name: nullIfEmpty(row.verifier_name),
+      verifier_image: nullIfEmpty(row.verifier_image),
+      verifier_details: nullIfEmpty(row.verifier_details),
+      verifier_slug: nullIfEmpty(row.verifier_slug),
+      verifier_label: nullIfEmpty(row.verifier_label),
       author_details: row.author_details || row.author_details,
       author_image: row.image || row.author_image,
       thumbnail: row.thumbnail,
@@ -288,11 +295,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
-      verifier_name: row.verifier_name ?? null,
-      verifier_image: row.verifier_image ?? null,
-      verifier_details: row.verifier_details ?? null,
-      verifier_slug: row.verifier_slug ?? null,
-      verifier_label: row.verifier_label ?? null,
+      verifier_name: nullIfEmpty(row.verifier_name),
+      verifier_image: nullIfEmpty(row.verifier_image),
+      verifier_details: nullIfEmpty(row.verifier_details),
+      verifier_slug: nullIfEmpty(row.verifier_slug),
+      verifier_label: nullIfEmpty(row.verifier_label),
       author_details: row.author_details || row.author_details,
       author_image: row.author_image,
       author_slug: row.author_slug,
@@ -363,11 +370,11 @@ export class NewsRepository {
       title: row.title,
       short_description: row.short_description,
       author_name: row.author_name || row.author_name,
-      verifier_name: row.verifier_name ?? null,
-      verifier_image: row.verifier_image ?? null,
-      verifier_details: row.verifier_details ?? null,
-      verifier_slug: row.verifier_slug ?? null,
-      verifier_label: row.verifier_label ?? null,
+      verifier_name: nullIfEmpty(row.verifier_name),
+      verifier_image: nullIfEmpty(row.verifier_image),
+      verifier_details: nullIfEmpty(row.verifier_details),
+      verifier_slug: nullIfEmpty(row.verifier_slug),
+      verifier_label: nullIfEmpty(row.verifier_label),
       author_details: row.author_details || row.author_details,
       author_image: row.image || row.author_image,
       author_slug: row.author_slug,
@@ -400,7 +407,7 @@ export class NewsRepository {
         item.title,
         item.short_description ?? null,
         item.author_name ?? null,
-        item.verifier_name ?? null,
+        nullIfEmpty(item.verifier_name),
         item.thumbnail ?? null,
         item.verified ? 1 : 0,
         item.update_date ?? null,
@@ -447,6 +454,9 @@ export class NewsRepository {
       } else if (key === "update_date" && value instanceof Date) {
         fields.push(`${key} = ?`);
         values.push(value);
+      } else if (key === "verifier_name") {
+        fields.push(`${key} = ?`);
+        values.push(nullIfEmpty(value));
       } else {
         fields.push(`${key} = ?`);
         values.push(value ?? null);
