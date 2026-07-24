@@ -64,6 +64,10 @@ export const create = async (req: Request, res: Response) => {
       question_fills: "No",
       questions: lead.questions ?? requestBody.questions ?? null,
       university: lead.university || requestBody.university || "",
+      preferred_time: lead.preferred_time || requestBody.preferred_time || "",
+      preferred_date: lead.preferred_date || requestBody.preferred_date || "",
+      budget: lead.budget ?? requestBody.budget ?? "",
+      message: lead.message || requestBody.message || "",
       compare_universities: resolveCompareUniversities(
         lead.interested_university,
         requestBody.interested_university
@@ -223,6 +227,10 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
           return row.interested_university || "-";
         },
       },
+      { key: "preferred_date", header: "Preferred Date", width: 15 },
+      { key: "preferred_time", header: "Preferred Time", width: 15 },
+      { key: "budget", header: "Budget", width: 15 },
+      { key: "message", header: "Message", width: 40 },
       {
         key: "created_at",
         header: "Created On",

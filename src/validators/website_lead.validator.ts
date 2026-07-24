@@ -93,6 +93,18 @@ export const createWebsiteLeadSchema = z
     interested_university: optionalInterestedUniversity,
     questions: optionalQuestions,
     university: optionalTrimmed("University", 255),
+    preferred_time: optionalTrimmed("Preferred time", 100),
+    preferred_date: optionalTrimmed("Preferred date", 100),
+    budget: z.preprocess(
+      (val) => (typeof val === "number" ? String(val) : val),
+      optionalTrimmed("Budget", 100)
+    ),
+    message: z
+      .string()
+      .trim()
+      .max(5000, "Message must be at most 5000 characters")
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {

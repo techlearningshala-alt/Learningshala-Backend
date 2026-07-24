@@ -62,6 +62,10 @@ export const WebsiteLeadRepository = {
         interested_university,
         questions,
         university,
+        preferred_time,
+        preferred_date,
+        budget,
+        message,
         created_at
       FROM website_leads
       ${whereClause}
@@ -93,10 +97,16 @@ export const WebsiteLeadRepository = {
       (
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
-        website_url, otp, click_source, lead_url, traffic_type, interested_university, questions, university
+        website_url, otp, click_source, lead_url, traffic_type, interested_university, questions, university,
+        preferred_time, preferred_date, budget, message
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
+
+    const budgetValue =
+      payload.budget === undefined || payload.budget === null
+        ? null
+        : String(payload.budget).trim() || null;
 
     const params = [
       payload.name,
@@ -120,6 +130,10 @@ export const WebsiteLeadRepository = {
       payload.interested_university ?? null,
       payload.questions ?? null,
       payload.university ?? null,
+      payload.preferred_time ?? null,
+      payload.preferred_date ?? null,
+      budgetValue,
+      payload.message ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);
@@ -127,6 +141,7 @@ export const WebsiteLeadRepository = {
     return {
       id: result.insertId,
       ...payload,
+      budget: budgetValue,
     };
   },
 
@@ -172,6 +187,10 @@ export const WebsiteLeadRepository = {
         interested_university,
         questions,
         university,
+        preferred_time,
+        preferred_date,
+        budget,
+        message,
         created_at,
         updated_at
       FROM website_leads

@@ -25,6 +25,10 @@ export interface WebsiteLead {
   interested_university?: string | string[] | null;
   questions?: unknown | string | null;
   university?: string | null;
+  preferred_time?: string | null;
+  preferred_date?: string | null;
+  budget?: string | number | null;
+  message?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }

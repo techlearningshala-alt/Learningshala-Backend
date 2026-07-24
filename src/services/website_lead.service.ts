@@ -258,6 +258,13 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     interested_university: normalizeInterestedUniversities(payload.interested_university),
     questions: normalizeQuestions(payload.questions),
     university: normalizeString(payload.university),
+    preferred_time: normalizeString(payload.preferred_time),
+    preferred_date: normalizeString(payload.preferred_date),
+    budget:
+      payload.budget === undefined || payload.budget === null
+        ? null
+        : normalizeString(String(payload.budget)),
+    message: normalizeString(payload.message),
   };
 
   const created = await WebsiteLeadRepository.create(normalized);
