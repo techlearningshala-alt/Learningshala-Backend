@@ -232,7 +232,11 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   }
 
   const normalizedUtmSource = normalizeString(payload.utm_source);
-  const resolvedLeadSource = normalizedUtmSource || "website";
+  const normalizedLeadSource = normalizeString(payload.lead_source);
+  const normalizedSource = normalizeString(payload.source);
+  // Frontend sends the same value for source and utm_source.
+  const sourceValue =
+    normalizedUtmSource || normalizedSource || normalizedLeadSource || null;
 
   const normalized: WebsiteLead = {
     name: payload.name.trim(),
@@ -242,14 +246,12 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     specialization: normalizeString(payload.specialization),
     state: normalizeString(payload.state),
     city: normalizeString(payload.city),
-    // Keep DB behavior in sync with webhook rule:
-    // use utm_source when available, otherwise default to "website".
-    lead_source: "Organic",
+    lead_source: sourceValue,
     sub_source: normalizeString(payload.sub_source),
-    utm_source: "Organic",
-    utm_campaign: "",
-    utm_adgroup: "",
-    utm_ads: "",
+    utm_source: sourceValue,
+    utm_campaign: normalizeString(payload.utm_campaign) || "",
+    utm_adgroup: normalizeString(payload.utm_adgroup) || "",
+    utm_ads: normalizeString(payload.utm_ads) || "",
     website_url: "https://learningshala.com",
     otp: otpValue,
     click_source: payload.click_source,

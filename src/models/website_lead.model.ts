@@ -8,6 +8,7 @@ export interface WebsiteLead {
   state?: string | null;
   city?: string | null;
   lead_source?: string | null;
+  source?: string | null;
   sub_source?: string | null;
   utm_source?: string | null;
   utm_medium?: string | null;

@@ -77,6 +77,7 @@ export const createWebsiteLeadSchema = z
     state: optionalTrimmed("State", 100),
     city: optionalTrimmed("City", 100),
     lead_source: optionalTrimmed("Lead source", 150),
+    source: optionalTrimmed("Source", 150),
     sub_source: optionalTrimmed("Sub source", 150),
     utm_source: optionalTrimmed("UTM source", 255),
     utm_medium: optionalTrimmed("UTM medium", 255),

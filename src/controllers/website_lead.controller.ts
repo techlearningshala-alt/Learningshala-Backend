@@ -40,8 +40,17 @@ export const create = async (req: Request, res: Response) => {
   try {
     const lead = await createWebsiteLead(req.body);
     const requestBody: any = req.body || {};
-    const resolvedUtmSource = String(requestBody.utm_source || lead.utm_source || "").trim();
     const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
+    const sourceValue = String(
+      requestBody.source ||
+        requestBody.utm_source ||
+        lead.utm_source ||
+        lead.lead_source ||
+        ""
+    ).trim();
+    const subSourceValue = String(
+      requestBody.sub_source || lead.sub_source || ""
+    ).trim();
 
     const webhookPayload = {
       name: lead.name,
@@ -51,16 +60,16 @@ export const create = async (req: Request, res: Response) => {
       specialisation: lead.specialization || "Not Decided Yet",
       state: lead.state || "",
       city: lead.city || "",
-      source: "Organic",
-      sub_source_new: "LS-WEBSITE",
+      source: sourceValue,
+      sub_source_new: subSourceValue,
       website_url: "https://learningshala.com",
       lead_url: lead.lead_url || requestBody.lead_url || "",
-      utm_source: "Organic",
-      utm_medium: "",
-      utm_campaign: "",
-      utm_content: "",
-      utm_term: "",
-      utm_matchtype: "",
+      utm_source: sourceValue,
+      utm_medium: requestBody.utm_medium || "",
+      utm_campaign: requestBody.utm_campaign || lead.utm_campaign || "",
+      utm_content: requestBody.utm_content || "",
+      utm_term: requestBody.utm_term || "",
+      utm_matchtype: requestBody.utm_matchtype || "",
       question_fills: "No",
       questions: lead.questions ?? requestBody.questions ?? null,
       university: lead.university || requestBody.university || "",
