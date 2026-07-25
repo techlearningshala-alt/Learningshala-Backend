@@ -404,7 +404,7 @@ export class DashboardService {
   }
 
   /**
-   * Get website leads overview (today, yesterday, current month, total, organic)
+   * Get website leads overview (today, yesterday, current month, total) — organic only
    */
   static async getWebsiteLeadsOverview() {
     try {
@@ -419,38 +419,41 @@ export class DashboardService {
       const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
       const yesterdayStr = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
       const monthStartStr = monthStart.toISOString().split("T")[0];
+      const organicFilter =
+        `(traffic_type = 'organic' OR traffic_type IS NULL OR traffic_type = '')`;
 
       const [
         [todayRows],
         [yesterdayRows],
         [monthRows],
         [totalRows],
-        [organicRows],
       ]: any = await Promise.all([
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter}`,
           [todayStr]
         ),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ?`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter}`,
           [yesterdayStr]
         ),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ?`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ? AND ${organicFilter}`,
           [monthStartStr]
         ),
-        pool.query(`SELECT COUNT(*) as count FROM website_leads`),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE traffic_type = 'organic' OR traffic_type IS NULL OR traffic_type = ''`
+          `SELECT COUNT(*) as count FROM website_leads WHERE ${organicFilter}`
         ),
       ]);
+
+      const total = (totalRows as any[])[0]?.count || 0;
 
       return {
         today: (todayRows as any[])[0]?.count || 0,
         yesterday: (yesterdayRows as any[])[0]?.count || 0,
         thisMonth: (monthRows as any[])[0]?.count || 0,
-        total: (totalRows as any[])[0]?.count || 0,
-        organic: (organicRows as any[])[0]?.count || 0,
+        total,
+        // Kept for backward compatibility; overview is organic-only now.
+        organic: total,
       };
     } catch (error) {
       console.error("❌ Error fetching website leads overview:", error);
