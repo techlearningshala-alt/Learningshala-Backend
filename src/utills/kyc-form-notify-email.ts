@@ -1,8 +1,9 @@
 import { transporter } from "../config/smtp";
-import { getS3Url } from "../config/s3";
 import type { KycForm } from "../models/kyc_form.model";
 
 const DEFAULT_KYC_NOTIFY_EMAIL = "eklovey@learningshala.in";
+const EMAIL_BRAND_NAME = "Partner Learning Shala";
+const CLOUDFRONT_BASE = "https://d34odytkc8nsi8.cloudfront.net";
 
 const DOC_FIELDS = [
   "doc_id",
@@ -23,27 +24,30 @@ const FIELD_LABELS: Array<{ key: keyof KycForm | (typeof DOC_FIELDS)[number]; la
   { key: "pan", label: "PAN" },
   { key: "aadhaar", label: "Aadhaar" },
   { key: "gender", label: "Gender" },
-  { key: "shop_name", label: "Shop Name" },
+  { key: "shop_name", label: "Shop / Business Name" },
   { key: "biz_type", label: "Business Type" },
   { key: "address", label: "Address" },
   { key: "locality", label: "Locality" },
   { key: "city", label: "City" },
   { key: "pincode", label: "Pincode" },
   { key: "google_loc", label: "Google Location" },
-  { key: "footfall", label: "Footfall" },
-  { key: "acc_holder", label: "Account Holder" },
+  { key: "footfall", label: "Daily Student Footfall" },
+  { key: "acc_holder", label: "Account Holder Name" },
   { key: "bank_name", label: "Bank Name" },
   { key: "acc_number", label: "Account Number" },
   { key: "ifsc", label: "IFSC" },
   { key: "upi", label: "UPI" },
-  { key: "doc_id", label: "Doc ID" },
-  { key: "doc_pan", label: "Doc PAN" },
-  { key: "doc_shop_addr", label: "Doc Shop Address" },
-  { key: "doc_cheque", label: "Doc Cheque" },
-  { key: "doc_photo_out", label: "Doc Photo Outside" },
-  { key: "doc_photo_in", label: "Doc Photo Inside" },
-  { key: "coi", label: "COI" },
-  { key: "coi_specify", label: "COI Specify" },
+  { key: "doc_id", label: "ID Proof" },
+  { key: "doc_pan", label: "PAN" },
+  { key: "doc_shop_addr", label: "Shop Address" },
+  { key: "doc_cheque", label: "Cancelled Cheque / Passbook" },
+  { key: "doc_photo_out", label: "Shop Photo Outside" },
+  { key: "doc_photo_in", label: "Shop Photo Inside" },
+  {
+    key: "coi",
+    label: "Is this partner related to, or associated with, the enrolling FMS",
+  },
+  { key: "coi_specify", label: "Is this partner related to(specify)" },
   { key: "declaration_agree", label: "Declaration Agree" },
 ];
 
@@ -55,14 +59,31 @@ function escapeHtml(value: unknown): string {
     .replace(/"/g, "&quot;");
 }
 
+function toCloudFrontUrl(value: string): string {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "-") return "";
+  if (raw.includes("d34odytkc8nsi8.cloudfront.net")) return raw;
+
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const parsed = new URL(raw);
+      const path = parsed.pathname.replace(/^\//, "");
+      return path ? `${CLOUDFRONT_BASE}/${path}` : CLOUDFRONT_BASE;
+    } catch {
+      // fall through
+    }
+  }
+
+  return `${CLOUDFRONT_BASE}/${raw.replace(/^\//, "")}`;
+}
+
 function displayValue(key: string, value: unknown): string {
   if (value === null || value === undefined || value === "") return "-";
   if (key === "declaration_agree") {
     return value === true || value === 1 || String(value).toLowerCase() === "true" ? "Yes" : "No";
   }
   if (DOC_FIELDS.includes(key as (typeof DOC_FIELDS)[number])) {
-    const url = getS3Url(String(value));
-    return url || "-";
+    return toCloudFrontUrl(String(value)) || "-";
   }
   return String(value);
 }
@@ -75,7 +96,6 @@ export async function sendKycFormNotificationEmail(entry: KycForm): Promise<void
 
   const recipient =
     process.env.KYC_NOTIFY_EMAIL?.trim() || DEFAULT_KYC_NOTIFY_EMAIL;
-  const appName = process.env.APP_NAME?.trim() || "LearningShala";
   const name = entry.full_name?.trim() || "KYC Applicant";
 
   const rows = FIELD_LABELS.map(({ key, label }) => {
@@ -86,7 +106,7 @@ export async function sendKycFormNotificationEmail(entry: KycForm): Promise<void
       ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>`
       : escapeHtml(value);
     return `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#64748b;font-size:13px;width:180px;vertical-align:top;"><strong style="color:#0f172a;">${escapeHtml(label)}</strong></td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#64748b;font-size:13px;width:220px;vertical-align:top;"><strong style="color:#0f172a;">${escapeHtml(label)}</strong></td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#334155;font-size:13px;word-break:break-word;">${display}</td>
     </tr>`;
   }).join("");
@@ -97,7 +117,7 @@ export async function sendKycFormNotificationEmail(entry: KycForm): Promise<void
   });
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || `"${appName}" <${process.env.SMTP_USER}>`,
+    from: process.env.SMTP_FROM || `"${EMAIL_BRAND_NAME}" <${process.env.SMTP_USER}>`,
     to: recipient,
     subject: `New KYC form submitted — ${name}`,
     text: [
@@ -105,7 +125,7 @@ export async function sendKycFormNotificationEmail(entry: KycForm): Promise<void
       "",
       ...textLines,
       "",
-      `— ${appName}`,
+      `— ${EMAIL_BRAND_NAME}`,
     ].join("\n"),
     html: `<!DOCTYPE html>
 <html lang="en">
@@ -117,7 +137,7 @@ export async function sendKycFormNotificationEmail(entry: KycForm): Promise<void
         <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;width:100%;background:#fff;border-radius:12px;overflow:hidden;">
           <tr>
             <td style="background:#111827;padding:20px 28px;">
-              <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">${escapeHtml(appName)}</p>
+              <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">${escapeHtml(EMAIL_BRAND_NAME)}</p>
               <p style="margin:6px 0 0;color:#a1a1aa;font-size:13px;">New KYC form submission</p>
             </td>
           </tr>
