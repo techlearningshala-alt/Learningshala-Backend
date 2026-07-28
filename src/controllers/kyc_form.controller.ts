@@ -4,6 +4,7 @@ import { createKycForm, listKycForms, getKycFormById } from "../services/kyc_for
 import { createKycFormSchema } from "../validators/kyc_form.validator";
 import { uploadToS3, getS3Url } from "../config/s3";
 import { generateFileName } from "../config/multer";
+import { sendKycFormNotificationEmail } from "../utills/kyc-form-notify-email";
 
 const S3_FOLDER = "kyc-forms";
 
@@ -57,9 +58,16 @@ export const create = async (req: Request, res: Response) => {
       ...uploadedDocs,
     });
 
+    const responseData = withDocUrls(entry);
+
+    // Non-blocking: API success even if email fails.
+    sendKycFormNotificationEmail(responseData).catch((emailErr) => {
+      console.error("⚠️ KYC notify email failed:", emailErr);
+    });
+
     return successResponse(
       res,
-      withDocUrls(entry),
+      responseData,
       "KYC form submitted successfully",
       201
     );
