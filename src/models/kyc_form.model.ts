@@ -1,0 +1,35 @@
+export interface KycForm {
+  id?: number;
+  full_name: string;
+  dob?: string | null;
+  mobile: string;
+  alt_mobile?: string | null;
+  email: string;
+  pan?: string | null;
+  aadhaar?: string | null;
+  gender?: string | null;
+  shop_name?: string | null;
+  biz_type?: string | null;
+  address?: string | null;
+  locality?: string | null;
+  city?: string | null;
+  pincode?: string | null;
+  google_loc?: string | null;
+  footfall?: string | null;
+  acc_holder?: string | null;
+  bank_name?: string | null;
+  acc_number?: string | null;
+  ifsc?: string | null;
+  upi?: string | null;
+  doc_id?: string | null;
+  doc_pan?: string | null;
+  doc_shop_addr?: string | null;
+  doc_cheque?: string | null;
+  doc_photo_out?: string | null;
+  doc_photo_in?: string | null;
+  coi?: string | null;
+  coi_specify?: string | null;
+  declaration_agree?: boolean | number | string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
