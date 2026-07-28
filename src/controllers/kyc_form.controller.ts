@@ -40,10 +40,12 @@ const uploadDocFiles = async (
   return uploaded;
 };
 
-const withDocUrls = <T extends Record<string, any>>(row: T) => {
-  const out: Record<string, any> = { ...row };
+const withDocUrls = <T extends Record<string, any>>(row: T): T => {
+  const out: T = { ...row };
   for (const field of DOC_FIELDS) {
-    if (out[field]) out[field] = getS3Url(String(out[field]));
+    if ((out as any)[field]) {
+      (out as any)[field] = getS3Url(String((out as any)[field]));
+    }
   }
   return out;
 };
