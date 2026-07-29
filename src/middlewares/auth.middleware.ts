@@ -20,7 +20,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       can_create: payload.can_create,
       can_read: payload.can_read,
       can_update: payload.can_update,
-      can_delete: payload.can_delete
+      can_delete: payload.can_delete,
+      section_access: payload.section_access || [],
     };
     return next();
   } catch (err) {

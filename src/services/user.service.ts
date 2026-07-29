@@ -32,6 +32,7 @@ export const createUser = async (data: {
   can_read?: boolean;
   can_update?: boolean;
   can_delete?: boolean;
+  section_access?: string[];
 }) => {
   // Check if email already exists
   const existing = await userRepo.findByEmail(data.email);
@@ -54,6 +55,7 @@ export const createUser = async (data: {
     can_read: data.can_read !== undefined ? data.can_read : true,
     can_update: data.can_update !== undefined ? data.can_update : false,
     can_delete: data.can_delete !== undefined ? data.can_delete : false,
+    section_access: data.section_access || [],
   });
 
   // Return user without password
@@ -70,6 +72,7 @@ export const updateUser = async (id: number, data: {
   can_read?: boolean;
   can_update?: boolean;
   can_delete?: boolean;
+  section_access?: string[];
 }) => {
   const user = await userRepo.findById(id);
   if (!user) {
@@ -102,6 +105,7 @@ export const updateUser = async (id: number, data: {
     can_read: data.can_read,
     can_update: data.can_update,
     can_delete: data.can_delete,
+    section_access: data.section_access,
   });
 
   if (!updatedUser) {

@@ -114,7 +114,8 @@ class AuthService {
       can_create: user.can_create || false,
       can_read: user.can_read || false,
       can_update: user.can_update || false,
-      can_delete: user.can_delete || false
+      can_delete: user.can_delete || false,
+      section_access: user.section_access || [],
     }, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES });
     const refreshToken = jwt.sign({ id: user.id }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES });
 
@@ -135,7 +136,8 @@ class AuthService {
         can_create: user.can_create || false,
         can_read: user.can_read || false,
         can_update: user.can_update || false,
-        can_delete: user.can_delete || false
+        can_delete: user.can_delete || false,
+        section_access: user.section_access || [],
       }
     };
   }

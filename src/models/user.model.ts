@@ -8,6 +8,8 @@ export interface User {
   can_read?: boolean | null;
   can_update?: boolean | null;
   can_delete?: boolean | null;
+  /** Allowed CMS sections: blog | news | university */
+  section_access?: string[] | string | null;
   created_at: Date;
   updated_at: Date;
 }

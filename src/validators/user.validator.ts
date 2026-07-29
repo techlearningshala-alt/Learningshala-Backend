@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const sectionAccessSchema = z
+  .array(z.enum(["blog", "news", "university"]))
+  .optional()
+  .default([]);
+
 export const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email format"),
@@ -9,6 +14,7 @@ export const createUserSchema = z.object({
   can_read: z.boolean().optional().default(true),
   can_update: z.boolean().optional().default(false),
   can_delete: z.boolean().optional().default(false),
+  section_access: sectionAccessSchema,
 });
 
 export const updateUserSchema = createUserSchema.partial().extend({
