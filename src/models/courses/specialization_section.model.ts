@@ -7,6 +7,7 @@ export interface SpecializationSection {
   specialization_id: number;        // FK → specializations.id
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null; // Added for sections with images
   created_at: Date;
@@ -17,6 +18,7 @@ export interface SpecializationSectionInput {
   id?: number; // Added for updates
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
 }

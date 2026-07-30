@@ -6,6 +6,7 @@ export interface SpecializationSectionRecord {
   specialization_id: number;
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
   created_at: Date;
@@ -15,6 +16,7 @@ export interface SpecializationSectionRecord {
 export interface SpecializationSectionInput {
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
 }
@@ -59,18 +61,19 @@ class SpecializationSectionRepository {
     const placeholders: string[] = [];
 
     sections.forEach((section) => {
-      placeholders.push("(?, ?, ?, ?, ?)");
+      placeholders.push("(?, ?, ?, ?, ?, ?)");
       values.push(
         specializationId,
         section.section_key,
         section.title,
+        section.heading ?? null,
         section.description ?? null,
         section.image ?? null
       );
     });
 
     await executor.query(
-      `INSERT INTO specialization_sections (specialization_id, section_key, title, description, image)
+      `INSERT INTO specialization_sections (specialization_id, section_key, title, heading, description, image)
        VALUES ${placeholders.join(", ")}`,
       values
     );
@@ -78,4 +81,3 @@ class SpecializationSectionRepository {
 }
 
 export default new SpecializationSectionRepository();
-

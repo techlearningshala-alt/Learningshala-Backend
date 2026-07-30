@@ -118,6 +118,10 @@ function transformCourseSections(sections: any[]): Record<string, any> {
     // Set section_key as a key with description as its value
     if (sectionKey) {
       acc[sectionKey] = descriptionValue;
+      // Namespaced heading (same pattern as university sections_transformed)
+      if (s.heading !== undefined && s.heading !== null && String(s.heading).trim() !== "") {
+        acc[`${sectionKey}_heading`] = s.heading;
+      }
     }
 
     // Flatten other properties (like image) into the same object

@@ -6,6 +6,7 @@ export interface CourseSectionRecord {
   course_id: number;
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
   created_at: Date;
@@ -15,6 +16,7 @@ export interface CourseSectionRecord {
 export interface CourseSectionInput {
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
 }
@@ -59,18 +61,19 @@ class CourseSectionRepository {
     const placeholders: string[] = [];
 
     sections.forEach((section) => {
-      placeholders.push("(?, ?, ?, ?, ?)");
+      placeholders.push("(?, ?, ?, ?, ?, ?)");
       values.push(
         courseId,
         section.section_key,
         section.title,
+        section.heading ?? null,
         section.description ?? null,
         section.image ?? null
       );
     });
 
     await executor.query(
-      `INSERT INTO course_sections (course_id, section_key, title, description, image)
+      `INSERT INTO course_sections (course_id, section_key, title, heading, description, image)
        VALUES ${placeholders.join(", ")}`,
       values
     );
@@ -78,4 +81,3 @@ class CourseSectionRepository {
 }
 
 export default new CourseSectionRepository();
-

@@ -267,6 +267,7 @@ const prepareSectionPayload = async (
     prepared.push({
       section_key: sectionKey, // Use the provided section_key directly (not sanitized)
       title: section.title || sectionKey,
+      heading: section.heading || "",
       description: section.description || "",
       image: imagePath,
     });

@@ -7,6 +7,7 @@ export interface CourseSection {
   course_id: number;        // FK → courses.id
   section_key: string;
   title: string;
+  heading?: string | null;
   description?: string | null;
   image?: string | null;
   created_at: Date;
