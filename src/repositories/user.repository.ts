@@ -1,7 +1,14 @@
 import pool from "../config/db";
 import { User } from "../models/user.model";
 
-const ALLOWED_SECTIONS = new Set(["blog", "news", "university"]);
+const ALLOWED_SECTIONS = new Set([
+  "home",
+  "menu",
+  "miscellaneous",
+  "blog",
+  "news",
+  "university",
+]);
 
 export class UserRepository {
   private parseSectionAccess(value: unknown): string[] {

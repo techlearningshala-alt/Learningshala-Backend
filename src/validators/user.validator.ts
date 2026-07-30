@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const sectionAccessSchema = z
-  .array(z.enum(["blog", "news", "university"]))
+  .array(z.enum(["home", "menu", "miscellaneous", "blog", "news", "university"]))
   .optional()
   .default([]);
 
