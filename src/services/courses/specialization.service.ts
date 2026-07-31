@@ -87,10 +87,8 @@ function transformSpecializationSections(sections: any[]): Record<string, any> {
     // Set section_key as a key with description as its value
     if (sectionKey) {
       acc[sectionKey] = descriptionValue;
-      // Namespaced heading (same pattern as university sections_transformed)
-      if (s.heading !== undefined && s.heading !== null && String(s.heading).trim() !== "") {
-        acc[`${sectionKey}_heading`] = s.heading;
-      }
+      // Always include namespaced heading (empty string when unset)
+      acc[`${sectionKey}_heading`] = s.heading == null ? "" : String(s.heading);
     }
 
     // Flatten other properties (like image) into the same object
@@ -110,7 +108,10 @@ const attachRelations = async (specialization: any) => {
   ]);
   specialization.banners = banners || [];
   // For admin (ID-based) flows we want the raw sections array
-  specialization.sections = sections || [];
+  specialization.sections = (sections || []).map((s: any) => ({
+    ...s,
+    heading: s.heading == null ? "" : String(s.heading),
+  }));
   return specialization;
 };
 
