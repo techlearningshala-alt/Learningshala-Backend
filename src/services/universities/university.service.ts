@@ -1072,7 +1072,7 @@ export const getUniversityBySlug = async (slug: string) => {
       FROM university_faqs f
       LEFT JOIN university_faq_categories c ON f.category_id = c.id
       WHERE f.university_id = ?
-      ORDER BY c.priority ASC, c.id ASC, f.created_at DESC`,
+      ORDER BY c.priority ASC, c.id ASC, f.created_at ASC, f.id ASC`,
       [universityId]
     );
 
