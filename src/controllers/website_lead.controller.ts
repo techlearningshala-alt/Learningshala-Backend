@@ -139,7 +139,7 @@ export const getAll = async (req: Request, res: Response) => {
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
     const trafficTypeRaw =
       typeof req.query.trafficType === "string" ? req.query.trafficType.trim().toLowerCase() : "";
-    const trafficType = ["paid", "organic", "referral"].includes(trafficTypeRaw)
+    const trafficType = ["paid", "organic"].includes(trafficTypeRaw)
       ? trafficTypeRaw
       : undefined;
     const data = await listWebsiteLeads(page, limit, { search, fromDate, toDate, trafficType });
@@ -226,7 +226,7 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
     const trafficTypeRaw =
       typeof req.query.trafficType === "string" ? req.query.trafficType.trim().toLowerCase() : "";
-    const trafficType = ["paid", "organic", "referral"].includes(trafficTypeRaw)
+    const trafficType = ["paid", "organic"].includes(trafficTypeRaw)
       ? trafficTypeRaw
       : undefined;
 

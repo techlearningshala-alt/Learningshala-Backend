@@ -32,7 +32,10 @@ export const WebsiteLeadRepository = {
       params.push(options.toDate);
     }
 
-    if (options.trafficType) {
+    if (options.trafficType === "organic") {
+      // Include legacy "referral" rows under organic (referral filter removed)
+      where.push("(traffic_type = 'organic' OR traffic_type = 'referral' OR traffic_type IS NULL OR traffic_type = '')");
+    } else if (options.trafficType) {
       where.push("traffic_type = ?");
       params.push(options.trafficType);
     }
