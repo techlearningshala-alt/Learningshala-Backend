@@ -10,15 +10,30 @@ import {
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
 import { mapCourseForCrm } from "../utills/crm-course-mapper";
+import {
+  getUtmMediumFromLeadUrl,
+  META_PAID_SOURCE,
+  META_PAID_SUB_SOURCE,
+  shouldUseMetaPaidWebhook,
+} from "../utills/traffic-type";
 
 const WEBSITE_LEAD_WEBHOOK_URL =
   process.env.WEBSITE_LEAD_WEBHOOK_URL || "";
 
-const postLeadToWebhook = async (payload: Record<string, unknown>) => {
+const WEBSITE_LEAD_META_WEBHOOK_URL =
+  process.env.WEBSITE_LEAD_META_WEBHOOK_URL || "";
+const postLeadToWebhook = async (
+  payload: Record<string, unknown>,
+  webhookUrl: string
+) => {
+  if (!webhookUrl) {
+    throw new Error("Webhook URL is not configured");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(WEBSITE_LEAD_WEBHOOK_URL, {
+    const response = await fetch(webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -41,16 +56,23 @@ export const create = async (req: Request, res: Response) => {
     const lead = await createWebsiteLead(req.body);
     const requestBody: any = req.body || {};
     const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
-    const sourceValue = String(
-      requestBody.source ||
-        requestBody.utm_source ||
-        lead.utm_source ||
-        lead.lead_source ||
-        ""
-    ).trim();
-    const subSourceValue = String(
-      requestBody.sub_source || lead.sub_source || ""
-    ).trim();
+    const leadUrl = String(lead.lead_url || requestBody.lead_url || "").trim();
+    const useMetaPaidWebhook = shouldUseMetaPaidWebhook(leadUrl);
+
+    const sourceValue = useMetaPaidWebhook
+      ? META_PAID_SOURCE
+      : String(
+          requestBody.source ||
+            requestBody.utm_source ||
+            lead.utm_source ||
+            lead.lead_source ||
+            ""
+        ).trim();
+    const subSourceValue = useMetaPaidWebhook
+      ? META_PAID_SUB_SOURCE
+      : String(requestBody.sub_source || lead.sub_source || "").trim();
+
+    const utmMediumFromUrl = getUtmMediumFromLeadUrl(leadUrl) || "";
 
     const webhookPayload = {
       name: lead.name,
@@ -63,9 +85,9 @@ export const create = async (req: Request, res: Response) => {
       source: sourceValue,
       sub_source_new: subSourceValue,
       website_url: "https://learningshala.com",
-      lead_url: lead.lead_url || requestBody.lead_url || "",
+      lead_url: leadUrl,
       utm_source: sourceValue,
-      utm_medium: requestBody.utm_medium || "",
+      utm_medium: requestBody.utm_medium || utmMediumFromUrl || "",
       utm_campaign: requestBody.utm_campaign || lead.utm_campaign || "",
       utm_content: requestBody.utm_content || "",
       utm_term: requestBody.utm_term || "",
@@ -83,8 +105,12 @@ export const create = async (req: Request, res: Response) => {
       ),
     };
 
+    const webhookUrl = useMetaPaidWebhook
+      ? WEBSITE_LEAD_META_WEBHOOK_URL
+      : WEBSITE_LEAD_WEBHOOK_URL;
+
     // Non-blocking webhook: DB save succeeds even if webhook fails.
-    postLeadToWebhook(webhookPayload).catch((webhookErr) => {
+    postLeadToWebhook(webhookPayload, webhookUrl).catch((webhookErr) => {
       console.error("⚠️ Website lead webhook failed:", webhookErr);
     });
 

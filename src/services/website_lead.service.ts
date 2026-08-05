@@ -1,6 +1,11 @@
 import { WebsiteLead } from "../models/website_lead.model";
 import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/website_lead.repository";
-import { deriveTrafficTypeFromLeadUrl } from "../utills/traffic-type";
+import {
+  deriveTrafficTypeFromLeadUrl,
+  META_PAID_SOURCE,
+  META_PAID_SUB_SOURCE,
+  shouldUseMetaPaidWebhook,
+} from "../utills/traffic-type";
 
 const normalizeString = (val?: string | null) =>
   typeof val === "string" ? val.trim() || null : val ?? null;
@@ -235,8 +240,15 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   const normalizedLeadSource = normalizeString(payload.lead_source);
   const normalizedSource = normalizeString(payload.source);
   // Frontend sends the same value for source and utm_source.
-  const sourceValue =
+  let sourceValue =
     normalizedUtmSource || normalizedSource || normalizedLeadSource || null;
+  let subSourceValue = normalizeString(payload.sub_source);
+
+  // Paid Meta/Google leads: fixed source + sub_source for CRM/webhook consistency
+  if (shouldUseMetaPaidWebhook(payload.lead_url)) {
+    sourceValue = META_PAID_SOURCE;
+    subSourceValue = META_PAID_SUB_SOURCE;
+  }
 
   const normalized: WebsiteLead = {
     name: payload.name.trim(),
@@ -247,7 +259,7 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     state: normalizeString(payload.state),
     city: normalizeString(payload.city),
     lead_source: sourceValue,
-    sub_source: normalizeString(payload.sub_source),
+    sub_source: subSourceValue,
     utm_source: sourceValue,
     utm_campaign: normalizeString(payload.utm_campaign) || "",
     utm_adgroup: normalizeString(payload.utm_adgroup) || "",
