@@ -30,6 +30,7 @@ export interface WebsiteLead {
   preferred_date?: string | null;
   budget?: string | number | null;
   message?: string | null;
+  filter_lead?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }

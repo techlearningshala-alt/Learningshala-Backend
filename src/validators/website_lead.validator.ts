@@ -106,6 +106,7 @@ export const createWebsiteLeadSchema = z
       .max(5000, "Message must be at most 5000 characters")
       .optional()
       .or(z.literal("").transform(() => undefined)),
+    filter_lead: optionalTrimmed("Filter lead", 100),
   })
   .superRefine((data, ctx) => {
     if (!data.email && !data.phone) {

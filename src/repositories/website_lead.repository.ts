@@ -6,7 +6,11 @@ export interface ListWebsiteLeadOptions {
   fromDate?: string;
   toDate?: string;
   trafficType?: string;
+  /** When set to b2b_free_counselling, return only those leads; otherwise hide them */
+  filterLead?: string;
 }
+
+const COUNSELLING_FILTER_LEAD = "b2b_free_counselling";
 
 export const WebsiteLeadRepository = {
   async findAll(page = 1, limit = 10, options: ListWebsiteLeadOptions = {}) {
@@ -40,6 +44,18 @@ export const WebsiteLeadRepository = {
       params.push(options.trafficType);
     }
 
+    if (options.filterLead === COUNSELLING_FILTER_LEAD) {
+      // B2B Leads tab: only counselling leads
+      where.push("filter_lead = ?");
+      params.push(COUNSELLING_FILTER_LEAD);
+    } else {
+      // Default Website Leads list: hide counselling leads
+      where.push(
+        "(filter_lead IS NULL OR filter_lead = '' OR filter_lead <> ?)"
+      );
+      params.push(COUNSELLING_FILTER_LEAD);
+    }
+
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await pool.query(
@@ -69,6 +85,7 @@ export const WebsiteLeadRepository = {
         preferred_date,
         budget,
         message,
+        filter_lead,
         created_at
       FROM website_leads
       ${whereClause}
@@ -101,9 +118,9 @@ export const WebsiteLeadRepository = {
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
         website_url, otp, click_source, lead_url, traffic_type, interested_university, questions, university,
-        preferred_time, preferred_date, budget, message
+        preferred_time, preferred_date, budget, message, filter_lead
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const budgetValue =
@@ -137,6 +154,7 @@ export const WebsiteLeadRepository = {
       payload.preferred_date ?? null,
       budgetValue,
       payload.message ?? null,
+      payload.filter_lead ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);

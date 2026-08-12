@@ -222,6 +222,7 @@ export class DashboardService {
           pool.query(
             `SELECT id, name, phone, course, created_at 
              FROM website_leads 
+             WHERE (filter_lead IS NULL OR filter_lead = '' OR filter_lead <> 'b2b_free_counselling')
              ORDER BY created_at DESC 
              LIMIT 10`
           ),
@@ -421,6 +422,9 @@ export class DashboardService {
       const monthStartStr = monthStart.toISOString().split("T")[0];
       const organicFilter =
         `(traffic_type = 'organic' OR traffic_type IS NULL OR traffic_type = '')`;
+      // Exclude B2B counselling leads from admin overview
+      const adminVisibleFilter =
+        `(filter_lead IS NULL OR filter_lead = '' OR filter_lead <> 'b2b_free_counselling')`;
 
       const [
         [todayRows],
@@ -429,19 +433,19 @@ export class DashboardService {
         [totalRows],
       ]: any = await Promise.all([
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter}`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter} AND ${adminVisibleFilter}`,
           [todayStr]
         ),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter}`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) = ? AND ${organicFilter} AND ${adminVisibleFilter}`,
           [yesterdayStr]
         ),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ? AND ${organicFilter}`,
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ? AND ${organicFilter} AND ${adminVisibleFilter}`,
           [monthStartStr]
         ),
         pool.query(
-          `SELECT COUNT(*) as count FROM website_leads WHERE ${organicFilter}`
+          `SELECT COUNT(*) as count FROM website_leads WHERE ${organicFilter} AND ${adminVisibleFilter}`
         ),
       ]);
 

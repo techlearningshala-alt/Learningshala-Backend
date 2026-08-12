@@ -67,7 +67,6 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
- // Update mentor
 // Update mentor
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {

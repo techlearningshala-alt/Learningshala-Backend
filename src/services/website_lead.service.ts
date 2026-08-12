@@ -279,6 +279,7 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
         ? null
         : normalizeString(String(payload.budget)),
     message: normalizeString(payload.message),
+    filter_lead: normalizeString(payload.filter_lead),
   };
 
   const created = await WebsiteLeadRepository.create(normalized);

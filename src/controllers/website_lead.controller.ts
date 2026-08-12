@@ -22,6 +22,12 @@ const WEBSITE_LEAD_WEBHOOK_URL =
 
 const WEBSITE_LEAD_META_WEBHOOK_URL =
   process.env.WEBSITE_LEAD_META_WEBHOOK_URL || "";
+
+const WEBSITE_LEAD_WEBHOOK_URL_COUNSELLING_LEADS =
+  process.env.WEBSITE_LEAD_WEBHOOK_URL_COUNSELLING_LEADS || "";
+
+const COUNSELLING_FILTER_LEAD = "b2b_free_counselling";
+
 const postLeadToWebhook = async (
   payload: Record<string, unknown>,
   webhookUrl: string
@@ -57,7 +63,12 @@ export const create = async (req: Request, res: Response) => {
     const requestBody: any = req.body || {};
     const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
     const leadUrl = String(lead.lead_url || requestBody.lead_url || "").trim();
-    const useMetaPaidWebhook = shouldUseMetaPaidWebhook(leadUrl);
+    const filterLead = String(
+      lead.filter_lead || requestBody.filter_lead || ""
+    ).trim();
+    const isCounsellingLead = filterLead === COUNSELLING_FILTER_LEAD;
+    const useMetaPaidWebhook =
+      !isCounsellingLead && shouldUseMetaPaidWebhook(leadUrl);
 
     const sourceValue = useMetaPaidWebhook
       ? META_PAID_SOURCE
@@ -99,15 +110,18 @@ export const create = async (req: Request, res: Response) => {
       preferred_date: lead.preferred_date || requestBody.preferred_date || "",
       budget: lead.budget ?? requestBody.budget ?? "",
       message: lead.message || requestBody.message || "",
+      filter_lead: filterLead || "",
       compare_universities: resolveCompareUniversities(
         lead.interested_university,
         requestBody.interested_university
       ),
     };
 
-    const webhookUrl = useMetaPaidWebhook
-      ? WEBSITE_LEAD_META_WEBHOOK_URL
-      : WEBSITE_LEAD_WEBHOOK_URL;
+    const webhookUrl = isCounsellingLead
+      ? WEBSITE_LEAD_WEBHOOK_URL_COUNSELLING_LEADS
+      : useMetaPaidWebhook
+        ? WEBSITE_LEAD_META_WEBHOOK_URL
+        : WEBSITE_LEAD_WEBHOOK_URL;
 
     // Non-blocking webhook: DB save succeeds even if webhook fails.
     postLeadToWebhook(webhookPayload, webhookUrl).catch((webhookErr) => {
@@ -142,7 +156,15 @@ export const getAll = async (req: Request, res: Response) => {
     const trafficType = ["paid", "organic"].includes(trafficTypeRaw)
       ? trafficTypeRaw
       : undefined;
-    const data = await listWebsiteLeads(page, limit, { search, fromDate, toDate, trafficType });
+    const filterLead =
+      typeof req.query.filterLead === "string" ? req.query.filterLead.trim() : undefined;
+    const data = await listWebsiteLeads(page, limit, {
+      search,
+      fromDate,
+      toDate,
+      trafficType,
+      filterLead,
+    });
     return successResponse(res, data, "Website leads fetched successfully");
   } catch (error: any) {
     console.error("❌ Error fetching website leads:", error);
@@ -229,10 +251,20 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
     const trafficType = ["paid", "organic"].includes(trafficTypeRaw)
       ? trafficTypeRaw
       : undefined;
+    const filterLead =
+      typeof req.query.filterLead === "string" ? req.query.filterLead.trim() : undefined;
 
     // Fetch all website leads with filters
-    const data = await listWebsiteLeads(1, 100000, { search, fromDate, toDate, trafficType });
+    const data = await listWebsiteLeads(1, 100000, {
+      search,
+      fromDate,
+      toDate,
+      trafficType,
+      filterLead,
+    });
     const leads = data.data || [];
+    const exportName =
+      filterLead === COUNSELLING_FILTER_LEAD ? "B2B_Leads" : "Website_Leads";
 
     // Define Excel columns
     const columns: ExcelColumn[] = [
@@ -283,7 +315,7 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       },
     ];
 
-    await exportToExcel(res, leads, columns, "Website_Leads");
+    await exportToExcel(res, leads, columns, exportName);
   } catch (error: any) {
     console.error("❌ Error exporting website leads:", error);
     return errorResponse(
