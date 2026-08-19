@@ -50,6 +50,7 @@ import redirectionRoutes from "./redirections/redirection.routes";
 import uploadRoutes from "./upload/upload.routes";
 import postAdmissionTeamRoutes from "./post_admission_team.routes";
 import adminActivityRoutes from "./admin_activity.routes";
+import compareRoutes from "./compare.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -131,5 +132,6 @@ router.use("/cms/redirections", redirectionRoutes);
 // ✅ Uploads (image & PDF) routes
 router.use("/cms/uploads", uploadRoutes);
 router.use("/cms/admin-activity", adminActivityRoutes);
+router.use("/cms/compares", compareRoutes);
 
 export default router;
