@@ -130,3 +130,45 @@ export const verifyOtpSchema = z.object({
 export const updateInterestedUniversitySchema = z.object({
   interested_university: optionalInterestedUniversity,
 });
+
+/** Partial update — all fields optional (files handled separately via multipart) */
+export const updateWebsiteLeadSchema = z.object({
+  name: requiredName.optional(),
+  email: optionalEmail,
+  phone: optionalPhone,
+  course: optionalTrimmed("Course"),
+  specialization: optionalTrimmed("Specialization"),
+  state: optionalTrimmed("State", 100),
+  city: optionalTrimmed("City", 100),
+  lead_source: optionalTrimmed("Lead source", 150),
+  source: optionalTrimmed("Source", 150),
+  sub_source: optionalTrimmed("Sub source", 150),
+  utm_source: optionalTrimmed("UTM source", 255),
+  utm_medium: optionalTrimmed("UTM medium", 255),
+  utm_campaign: optionalTrimmed("UTM campaign", 255),
+  utm_content: optionalTrimmed("UTM content", 255),
+  utm_term: optionalTrimmed("UTM term", 255),
+  utm_matchtype: optionalTrimmed("UTM matchtype", 255),
+  utm_adgroup: optionalTrimmed("UTM adgroup", 255),
+  utm_ads: optionalTrimmed("UTM ads", 255),
+  website_url: optionalUrl,
+  otp: optionalOtp,
+  click_source: optionalTrimmed("Click source", 150),
+  lead_url: optionalUrl,
+  interested_university: optionalInterestedUniversity,
+  questions: optionalQuestions,
+  university: optionalTrimmed("University", 255),
+  preferred_time: optionalTrimmed("Preferred time", 100),
+  preferred_date: optionalTrimmed("Preferred date", 100),
+  budget: z.preprocess(
+    (val) => (typeof val === "number" ? String(val) : val),
+    optionalTrimmed("Budget", 100)
+  ),
+  message: z
+    .string()
+    .trim()
+    .max(5000, "Message must be at most 5000 characters")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  filter_lead: optionalTrimmed("Filter lead", 100),
+});

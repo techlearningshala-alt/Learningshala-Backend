@@ -5,9 +5,9 @@ import {
   verifyWebsiteLeadOtp,
   listWebsiteLeads,
   updateInterestedUniversity,
+  updateWebsiteLead,
   resolveCompareUniversities,
 } from "../services/website_lead.service";
-import { authMiddleware } from "../middlewares/auth.middleware";
 import { exportToExcel, ExcelColumn } from "../utills/excelExport";
 import { mapCourseForCrm } from "../utills/crm-course-mapper";
 import {
@@ -16,6 +16,9 @@ import {
   META_PAID_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
 } from "../utills/traffic-type";
+import { uploadToS3, getS3Url, deleteFromS3 } from "../config/s3";
+import { generateFileName } from "../config/multer";
+import { WebsiteLeadRepository } from "../repositories/website_lead.repository";
 
 const WEBSITE_LEAD_WEBHOOK_URL =
   process.env.WEBSITE_LEAD_WEBHOOK_URL || "";
@@ -27,6 +30,40 @@ const WEBSITE_LEAD_WEBHOOK_URL_COUNSELLING_LEADS =
   process.env.WEBSITE_LEAD_WEBHOOK_URL_COUNSELLING_LEADS || "";
 
 const COUNSELLING_FILTER_LEAD = "b2b_free_counselling";
+const S3_FOLDER = "website-leads";
+const FILE_FIELDS = ["resume", "report"] as const;
+type FileField = (typeof FILE_FIELDS)[number];
+
+const uploadLeadFiles = async (
+  files: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] } | undefined
+): Promise<Partial<Record<FileField, string>>> => {
+  const uploaded: Partial<Record<FileField, string>> = {};
+  if (!files) return uploaded;
+
+  const list: Express.Multer.File[] = Array.isArray(files)
+    ? files
+    : Object.values(files).flat();
+
+  for (const file of list) {
+    const field = file.fieldname as FileField;
+    if (!FILE_FIELDS.includes(field)) continue;
+    const fileName = generateFileName(file.originalname);
+    const key = await uploadToS3(file.buffer, fileName, S3_FOLDER, file.mimetype);
+    uploaded[field] = key;
+  }
+
+  return uploaded;
+};
+
+const withFileUrls = <T extends Record<string, any>>(row: T): T => {
+  const out: T = { ...row };
+  for (const field of FILE_FIELDS) {
+    if ((out as any)[field]) {
+      (out as any)[field] = getS3Url(String((out as any)[field]));
+    }
+  }
+  return out;
+};
 
 const postLeadToWebhook = async (
   payload: Record<string, unknown>,
@@ -59,7 +96,11 @@ const postLeadToWebhook = async (
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const lead = await createWebsiteLead(req.body);
+    const uploadedFiles = await uploadLeadFiles(req.files as any);
+    const lead = await createWebsiteLead({
+      ...req.body,
+      ...uploadedFiles,
+    });
     const requestBody: any = req.body || {};
     const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
     const leadUrl = String(lead.lead_url || requestBody.lead_url || "").trim();
@@ -111,6 +152,8 @@ export const create = async (req: Request, res: Response) => {
       budget: lead.budget ?? requestBody.budget ?? "",
       message: lead.message || requestBody.message || "",
       filter_lead: filterLead || "",
+      resume: lead.resume ? getS3Url(String(lead.resume)) : "",
+      report: lead.report ? getS3Url(String(lead.report)) : "",
       compare_universities: resolveCompareUniversities(
         lead.interested_university,
         requestBody.interested_university
@@ -130,12 +173,63 @@ export const create = async (req: Request, res: Response) => {
 
     // Exclude OTP from response for security
     const { otp, ...leadWithoutOtp } = lead;
-    return successResponse(res, leadWithoutOtp, "Website lead created successfully", 201);
+    return successResponse(
+      res,
+      withFileUrls(leadWithoutOtp),
+      "Website lead created successfully",
+      201
+    );
   } catch (error: any) {
     console.error("❌ Error creating website lead:", error);
     return errorResponse(
       res,
       error?.message || "Failed to create website lead",
+      error?.statusCode || 400
+    );
+  }
+};
+
+export const update = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id || Number.isNaN(id)) {
+      return errorResponse(res, "Valid lead ID is required", 400);
+    }
+
+    const existing = await WebsiteLeadRepository.findById(id);
+    if (!existing) {
+      return errorResponse(res, "Website lead not found", 404);
+    }
+
+    const uploadedFiles = await uploadLeadFiles(req.files as any);
+
+    // Replace old S3 files when new ones are uploaded
+    for (const field of FILE_FIELDS) {
+      if (uploadedFiles[field] && existing[field]) {
+        deleteFromS3(String(existing[field])).catch(() => undefined);
+      }
+    }
+
+    const updated = await updateWebsiteLead(id, {
+      ...req.body,
+      ...uploadedFiles,
+    });
+
+    if (!updated) {
+      return errorResponse(res, "Website lead not found", 404);
+    }
+
+    const { otp, ...dataWithoutOtp } = updated as any;
+    return successResponse(
+      res,
+      withFileUrls(dataWithoutOtp),
+      "Website lead updated successfully"
+    );
+  } catch (error: any) {
+    console.error("❌ Error updating website lead:", error);
+    return errorResponse(
+      res,
+      error?.message || "Failed to update website lead",
       error?.statusCode || 400
     );
   }
@@ -165,7 +259,14 @@ export const getAll = async (req: Request, res: Response) => {
       trafficType,
       filterLead,
     });
-    return successResponse(res, data, "Website leads fetched successfully");
+    return successResponse(
+      res,
+      {
+        ...data,
+        data: (data.data || []).map((row: any) => withFileUrls(row)),
+      },
+      "Website leads fetched successfully"
+    );
   } catch (error: any) {
     console.error("❌ Error fetching website leads:", error);
     return errorResponse(
@@ -225,7 +326,7 @@ export const updateInterestedUniversityById = async (req: Request, res: Response
     const { otp, ...dataWithoutOtp } = updated as any;
     return successResponse(
       res,
-      dataWithoutOtp,
+      withFileUrls(dataWithoutOtp),
       "Interested university updated successfully"
     );
   } catch (error: any) {
@@ -298,6 +399,8 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       { key: "preferred_time", header: "Preferred Time", width: 15 },
       { key: "budget", header: "Budget", width: 15 },
       { key: "message", header: "Message", width: 40 },
+      { key: "resume", header: "Resume", width: 40 },
+      { key: "report", header: "Report", width: 40 },
       {
         key: "created_at",
         header: "Created On",
@@ -315,7 +418,12 @@ export const exportWebsiteLeads = async (req: Request, res: Response) => {
       },
     ];
 
-    await exportToExcel(res, leads, columns, exportName);
+    await exportToExcel(
+      res,
+      leads.map((row: any) => withFileUrls(row)),
+      columns,
+      exportName
+    );
   } catch (error: any) {
     console.error("❌ Error exporting website leads:", error);
     return errorResponse(

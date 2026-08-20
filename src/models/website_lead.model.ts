@@ -31,6 +31,8 @@ export interface WebsiteLead {
   budget?: string | number | null;
   message?: string | null;
   filter_lead?: string | null;
+  resume?: string | null;
+  report?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }

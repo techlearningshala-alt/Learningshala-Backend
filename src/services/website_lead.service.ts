@@ -280,6 +280,8 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
         : normalizeString(String(payload.budget)),
     message: normalizeString(payload.message),
     filter_lead: normalizeString(payload.filter_lead),
+    resume: normalizeString(payload.resume),
+    report: normalizeString(payload.report),
   };
 
   const created = await WebsiteLeadRepository.create(normalized);
@@ -287,6 +289,92 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     ...created,
     interested_university: parseInterestedUniversities(created.interested_university),
     questions: parseQuestions(created.questions),
+  };
+}
+
+export async function updateWebsiteLead(
+  id: number,
+  payload: Partial<WebsiteLead>
+): Promise<WebsiteLead | null> {
+  const existing = await WebsiteLeadRepository.findById(id);
+  if (!existing) return null;
+
+  const patch: Partial<WebsiteLead> = {};
+
+  if (payload.name !== undefined) patch.name = String(payload.name).trim();
+  if (payload.email !== undefined) patch.email = normalizeString(payload.email);
+  if (payload.phone !== undefined) patch.phone = normalizePhone(payload.phone);
+  if (payload.course !== undefined) patch.course = normalizeString(payload.course);
+  if (payload.specialization !== undefined) {
+    patch.specialization = normalizeString(payload.specialization);
+  }
+  if (payload.state !== undefined) patch.state = normalizeString(payload.state);
+  if (payload.city !== undefined) patch.city = normalizeString(payload.city);
+  if (payload.lead_source !== undefined) {
+    patch.lead_source = normalizeString(payload.lead_source);
+  }
+  if (payload.sub_source !== undefined) {
+    patch.sub_source = normalizeString(payload.sub_source);
+  }
+  if (payload.utm_source !== undefined) {
+    patch.utm_source = normalizeString(payload.utm_source);
+  }
+  if (payload.utm_campaign !== undefined) {
+    patch.utm_campaign = normalizeString(payload.utm_campaign);
+  }
+  if (payload.utm_adgroup !== undefined) {
+    patch.utm_adgroup = normalizeString(payload.utm_adgroup);
+  }
+  if (payload.utm_ads !== undefined) patch.utm_ads = normalizeString(payload.utm_ads);
+  if (payload.website_url !== undefined) {
+    patch.website_url = normalizeString(payload.website_url);
+  }
+  if (payload.otp !== undefined) {
+    const cleanedOtp = String(payload.otp || "").trim().replace(/\D/g, "");
+    if (cleanedOtp.length === 6) patch.otp = cleanedOtp;
+  }
+  if (payload.click_source !== undefined) {
+    patch.click_source = normalizeString(payload.click_source);
+  }
+  if (payload.lead_url !== undefined) {
+    patch.lead_url = normalizeString(payload.lead_url);
+    patch.traffic_type = deriveTrafficTypeFromLeadUrl(payload.lead_url);
+  }
+  if (payload.interested_university !== undefined) {
+    patch.interested_university = normalizeInterestedUniversities(
+      payload.interested_university
+    );
+  }
+  if (payload.questions !== undefined) {
+    patch.questions = normalizeQuestions(payload.questions);
+  }
+  if (payload.university !== undefined) {
+    patch.university = normalizeString(payload.university);
+  }
+  if (payload.preferred_time !== undefined) {
+    patch.preferred_time = normalizeString(payload.preferred_time);
+  }
+  if (payload.preferred_date !== undefined) {
+    patch.preferred_date = normalizeString(payload.preferred_date);
+  }
+  if (payload.budget !== undefined) {
+    patch.budget =
+      payload.budget === null ? null : normalizeString(String(payload.budget));
+  }
+  if (payload.message !== undefined) patch.message = normalizeString(payload.message);
+  if (payload.filter_lead !== undefined) {
+    patch.filter_lead = normalizeString(payload.filter_lead);
+  }
+  if (payload.resume !== undefined) patch.resume = normalizeString(payload.resume);
+  if (payload.report !== undefined) patch.report = normalizeString(payload.report);
+
+  const updated = await WebsiteLeadRepository.updateById(id, patch);
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    interested_university: parseInterestedUniversities(updated.interested_university),
+    questions: parseQuestions(updated.questions),
   };
 }
 

@@ -12,6 +12,39 @@ export interface ListWebsiteLeadOptions {
 
 const COUNSELLING_FILTER_LEAD = "b2b_free_counselling";
 
+const LEAD_SELECT_COLUMNS = `
+  id,
+  name,
+  email,
+  phone,
+  course,
+  specialization,
+  state,
+  city,
+  lead_source,
+  sub_source,
+  utm_source,
+  utm_campaign,
+  utm_adgroup,
+  utm_ads,
+  website_url,
+  click_source,
+  lead_url,
+  traffic_type,
+  interested_university,
+  questions,
+  university,
+  preferred_time,
+  preferred_date,
+  budget,
+  message,
+  filter_lead,
+  resume,
+  report,
+  created_at,
+  updated_at
+`;
+
 export const WebsiteLeadRepository = {
   async findAll(page = 1, limit = 10, options: ListWebsiteLeadOptions = {}) {
     const offset = (page - 1) * limit;
@@ -59,34 +92,7 @@ export const WebsiteLeadRepository = {
     const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
     const [rows]: any = await pool.query(
-      `SELECT
-        id,
-        name,
-        email,
-        phone,
-        course,
-        specialization,
-        state,
-        city,
-        lead_source,
-        sub_source,
-        utm_source,
-        utm_campaign,
-        utm_adgroup,
-        utm_ads,
-        website_url,
-        click_source,
-        lead_url,
-        traffic_type,
-        interested_university,
-        questions,
-        university,
-        preferred_time,
-        preferred_date,
-        budget,
-        message,
-        filter_lead,
-        created_at
+      `SELECT ${LEAD_SELECT_COLUMNS}
       FROM website_leads
       ${whereClause}
       ORDER BY created_at DESC, id DESC
@@ -111,6 +117,16 @@ export const WebsiteLeadRepository = {
     };
   },
 
+  async findById(id: number): Promise<WebsiteLead | null> {
+    const [rows]: any = await pool.query(
+      `SELECT ${LEAD_SELECT_COLUMNS}
+       FROM website_leads
+       WHERE id = ?`,
+      [id]
+    );
+    return rows?.[0] || null;
+  },
+
   async create(payload: WebsiteLead): Promise<WebsiteLead> {
     const sql = `
       INSERT INTO website_leads
@@ -118,9 +134,9 @@ export const WebsiteLeadRepository = {
         name, email, phone, course, specialization, state, city,
         lead_source, sub_source, utm_source, utm_campaign, utm_adgroup, utm_ads,
         website_url, otp, click_source, lead_url, traffic_type, interested_university, questions, university,
-        preferred_time, preferred_date, budget, message, filter_lead
+        preferred_time, preferred_date, budget, message, filter_lead, resume, report
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `;
 
     const budgetValue =
@@ -155,6 +171,8 @@ export const WebsiteLeadRepository = {
       budgetValue,
       payload.message ?? null,
       payload.filter_lead ?? null,
+      payload.resume ?? null,
+      payload.report ?? null,
     ];
 
     const [result]: any = await pool.query(sql, params);
@@ -164,6 +182,70 @@ export const WebsiteLeadRepository = {
       ...payload,
       budget: budgetValue,
     };
+  },
+
+  async updateById(
+    id: number,
+    payload: Partial<WebsiteLead>
+  ): Promise<WebsiteLead | null> {
+    const fields: string[] = [];
+    const params: any[] = [];
+
+    const setIfPresent = (column: string, value: unknown) => {
+      if (value !== undefined) {
+        fields.push(`${column} = ?`);
+        params.push(value);
+      }
+    };
+
+    setIfPresent("name", payload.name);
+    setIfPresent("email", payload.email);
+    setIfPresent("phone", payload.phone);
+    setIfPresent("course", payload.course);
+    setIfPresent("specialization", payload.specialization);
+    setIfPresent("state", payload.state);
+    setIfPresent("city", payload.city);
+    setIfPresent("lead_source", payload.lead_source);
+    setIfPresent("sub_source", payload.sub_source);
+    setIfPresent("utm_source", payload.utm_source);
+    setIfPresent("utm_campaign", payload.utm_campaign);
+    setIfPresent("utm_adgroup", payload.utm_adgroup);
+    setIfPresent("utm_ads", payload.utm_ads);
+    setIfPresent("website_url", payload.website_url);
+    setIfPresent("otp", payload.otp);
+    setIfPresent("click_source", payload.click_source);
+    setIfPresent("lead_url", payload.lead_url);
+    setIfPresent("traffic_type", payload.traffic_type);
+    setIfPresent("interested_university", payload.interested_university);
+    setIfPresent("questions", payload.questions);
+    setIfPresent("university", payload.university);
+    setIfPresent("preferred_time", payload.preferred_time);
+    setIfPresent("preferred_date", payload.preferred_date);
+    if (payload.budget !== undefined) {
+      const budgetValue =
+        payload.budget === null ? null : String(payload.budget).trim() || null;
+      fields.push("budget = ?");
+      params.push(budgetValue);
+    }
+    setIfPresent("message", payload.message);
+    setIfPresent("filter_lead", payload.filter_lead);
+    setIfPresent("resume", payload.resume);
+    setIfPresent("report", payload.report);
+
+    if (!fields.length) {
+      return this.findById(id);
+    }
+
+    fields.push("updated_at = NOW()");
+    params.push(id);
+
+    const [result]: any = await pool.query(
+      `UPDATE website_leads SET ${fields.join(", ")} WHERE id = ?`,
+      params
+    );
+
+    if (!result?.affectedRows) return null;
+    return this.findById(id);
   },
 
   async verifyOtp(id: number, otp: string): Promise<boolean> {
@@ -184,42 +266,6 @@ export const WebsiteLeadRepository = {
     );
 
     if (!result?.affectedRows) return null;
-
-    const [rows]: any = await pool.query(
-      `SELECT
-        id,
-        name,
-        email,
-        phone,
-        course,
-        specialization,
-        state,
-        city,
-        lead_source,
-        sub_source,
-        utm_source,
-        utm_campaign,
-        utm_adgroup,
-        utm_ads,
-        website_url,
-        click_source,
-        lead_url,
-        traffic_type,
-        interested_university,
-        questions,
-        university,
-        preferred_time,
-        preferred_date,
-        budget,
-        message,
-        created_at,
-        updated_at
-      FROM website_leads
-      WHERE id = ?`,
-      [id]
-    );
-
-    return rows?.[0] || null;
+    return this.findById(id);
   },
 };
-
