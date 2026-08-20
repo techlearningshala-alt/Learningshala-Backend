@@ -29,9 +29,9 @@ router.post(
 // Public endpoint to verify OTP by lead ID (unauthenticated)
 router.post("/:id/verify-otp", validate(verifyOtpSchema), WebsiteLeadController.verifyOtp);
 
-// Protected endpoint to list website leads (authenticated)
-router.get("/", authMiddleware, WebsiteLeadController.getAll);
-router.get("/export", authMiddleware, WebsiteLeadController.exportWebsiteLeads);
+// Admin-only list/export (new paths — old GET / and GET /export removed)
+router.get("/admin-list", authMiddleware, WebsiteLeadController.getAll);
+router.get("/admin-export", authMiddleware, WebsiteLeadController.exportWebsiteLeads);
 
 router.put(
   "/:id/interested-university",
