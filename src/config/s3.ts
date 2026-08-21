@@ -14,36 +14,53 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "my-learningshala-bucket-2025";
 const AWS_REGION = process.env.AWS_REGION || "ap-south-1";
+const CLOUDFRONT_BASE =
+  process.env.AWS_CLOUDFRONT_BASE_URL ||
+  process.env.AWS_S3_BASE_URL ||
+  "https://d34odytkc8nsi8.cloudfront.net";
 
 /**
- * Get S3 base URL from environment or construct from bucket name and region
- * @returns S3 base URL
+ * Public CDN base URL for uploaded files (CloudFront preferred)
  */
 export const getS3BaseUrl = (): string => {
-  if (process.env.AWS_S3_BASE_URL) {
-    return process.env.AWS_S3_BASE_URL;
-  }
-  return `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com`;
+  return CLOUDFRONT_BASE.replace(/\/$/, "");
 };
 
 /**
- * Get full S3 URL from key
- * @param key - S3 key (path)
- * @returns Full S3 URL
+ * Get public CDN URL from S3 key (or rewrite direct S3 URL → CloudFront)
+ * @param key - S3 key (path) or full URL
+ * @returns CloudFront URL
  */
 export const getS3Url = (key: string): string => {
   if (!key) return "";
-  // If already a full URL, return as is
-  if (key.startsWith("http://") || key.startsWith("https://")) {
-    return key;
+
+  const raw = String(key).trim();
+  if (!raw) return "";
+
+  // Old local path — keep as-is
+  if (raw.startsWith("/uploads/")) {
+    return raw;
   }
-  // If old local path, return as is (for backward compatibility)
-  if (key.startsWith("/uploads/")) {
-    return key;
-  }
-  // Construct full URL from key
+
   const baseUrl = getS3BaseUrl();
-  return `${baseUrl}/${key}`;
+
+  // Already CloudFront
+  if (raw.includes("cloudfront.net")) {
+    return raw;
+  }
+
+  // Direct S3 / other absolute URL → keep only the object path under CDN
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const parsed = new URL(raw);
+      const path = parsed.pathname.replace(/^\//, "");
+      return path ? `${baseUrl}/${path}` : baseUrl;
+    } catch {
+      return raw;
+    }
+  }
+
+  return `${baseUrl}/${raw.replace(/^\//, "")}`;
 };
 
 /**
@@ -94,12 +111,15 @@ export const deleteFromS3 = async (fileKeyOrUrl: string): Promise<boolean> => {
     let key = fileKeyOrUrl;
     if (fileKeyOrUrl.includes("amazonaws.com/")) {
       key = fileKeyOrUrl.split("amazonaws.com/")[1];
+    } else if (fileKeyOrUrl.includes("cloudfront.net/")) {
+      key = fileKeyOrUrl.split("cloudfront.net/")[1];
     } else if (fileKeyOrUrl.startsWith("/uploads/")) {
       // Old local path - skip deletion
       return true;
     }
     // Otherwise, it's already a key, use as is
-
+    // Strip query string if present
+    key = key.split("?")[0];
     const command = new DeleteObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
