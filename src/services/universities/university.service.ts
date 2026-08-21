@@ -15,6 +15,18 @@ const parseCompareInformation = (raw: any): Record<string, any> => {
   }
 };
 
+/** Merge top-level scholarship_provides into compare_information for public compare APIs */
+const buildCompareInformation = (
+  raw: any,
+  scholarshipProvides?: string | null
+): Record<string, any> => ({
+  ...parseCompareInformation(raw),
+  scholarship_provides:
+    scholarshipProvides === undefined || scholarshipProvides === null
+      ? ""
+      : String(scholarshipProvides),
+});
+
 /** Resolve author/verifier profile fields; COLLATE avoids utf8mb4_unicode_ci vs general_ci mix errors. */
 const getAuthorSummaryByName = async (authorName?: string | null) => {
   const normalizedName = String(authorName || "").trim();
@@ -1122,6 +1134,7 @@ export const getUniversityBySlug = async (slug: string) => {
         uc.is_page_created,
         uc.compare_page_slug,
         uc.compare_information,
+        uc.scholarship_provides,
         uc.syllabus_file,
         uc.credit_points,
         uc.eligibility,
@@ -1133,7 +1146,7 @@ export const getUniversityBySlug = async (slug: string) => {
       FROM university_courses uc
       LEFT JOIN university_course_specialization ucs ON uc.id = ucs.university_course_id
       WHERE uc.university_id = ? AND uc.is_active = 1
-      GROUP BY uc.id, uc.name, uc.slug, uc.duration, uc.course_thumbnail, uc.fee_type_values, uc.emi_duration, uc.is_page_created, uc.compare_page_slug, uc.updated_at, uc.created_at
+      GROUP BY uc.id, uc.name, uc.slug, uc.duration, uc.course_thumbnail, uc.fee_type_values, uc.emi_duration, uc.is_page_created, uc.compare_page_slug, uc.compare_information, uc.scholarship_provides, uc.syllabus_file, uc.credit_points, uc.eligibility, uc.eligibility_info, uc.brochure_file, uc.updated_at, uc.created_at
       ORDER BY uc.created_at ASC`,
       [universityId]
     );
@@ -1157,7 +1170,10 @@ export const getUniversityBySlug = async (slug: string) => {
         fees: fees,
         is_page_created: course.is_page_created == 1 ? true : false,
         compare_page_slug: course.compare_page_slug,
-        compare_information: course.compare_information ? parseCompareInformation(course.compare_information) : null, 
+        compare_information: buildCompareInformation(
+          course.compare_information,
+          course.scholarship_provides
+        ),
         syllabus_file: course.syllabus_file,
         credit_points: course.credit_points,
         eligibility: course.eligibility,
@@ -1172,7 +1188,9 @@ export const getUniversityBySlug = async (slug: string) => {
   }
 
   const universityData: any = { ...rows[0] };
-  universityData.compare_information = parseCompareInformation(universityData.compare_information);
+  universityData.compare_information = parseCompareInformation(
+    universityData.compare_information
+  );
   // Normalize booleans
   if (universityData.is_page_created !== undefined) {
     universityData.is_page_created = Boolean(universityData.is_page_created);
