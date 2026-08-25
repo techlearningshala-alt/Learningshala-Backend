@@ -8,6 +8,13 @@ const pairSchema = z.object({
     .positive("university_course_id is required"),
 });
 
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .nullable()
+  .or(z.literal("").transform(() => null));
+
 export const createCompareSetSchema = z.object({
   title: z
     .string()
@@ -16,10 +23,17 @@ export const createCompareSetSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("").transform(() => null)),
+  description: optionalText,
+  university_url: z
+    .string()
+    .trim()
+    .max(2048, "University URL is too long")
+    .optional()
+    .nullable()
+    .or(z.literal("").transform(() => null)),
   pairs: z
     .array(pairSchema)
-    .min(2, "At least 2 pairs are required")
-    .max(20, "Maximum 20 pairs allowed"),
+    .length(2, "Exactly 2 universities are required"),
 });
 
 export const updateCompareSetSchema = createCompareSetSchema;

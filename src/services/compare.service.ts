@@ -36,16 +36,16 @@ export async function getCompareSet(id: number) {
 }
 
 export async function createCompareSet(payload: CreateCompareSetDto) {
-  if (!payload.pairs || payload.pairs.length < 2) {
-    throw new AppError("At least 2 pairs are required", 400);
+  if (!payload.pairs || payload.pairs.length !== 2) {
+    throw new AppError("Exactly 2 universities are required", 400);
   }
   await assertPairsValid(payload.pairs);
   return CompareRepository.create(payload);
 }
 
 export async function updateCompareSet(id: number, payload: UpdateCompareSetDto) {
-  if (!payload.pairs || payload.pairs.length < 2) {
-    throw new AppError("At least 2 pairs are required", 400);
+  if (!payload.pairs || payload.pairs.length !== 2) {
+    throw new AppError("Exactly 2 universities are required", 400);
   }
   await assertPairsValid(payload.pairs);
   const updated = await CompareRepository.update(id, payload);

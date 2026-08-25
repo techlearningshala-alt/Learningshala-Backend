@@ -13,6 +13,8 @@ export type ComparePair = {
 export type CompareSet = {
   id?: number;
   title?: string | null;
+  description?: string | null;
+  university_url?: string | null;
   pairs?: ComparePair[];
   pair_count?: number;
   created_at?: Date;
@@ -21,6 +23,8 @@ export type CompareSet = {
 
 export type CreateCompareSetDto = {
   title?: string | null;
+  description?: string | null;
+  university_url?: string | null;
   pairs: Array<{
     university_id: number;
     university_course_id: number;

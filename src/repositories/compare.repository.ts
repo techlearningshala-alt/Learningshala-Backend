@@ -13,13 +13,15 @@ export const CompareRepository = {
       `SELECT
          cs.id,
          cs.title,
+         cs.description,
+         cs.university_url,
          cs.created_at,
          cs.updated_at,
          COUNT(cp.id) AS pair_count
        FROM compare_sets cs
        LEFT JOIN compare_pairs cp ON cp.compare_set_id = cs.id
-       GROUP BY cs.id, cs.title, cs.created_at, cs.updated_at
-       ORDER BY cs.id DESC
+       GROUP BY cs.id, cs.title, cs.description, cs.university_url, cs.created_at, cs.updated_at
+       ORDER BY cs.id ASC
        LIMIT ? OFFSET ?`,
       [limit, offset]
     );
@@ -71,7 +73,8 @@ export const CompareRepository = {
 
   async findById(id: number): Promise<CompareSet | null> {
     const [rows]: any = await pool.query(
-      `SELECT id, title, created_at, updated_at FROM compare_sets WHERE id = ? LIMIT 1`,
+      `SELECT id, title, description, university_url, created_at, updated_at
+       FROM compare_sets WHERE id = ? LIMIT 1`,
       [id]
     );
     if (!rows.length) return null;
@@ -87,8 +90,12 @@ export const CompareRepository = {
       await conn.beginTransaction();
 
       const [result]: any = await conn.query(
-        `INSERT INTO compare_sets (title) VALUES (?)`,
-        [payload.title?.trim() || null]
+        `INSERT INTO compare_sets (title, description, university_url) VALUES (?, ?, ?)`,
+        [
+          payload.title?.trim() || null,
+          payload.description?.trim() || null,
+          payload.university_url?.trim() || null,
+        ]
       );
       const compareSetId = result.insertId as number;
 
@@ -120,10 +127,15 @@ export const CompareRepository = {
     try {
       await conn.beginTransaction();
 
-      await conn.query(`UPDATE compare_sets SET title = ? WHERE id = ?`, [
-        payload.title?.trim() || null,
-        id,
-      ]);
+      await conn.query(
+        `UPDATE compare_sets SET title = ?, description = ?, university_url = ? WHERE id = ?`,
+        [
+          payload.title?.trim() || null,
+          payload.description?.trim() || null,
+          payload.university_url?.trim() || null,
+          id,
+        ]
+      );
 
       await conn.query(`DELETE FROM compare_pairs WHERE compare_set_id = ?`, [id]);
 
