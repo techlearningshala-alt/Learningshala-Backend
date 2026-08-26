@@ -6,6 +6,8 @@ export type ComparePair = {
   university_course_id: number;
   university_name?: string | null;
   course_name?: string | null;
+  university_logo?: string | null;
+  banner?: string | null;
   created_at?: Date;
   updated_at?: Date;
 };

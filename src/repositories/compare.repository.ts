@@ -1,10 +1,17 @@
 import pool from "../config/db";
+import { getS3Url } from "../config/s3";
 import {
   CompareSet,
   ComparePair,
   CreateCompareSetDto,
   UpdateCompareSetDto,
 } from "../models/compare.model";
+
+const withPairMediaUrls = (pair: ComparePair): ComparePair => ({
+  ...pair,
+  university_logo: pair.university_logo ? getS3Url(String(pair.university_logo)) : null,
+  banner: pair.banner ? getS3Url(String(pair.banner)) : null,
+});
 
 export const CompareRepository = {
   async findAll(page = 1, limit = 10) {
@@ -60,6 +67,16 @@ export const CompareRepository = {
          cp.created_at,
          cp.updated_at,
          u.university_name,
+         u.university_logo,
+         (
+           SELECT ub.banner_image
+           FROM university_banners ub
+           WHERE ub.university_id = u.id
+             AND ub.banner_image IS NOT NULL
+             AND ub.banner_image <> ''
+           ORDER BY ub.id ASC
+           LIMIT 1
+         ) AS banner,
          uc.name AS course_name
        FROM compare_pairs cp
        LEFT JOIN universities u ON u.id = cp.university_id
@@ -68,7 +85,7 @@ export const CompareRepository = {
        ORDER BY cp.sort_order ASC, cp.id ASC`,
       [compareSetId]
     );
-    return rows as ComparePair[];
+    return (rows as ComparePair[]).map(withPairMediaUrls);
   },
 
   async findById(id: number): Promise<CompareSet | null> {
