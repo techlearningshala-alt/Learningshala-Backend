@@ -3,6 +3,8 @@ import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/w
 import {
   deriveTrafficTypeFromLeadUrl,
   extractUtmParamsFromLeadUrl,
+  INFLUENCER_SUB_SOURCE,
+  isInfluencerUtmSource,
   META_PAID_SOURCE,
   META_PAID_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
@@ -255,6 +257,9 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   if (shouldUseMetaPaidWebhook(payload.lead_url)) {
     sourceValue = META_PAID_SOURCE;
     subSourceValue = META_PAID_SUB_SOURCE;
+  } else if (isInfluencerUtmSource(utmFromUrl.utm_source || sourceValue)) {
+    // lead_url utm_source = influencer → sub_source always youtube
+    subSourceValue = INFLUENCER_SUB_SOURCE;
   }
 
   const normalized: WebsiteLead = {

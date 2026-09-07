@@ -25,6 +25,16 @@ const META_PAID_WEBHOOK_MEDIUMS = new Set(["meta", "paid", "google"]);
 export const META_PAID_SOURCE = "Meta";
 export const META_PAID_SUB_SOURCE = "LS-META-IGNOU";
 
+/** When lead_url utm_source is influencer → webhook/DB sub_source */
+export const INFLUENCER_SUB_SOURCE = "youtube";
+
+/** True when utm_source is/contains "influencer" (case-insensitive). */
+export function isInfluencerUtmSource(source?: string | null): boolean {
+  if (!source) return false;
+  const normalized = String(source).trim().toLowerCase().replace(/\+/g, " ");
+  return normalized === "influencer" || normalized.includes("influencer");
+}
+
 function getQueryParam(url: string, key: string): string | null {
   try {
     const parsed = new URL(url);

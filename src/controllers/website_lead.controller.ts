@@ -14,8 +14,10 @@ import {
   getUtmMediumFromLeadUrl,
   META_PAID_SOURCE,
   META_PAID_SUB_SOURCE,
+  INFLUENCER_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
   extractUtmParamsFromLeadUrl,
+  isInfluencerUtmSource,
 } from "../utills/traffic-type";
 import { uploadToS3, getS3Url, deleteFromS3 } from "../config/s3";
 import { generateFileName } from "../config/multer";
@@ -125,7 +127,9 @@ export const create = async (req: Request, res: Response) => {
         ).trim();
     const subSourceValue = useMetaPaidWebhook
       ? META_PAID_SUB_SOURCE
-      : String(requestBody.sub_source || lead.sub_source || "").trim();
+      : isInfluencerUtmSource(utmFromUrl.utm_source || sourceValue)
+        ? INFLUENCER_SUB_SOURCE
+        : String(requestBody.sub_source || lead.sub_source || "").trim();
 
     const utmMediumFromUrl = getUtmMediumFromLeadUrl(leadUrl) || "";
 
