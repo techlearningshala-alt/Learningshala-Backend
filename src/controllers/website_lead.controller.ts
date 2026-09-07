@@ -141,7 +141,7 @@ export const create = async (req: Request, res: Response) => {
       sub_source_new: subSourceValue,
       website_url: "https://learningshala.com",
       lead_url: leadUrl,
-      utm_source: sourceValue || utmFromUrl.utm_source || "",
+      utm_source: utmFromUrl.utm_source || "",
       utm_medium:
         requestBody.utm_medium ||
         utmMediumFromUrl ||
