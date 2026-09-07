@@ -242,13 +242,12 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   const normalizedUtmSource = normalizeString(payload.utm_source);
   const normalizedLeadSource = normalizeString(payload.lead_source);
   const normalizedSource = normalizeString(payload.source);
-  // Frontend sends the same value for source and utm_source.
-  // Fallback: parse UTMs from lead_url query string.
+  // utm_source and source/lead_source stay the same value
   let sourceValue =
     normalizedUtmSource ||
+    normalizeString(utmFromUrl.utm_source) ||
     normalizedSource ||
     normalizedLeadSource ||
-    normalizeString(utmFromUrl.utm_source) ||
     null;
   let subSourceValue = normalizeString(payload.sub_source);
 

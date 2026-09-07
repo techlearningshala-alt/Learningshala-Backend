@@ -116,11 +116,11 @@ export const create = async (req: Request, res: Response) => {
     const sourceValue = useMetaPaidWebhook
       ? META_PAID_SOURCE
       : String(
-          requestBody.source ||
-            requestBody.utm_source ||
+          requestBody.utm_source ||
+            utmFromUrl.utm_source ||
+            requestBody.source ||
             lead.utm_source ||
             lead.lead_source ||
-            utmFromUrl.utm_source ||
             ""
         ).trim();
     const subSourceValue = useMetaPaidWebhook
@@ -137,11 +137,12 @@ export const create = async (req: Request, res: Response) => {
       specialisation: lead.specialization || "Not Decided Yet",
       state: lead.state || "",
       city: lead.city || "",
+      // source and utm_source must always match
       source: sourceValue,
       sub_source_new: subSourceValue,
       website_url: "https://learningshala.com",
       lead_url: leadUrl,
-      utm_source: utmFromUrl.utm_source || "",
+      utm_source: sourceValue,
       utm_medium:
         requestBody.utm_medium ||
         utmMediumFromUrl ||
