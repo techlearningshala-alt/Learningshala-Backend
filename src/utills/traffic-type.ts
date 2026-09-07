@@ -26,7 +26,7 @@ export const META_PAID_SOURCE = "Meta";
 export const META_PAID_SUB_SOURCE = "LS-META-IGNOU";
 
 /** When lead_url utm_source is influencer → webhook/DB sub_source */
-export const INFLUENCER_SUB_SOURCE = "youtube";
+export const INFLUENCER_SUB_SOURCE = "YouTube";
 
 /** True when utm_source is/contains "influencer" (case-insensitive). */
 export function isInfluencerUtmSource(source?: string | null): boolean {

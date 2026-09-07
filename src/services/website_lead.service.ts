@@ -258,7 +258,7 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     sourceValue = META_PAID_SOURCE;
     subSourceValue = META_PAID_SUB_SOURCE;
   } else if (isInfluencerUtmSource(utmFromUrl.utm_source || sourceValue)) {
-    // lead_url utm_source = influencer → sub_source always youtube
+    // lead_url utm_source = influencer → sub_source always YouTube
     subSourceValue = INFLUENCER_SUB_SOURCE;
   }
 
