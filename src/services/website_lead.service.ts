@@ -2,6 +2,7 @@ import { WebsiteLead } from "../models/website_lead.model";
 import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/website_lead.repository";
 import {
   deriveTrafficTypeFromLeadUrl,
+  extractUtmParamsFromLeadUrl,
   META_PAID_SOURCE,
   META_PAID_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
@@ -236,12 +237,19 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     }
   }
 
+  const utmFromUrl = extractUtmParamsFromLeadUrl(payload.lead_url);
+
   const normalizedUtmSource = normalizeString(payload.utm_source);
   const normalizedLeadSource = normalizeString(payload.lead_source);
   const normalizedSource = normalizeString(payload.source);
   // Frontend sends the same value for source and utm_source.
+  // Fallback: parse UTMs from lead_url query string.
   let sourceValue =
-    normalizedUtmSource || normalizedSource || normalizedLeadSource || null;
+    normalizedUtmSource ||
+    normalizedSource ||
+    normalizedLeadSource ||
+    normalizeString(utmFromUrl.utm_source) ||
+    null;
   let subSourceValue = normalizeString(payload.sub_source);
 
   // Paid Meta/Google leads: fixed source + sub_source for CRM/webhook consistency
@@ -261,9 +269,18 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
     lead_source: sourceValue,
     sub_source: subSourceValue,
     utm_source: sourceValue,
-    utm_campaign: normalizeString(payload.utm_campaign) || "",
-    utm_adgroup: normalizeString(payload.utm_adgroup) || "",
-    utm_ads: normalizeString(payload.utm_ads) || "",
+    utm_campaign:
+      normalizeString(payload.utm_campaign) ||
+      normalizeString(utmFromUrl.utm_campaign) ||
+      "",
+    utm_adgroup:
+      normalizeString(payload.utm_adgroup) ||
+      normalizeString(utmFromUrl.utm_adgroup) ||
+      "",
+    utm_ads:
+      normalizeString(payload.utm_ads) ||
+      normalizeString(utmFromUrl.utm_ads) ||
+      "",
     website_url: "https://learningshala.com",
     otp: otpValue,
     click_source: payload.click_source,

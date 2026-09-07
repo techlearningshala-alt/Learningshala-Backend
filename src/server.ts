@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import routes from "./routes";
+import whatsappWebhookRoutes from "./routes/whatsapp_webhook.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import { stream } from "./utills/logger";
 import cors from "cors";
@@ -21,6 +22,21 @@ app.use(cors({
 
 // ✅ Serve static uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+/**
+ * Meta WhatsApp webhook — must capture raw body BEFORE global express.json()
+ * so we can verify X-Hub-Signature-256.
+ * Configure in Meta: Callback URL = https://<your-api-host>/webhook/whatsapp
+ */
+app.use(
+  "/webhook/whatsapp",
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = Buffer.from(buf);
+    },
+  }),
+  whatsappWebhookRoutes
+);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

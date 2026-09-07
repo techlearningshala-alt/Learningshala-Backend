@@ -15,6 +15,7 @@ import {
   META_PAID_SOURCE,
   META_PAID_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
+  extractUtmParamsFromLeadUrl,
 } from "../utills/traffic-type";
 import { uploadToS3, getS3Url, deleteFromS3 } from "../config/s3";
 import { generateFileName } from "../config/multer";
@@ -104,6 +105,7 @@ export const create = async (req: Request, res: Response) => {
     const requestBody: any = req.body || {};
     const crmCourse = mapCourseForCrm(requestBody.course || lead.course);
     const leadUrl = String(lead.lead_url || requestBody.lead_url || "").trim();
+    const utmFromUrl = extractUtmParamsFromLeadUrl(leadUrl);
     const filterLead = String(
       lead.filter_lead || requestBody.filter_lead || ""
     ).trim();
@@ -118,6 +120,7 @@ export const create = async (req: Request, res: Response) => {
             requestBody.utm_source ||
             lead.utm_source ||
             lead.lead_source ||
+            utmFromUrl.utm_source ||
             ""
         ).trim();
     const subSourceValue = useMetaPaidWebhook
@@ -138,12 +141,21 @@ export const create = async (req: Request, res: Response) => {
       sub_source_new: subSourceValue,
       website_url: "https://learningshala.com",
       lead_url: leadUrl,
-      utm_source: sourceValue,
-      utm_medium: requestBody.utm_medium || utmMediumFromUrl || "",
-      utm_campaign: requestBody.utm_campaign || lead.utm_campaign || "",
-      utm_content: requestBody.utm_content || "",
-      utm_term: requestBody.utm_term || "",
-      utm_matchtype: requestBody.utm_matchtype || "",
+      utm_source: sourceValue || utmFromUrl.utm_source || "",
+      utm_medium:
+        requestBody.utm_medium ||
+        utmMediumFromUrl ||
+        utmFromUrl.utm_medium ||
+        "",
+      utm_campaign:
+        requestBody.utm_campaign ||
+        lead.utm_campaign ||
+        utmFromUrl.utm_campaign ||
+        "",
+      utm_content: requestBody.utm_content || utmFromUrl.utm_content || "",
+      utm_term: requestBody.utm_term || utmFromUrl.utm_term || "",
+      utm_matchtype:
+        requestBody.utm_matchtype || utmFromUrl.utm_matchtype || "",
       question_fills: "No",
       questions: lead.questions ?? requestBody.questions ?? null,
       university: lead.university || requestBody.university || "",

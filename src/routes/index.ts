@@ -51,6 +51,7 @@ import uploadRoutes from "./upload/upload.routes";
 import postAdmissionTeamRoutes from "./post_admission_team.routes";
 import adminActivityRoutes from "./admin_activity.routes";
 import compareRoutes from "./compare.routes";
+import whatsappRoutes from "./whatsapp.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -133,5 +134,9 @@ router.use("/cms/redirections", redirectionRoutes);
 router.use("/cms/uploads", uploadRoutes);
 router.use("/cms/admin-activity", adminActivityRoutes);
 router.use("/cms/compares", compareRoutes);
+
+// ✅ WhatsApp multi-university inbox (admin)
+// Per-university phone_number_id / waba_id managed via /cms/whatsapp/universities
+router.use("/cms/whatsapp", whatsappRoutes);
 
 export default router;

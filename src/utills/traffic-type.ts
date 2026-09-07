@@ -42,6 +42,66 @@ function getQueryParam(url: string, key: string): string | null {
   }
 }
 
+/** Decode query value; keep original casing (for CRM webhook / storage). */
+function getQueryParamRaw(url: string, key: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const value = parsed.searchParams.get(key);
+    return value ? value.trim() : null;
+  } catch {
+    const match = new RegExp(`[?&]${key}=([^&#]*)`, "i").exec(url);
+    if (!match?.[1]) return null;
+    try {
+      return decodeURIComponent(match[1].replace(/\+/g, " ")).trim();
+    } catch {
+      return match[1].replace(/\+/g, " ").trim();
+    }
+  }
+}
+
+export type LeadUrlUtmParams = {
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+  utm_content: string;
+  utm_term: string;
+  utm_matchtype: string;
+  utm_adgroup: string;
+  utm_ads: string;
+};
+
+/**
+ * Pull UTM query params from lead_url, e.g.
+ * https://learningshala.com/?utm_source=Influencer+Test&utm_campaign=Test
+ */
+export function extractUtmParamsFromLeadUrl(
+  leadUrl?: string | null
+): LeadUrlUtmParams {
+  const empty: LeadUrlUtmParams = {
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_content: "",
+    utm_term: "",
+    utm_matchtype: "",
+    utm_adgroup: "",
+    utm_ads: "",
+  };
+  if (!leadUrl || !String(leadUrl).trim()) return empty;
+
+  const url = String(leadUrl).trim();
+  return {
+    utm_source: getQueryParamRaw(url, "utm_source") || "",
+    utm_medium: getQueryParamRaw(url, "utm_medium") || "",
+    utm_campaign: getQueryParamRaw(url, "utm_campaign") || "",
+    utm_content: getQueryParamRaw(url, "utm_content") || "",
+    utm_term: getQueryParamRaw(url, "utm_term") || "",
+    utm_matchtype: getQueryParamRaw(url, "utm_matchtype") || "",
+    utm_adgroup: getQueryParamRaw(url, "utm_adgroup") || "",
+    utm_ads: getQueryParamRaw(url, "utm_ads") || "",
+  };
+}
+
 export function getUtmMediumFromLeadUrl(leadUrl?: string | null): string | null {
   if (!leadUrl || !String(leadUrl).trim()) return null;
   return getQueryParam(String(leadUrl).trim(), "utm_medium");
