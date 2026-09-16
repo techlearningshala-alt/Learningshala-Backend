@@ -114,7 +114,10 @@ export class DashboardService {
         nonLeadQueries.push(
           pool.query("SELECT COUNT(*) as count FROM universities WHERE is_active = 1"),
           pool.query("SELECT COUNT(*) as count FROM university_courses WHERE is_active = 1"),
-          pool.query("SELECT COUNT(*) as count FROM university_course_specialization WHERE is_active = 1"),
+          // Course specializations with Page Live = Yes
+          pool.query(
+            "SELECT COUNT(*) as count FROM university_course_specialization WHERE is_active = 1 AND is_page_created = 1"
+          ),
           pool.query("SELECT COUNT(*) as count FROM courses WHERE is_active = 1"),
           pool.query("SELECT COUNT(*) as count FROM specializations WHERE is_active = 1"),
           pool.query("SELECT COUNT(*) as count FROM mentors"),
