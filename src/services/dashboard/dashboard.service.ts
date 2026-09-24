@@ -52,8 +52,14 @@ export interface DashboardData {
     today: number;
     yesterday: number;
     thisMonth: number;
+    lastMonth: number;
     total: number;
     organic: number;
+  };
+  monthStats: {
+    leadsLastMonth: number;
+    websiteLeadsLastMonth: number;
+    contactMessagesLastMonth: number;
   };
 }
 
@@ -408,7 +414,7 @@ export class DashboardService {
   }
 
   /**
-   * Get website leads overview (today, yesterday, current month, total) — organic only
+   * Get website leads overview (today, yesterday, current month, last month, total) — organic only
    */
   static async getWebsiteLeadsOverview() {
     try {
@@ -419,10 +425,14 @@ export class DashboardService {
       const year = today.getFullYear();
       const month = today.getMonth(); // 0-based
       const monthStart = new Date(year, month, 1);
+      const lastMonthStart = new Date(year, month - 1, 1);
+      const lastMonthEnd = new Date(year, month, 0); // last day of previous month
 
       const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
       const yesterdayStr = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
       const monthStartStr = monthStart.toISOString().split("T")[0];
+      const lastMonthStartStr = lastMonthStart.toISOString().split("T")[0];
+      const lastMonthEndStr = lastMonthEnd.toISOString().split("T")[0];
       const organicFilter =
         `(traffic_type = 'organic' OR traffic_type IS NULL OR traffic_type = '')`;
       // Exclude B2B counselling leads from admin overview
@@ -433,6 +443,7 @@ export class DashboardService {
         [todayRows],
         [yesterdayRows],
         [monthRows],
+        [lastMonthRows],
         [totalRows],
       ]: any = await Promise.all([
         pool.query(
@@ -448,6 +459,10 @@ export class DashboardService {
           [monthStartStr]
         ),
         pool.query(
+          `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ? AND DATE(created_at) <= ? AND ${organicFilter} AND ${adminVisibleFilter}`,
+          [lastMonthStartStr, lastMonthEndStr]
+        ),
+        pool.query(
           `SELECT COUNT(*) as count FROM website_leads WHERE ${organicFilter} AND ${adminVisibleFilter}`
         ),
       ]);
@@ -458,6 +473,7 @@ export class DashboardService {
         today: (todayRows as any[])[0]?.count || 0,
         yesterday: (yesterdayRows as any[])[0]?.count || 0,
         thisMonth: (monthRows as any[])[0]?.count || 0,
+        lastMonth: (lastMonthRows as any[])[0]?.count || 0,
         total,
         // Kept for backward compatibility; overview is organic-only now.
         organic: total,
@@ -469,17 +485,77 @@ export class DashboardService {
   }
 
   /**
+   * Last calendar month lead counts (landing / website / contact)
+   */
+  static async getMonthStats(userRole?: string) {
+    try {
+      const isLead = userRole === "lead";
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const lastMonthStart = new Date(year, month - 1, 1);
+      const lastMonthEnd = new Date(year, month, 0);
+      const lastMonthStartStr = lastMonthStart.toISOString().split("T")[0];
+      const lastMonthEndStr = lastMonthEnd.toISOString().split("T")[0];
+
+      let leadsLastMonth: any;
+      let websiteLeadsLastMonth: any;
+      let contactMessagesLastMonth: any;
+
+      if (isLead) {
+        [leadsLastMonth, websiteLeadsLastMonth, contactMessagesLastMonth] =
+          await Promise.all([
+            pool.query(
+              `SELECT COUNT(*) as count FROM leads WHERE DATE(created_on) >= ? AND DATE(created_on) <= ?`,
+              [lastMonthStartStr, lastMonthEndStr]
+            ),
+            pool.query(
+              `SELECT COUNT(*) as count FROM website_leads WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?`,
+              [lastMonthStartStr, lastMonthEndStr]
+            ),
+            pool.query(
+              `SELECT COUNT(*) as count FROM contact_us WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?`,
+              [lastMonthStartStr, lastMonthEndStr]
+            ),
+          ]);
+      } else {
+        leadsLastMonth = [[{ count: 0 }]];
+        websiteLeadsLastMonth = [[{ count: 0 }]];
+        contactMessagesLastMonth = [[{ count: 0 }]];
+      }
+
+      return {
+        leadsLastMonth: (leadsLastMonth[0] as any[])[0]?.count || 0,
+        websiteLeadsLastMonth:
+          (websiteLeadsLastMonth[0] as any[])[0]?.count || 0,
+        contactMessagesLastMonth:
+          (contactMessagesLastMonth[0] as any[])[0]?.count || 0,
+      };
+    } catch (error) {
+      console.error("❌ Error fetching month stats:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get complete dashboard data
    * @param userRole - User role to filter data (admin sees non-lead data only, lead sees only leads, others don't see leads)
    */
   static async getDashboardData(userRole?: string): Promise<DashboardData> {
     try {
-      const [statistics, recentActivity, todayStats, weekStats, websiteLeadsOverview] =
-        await Promise.all([
+      const [
+        statistics,
+        recentActivity,
+        todayStats,
+        weekStats,
+        monthStats,
+        websiteLeadsOverview,
+      ] = await Promise.all([
         this.getStatistics(userRole),
         this.getRecentActivity(userRole),
         this.getTodayStats(userRole),
         this.getWeekStats(userRole),
+        this.getMonthStats(userRole),
         this.getWebsiteLeadsOverview(),
       ]);
 
@@ -488,6 +564,7 @@ export class DashboardService {
         recentActivity,
         todayStats,
         weekStats,
+        monthStats,
         websiteLeadsOverview,
       };
     } catch (error) {
