@@ -53,6 +53,7 @@ import adminActivityRoutes from "./admin_activity.routes";
 import compareRoutes from "./compare.routes";
 import whatsappRoutes from "./whatsapp.routes";
 import vagmineLeadRoutes from "./vagmine_lead.routes";
+import homeTitleDescriptionRoutes from "./home_title_description.routes";
 // import universitySectionRoute from "./universities/university_section.routes";
 
 const router = Router();
@@ -60,6 +61,7 @@ const router = Router();
 // ✅ CMS grouped routes
 router.use("/cms/faqs", faqRoutes);
 router.use("/cms/media-spotlight", mediaRoutes);
+router.use("/cms/home-title-descriptions", homeTitleDescriptionRoutes);
 router.use("/cms/mentors", mentorRoutes);
 router.use("/cms/post-admission-team", postAdmissionTeamRoutes);
 router.use("/cms/student-testimonials", testimonialRoutes);
