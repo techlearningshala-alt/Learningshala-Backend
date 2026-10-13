@@ -32,6 +32,7 @@ import stateRoutes from "./location/state.routes";
 import cityRoutes from "./location/city.routes";
 import searchRoutes from "./search.routes";
 import websiteLeadRoutes from "./website_lead.routes";
+import websiteLeadAuthRoutes from "./website_lead_auth.routes";
 import contactUsRoutes from "./contact_us.routes";
 import joinWaitlistRoutes from "./join_waitlist.routes";
 import partnerWithUsRoutes from "./partner_with_us.routes";
@@ -101,6 +102,9 @@ router.use("/cms/search", searchRoutes);
 
 // ✅ Public website leads capture
 router.use("/cms/website/leads", websiteLeadRoutes);
+
+// ✅ Public website lead OTP login
+router.use("/cms/website/auth", websiteLeadAuthRoutes);
 
 // ✅ Contact Us routes
 router.use("/cms/contact-us", contactUsRoutes);

@@ -13,15 +13,17 @@ export const getHomeTitleDescription = async (id: number) => {
 };
 
 export const addHomeTitleDescription = async (
+  page: string,
   meta_title: string,
   meta_description: string
 ) => {
-  await repo.create({ meta_title, meta_description });
+  await repo.create({ page, meta_title, meta_description });
   return { message: "Title & description created successfully" };
 };
 
 export const updateHomeTitleDescription = async (
   id: number,
+  page?: string,
   meta_title?: string,
   meta_description?: string,
   saveWithDate = true
@@ -29,7 +31,7 @@ export const updateHomeTitleDescription = async (
   const item = await repo.findById(id);
   if (!item) throw new AppError("Title & description not found", 404);
 
-  await repo.update(id, { meta_title, meta_description }, saveWithDate);
+  await repo.update(id, { page, meta_title, meta_description }, saveWithDate);
   return { message: "Title & description updated successfully" };
 };
 

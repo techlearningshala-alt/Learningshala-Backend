@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { WebsiteLead } from "../models/website_lead.model";
 import { WebsiteLeadRepository, ListWebsiteLeadOptions } from "../repositories/website_lead.repository";
 import {
@@ -9,6 +10,11 @@ import {
   META_PAID_SUB_SOURCE,
   shouldUseMetaPaidWebhook,
 } from "../utills/traffic-type";
+import { sendTataOtpSms } from "../utills/tataSms";
+
+const OTP_TTL_MINUTES = 10;
+
+const generateOtp = () => String(crypto.randomInt(100000, 1000000));
 
 const normalizeString = (val?: string | null) =>
   typeof val === "string" ? val.trim() || null : val ?? null;
@@ -230,14 +236,8 @@ const strictValidateWebsiteLeadPayload = (payload: WebsiteLead) => {
 
 export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLead> {
   strictValidateWebsiteLeadPayload(payload);
-  // Normalize OTP - if provided, validate it's 6 digits, otherwise use default
-  let otpValue = "123456"; // Default OTP
-  if (payload.otp) {
-    const cleanedOtp = String(payload.otp).trim().replace(/\D/g, "");
-    if (cleanedOtp.length === 6) {
-      otpValue = cleanedOtp;
-    }
-  }
+  // Always generate OTP server-side and send via SMS after save
+  const otpValue = generateOtp();
 
   const utmFromUrl = extractUtmParamsFromLeadUrl(payload.lead_url);
 
@@ -306,8 +306,31 @@ export async function createWebsiteLead(payload: WebsiteLead): Promise<WebsiteLe
   };
 
   const created = await WebsiteLeadRepository.create(normalized);
+
+  if (!created.id || !created.phone) {
+    const err: any = new Error("Lead saved but phone is missing for OTP");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const smsResult = await sendTataOtpSms(String(created.phone), otpValue);
+  const otpExpiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+
+  await WebsiteLeadRepository.saveLoginOtp(created.id, {
+    otp: otpValue,
+    campaign_id: smsResult.campaignId ?? null,
+    job_id: smsResult.jobId ?? null,
+    custm_id: smsResult.cusTmId ?? null,
+    otp_expires_at: otpExpiresAt,
+  });
+
   return {
     ...created,
+    otp_verified: 0,
+    campaign_id: smsResult.campaignId ?? null,
+    job_id: smsResult.jobId ?? null,
+    custm_id: smsResult.cusTmId ?? null,
+    otp_expires_at: otpExpiresAt,
     interested_university: parseInterestedUniversities(created.interested_university),
     questions: parseQuestions(created.questions),
   };

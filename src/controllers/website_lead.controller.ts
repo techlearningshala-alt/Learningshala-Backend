@@ -192,8 +192,12 @@ export const create = async (req: Request, res: Response) => {
     const { otp, ...leadWithoutOtp } = lead;
     return successResponse(
       res,
-      withFileUrls(leadWithoutOtp),
-      "Website lead created successfully",
+      {
+        ...withFileUrls(leadWithoutOtp),
+        otp_sent: true,
+        expires_in_minutes: 10,
+      },
+      "Website lead created and OTP sent successfully",
       201
     );
   } catch (error: any) {

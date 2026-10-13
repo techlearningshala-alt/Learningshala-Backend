@@ -39,8 +39,9 @@ export const getOne = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const { meta_title, meta_description } = req.body;
+    const { page, meta_title, meta_description } = req.body;
     const data = await HomeTitleDescriptionService.addHomeTitleDescription(
+      page,
       meta_title,
       meta_description
     );
@@ -61,12 +62,13 @@ export const update = async (req: Request, res: Response) => {
       return errorResponse(res, "Valid ID is required", 400);
     }
 
-    const { meta_title, meta_description, saveWithDate = "true" } = req.body;
+    const { page, meta_title, meta_description, saveWithDate = "true" } = req.body;
     const saveDateFlag =
       saveWithDate === true || saveWithDate === "true" || saveWithDate === 1;
 
     const data = await HomeTitleDescriptionService.updateHomeTitleDescription(
       id,
+      page,
       meta_title,
       meta_description,
       saveDateFlag

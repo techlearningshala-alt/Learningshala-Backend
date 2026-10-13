@@ -254,6 +254,68 @@ export const WebsiteLeadRepository = {
     return rows.length > 0;
   },
 
+  /** Latest lead whose phone matches 10-digit local or 91-prefixed form. */
+  async findLatestByPhone(phone: string): Promise<WebsiteLead | null> {
+    const digits = String(phone || "").replace(/\D/g, "");
+    let local = digits;
+    if (local.length === 12 && local.startsWith("91")) local = local.slice(2);
+    if (local.length === 11 && local.startsWith("0")) local = local.slice(1);
+    if (local.length !== 10) return null;
+
+    const withCountry = `91${local}`;
+    const [rows]: any = await pool.query(
+      `SELECT *
+       FROM website_leads
+       WHERE REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), '(', '') IN (?, ?, ?)
+          OR RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), '(', ''), 10) = ?
+       ORDER BY created_at DESC, id DESC
+       LIMIT 1`,
+      [local, withCountry, `+${withCountry}`, local]
+    );
+    return rows?.[0] || null;
+  },
+
+  async saveLoginOtp(
+    id: number,
+    data: {
+      otp: string;
+      campaign_id?: string | null;
+      job_id?: string | null;
+      custm_id?: string | null;
+      otp_expires_at: Date;
+    }
+  ): Promise<void> {
+    await pool.query(
+      `UPDATE website_leads
+       SET otp = ?,
+           otp_verified = 0,
+           campaign_id = ?,
+           job_id = ?,
+           custm_id = ?,
+           otp_expires_at = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [
+        data.otp,
+        data.campaign_id ?? null,
+        data.job_id ?? null,
+        data.custm_id ?? null,
+        data.otp_expires_at,
+        id,
+      ]
+    );
+  },
+
+  async markOtpVerified(id: number): Promise<void> {
+    await pool.query(
+      `UPDATE website_leads
+       SET otp_verified = 1,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [id]
+    );
+  },
+
   async updateInterestedUniversity(
     id: number,
     interestedUniversity: string | null = null

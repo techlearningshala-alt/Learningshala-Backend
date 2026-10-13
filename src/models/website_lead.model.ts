@@ -20,6 +20,11 @@ export interface WebsiteLead {
   utm_ads?: string | null;
   website_url?: string | null;
   otp?: string | null;
+  otp_verified?: boolean | number | null;
+  campaign_id?: string | null;
+  job_id?: string | null;
+  custm_id?: string | null;
+  otp_expires_at?: Date | string | null;
   click_source?: string | null;
   lead_url?: string | null;
   traffic_type?: "paid" | "organic" | string | null;
