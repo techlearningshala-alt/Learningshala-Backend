@@ -11,6 +11,10 @@ const phoneSchema = z
     return /^[6-9]\d{9}$/.test(local);
   }, "Enter a valid 10-digit mobile number");
 
+export const websiteLeadLoginSchema = z.object({
+  phone: phoneSchema,
+});
+
 export const websiteLeadVerifyOtpSchema = z.object({
   phone: phoneSchema,
   otp: z

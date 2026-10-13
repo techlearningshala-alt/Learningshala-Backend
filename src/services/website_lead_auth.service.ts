@@ -1,9 +1,12 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { WebsiteLeadRepository } from "../repositories/website_lead.repository";
+import { sendTataOtpSms } from "../utills/tataSms";
 import { AppError } from "../middlewares/error.middleware";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
 const ACCESS_EXPIRES: any = process.env.JWT_ACCESS_EXPIRES_IN || "7d";
+const OTP_TTL_MINUTES = 10;
 
 const normalizeLocalPhone = (phone: string): string => {
   const digits = String(phone || "").replace(/\D/g, "");
@@ -12,6 +15,40 @@ const normalizeLocalPhone = (phone: string): string => {
   if (local.length === 11 && local.startsWith("0")) local = local.slice(1);
   return local;
 };
+
+const generateOtp = (): string => String(crypto.randomInt(100000, 1000000));
+
+/** Returning user: phone only → send OTP to existing lead */
+export async function loginWithPhone(phone: string) {
+  const localPhone = normalizeLocalPhone(phone);
+  if (!/^[6-9]\d{9}$/.test(localPhone)) {
+    throw new AppError("Enter a valid 10-digit mobile number", 400);
+  }
+
+  const lead = await WebsiteLeadRepository.findLatestByPhone(localPhone);
+  if (!lead?.id) {
+    throw new AppError("No lead found for this phone number", 404);
+  }
+
+  const otp = generateOtp();
+  const smsResult = await sendTataOtpSms(localPhone, otp);
+  const otpExpiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+
+  await WebsiteLeadRepository.saveLoginOtp(lead.id, {
+    otp,
+    campaign_id: smsResult.campaignId ?? null,
+    job_id: smsResult.jobId ?? null,
+    custm_id: smsResult.cusTmId ?? null,
+    otp_expires_at: otpExpiresAt,
+  });
+
+  return {
+    message: "OTP sent successfully",
+    phone: localPhone,
+    lead_id: lead.id,
+    expires_in_minutes: OTP_TTL_MINUTES,
+  };
+}
 
 export async function verifyOtpAndLogin(phone: string, otp: string) {
   const localPhone = normalizeLocalPhone(phone);
