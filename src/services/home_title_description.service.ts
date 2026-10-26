@@ -3,8 +3,22 @@ import { AppError } from "../middlewares/error.middleware";
 
 const repo = new HomeTitleDescriptionRepository();
 
-export const listHomeTitleDescriptions = async (page = 1, limit = 10) =>
-  await repo.findAll(page, limit);
+const normalizeType = (type?: string) => {
+  const value = String(type || "home").trim().toLowerCase();
+  if (value !== "home" && value !== "static") {
+    throw new AppError("type must be 'home' or 'static'", 400);
+  }
+  return value;
+};
+
+export const listHomeTitleDescriptions = async (
+  page = 1,
+  limit = 10,
+  type?: string
+) => {
+  const normalizedType = type ? normalizeType(type) : undefined;
+  return await repo.findAll(page, limit, normalizedType);
+};
 
 export const getHomeTitleDescription = async (id: number) => {
   const item = await repo.findById(id);
@@ -15,9 +29,16 @@ export const getHomeTitleDescription = async (id: number) => {
 export const addHomeTitleDescription = async (
   page: string,
   meta_title: string,
-  meta_description: string
+  meta_description: string,
+  type = "home"
 ) => {
-  await repo.create({ page, meta_title, meta_description });
+  const normalizedType = normalizeType(type);
+  await repo.create({
+    type: normalizedType,
+    page,
+    meta_title,
+    meta_description,
+  });
   return { message: "Title & description created successfully" };
 };
 
@@ -26,12 +47,24 @@ export const updateHomeTitleDescription = async (
   page?: string,
   meta_title?: string,
   meta_description?: string,
-  saveWithDate = true
+  saveWithDate = true,
+  type?: string
 ) => {
   const item = await repo.findById(id);
   if (!item) throw new AppError("Title & description not found", 404);
 
-  await repo.update(id, { page, meta_title, meta_description }, saveWithDate);
+  const patch: {
+    type?: string;
+    page?: string;
+    meta_title?: string;
+    meta_description?: string;
+  } = { page, meta_title, meta_description };
+
+  if (type !== undefined) {
+    patch.type = normalizeType(type);
+  }
+
+  await repo.update(id, patch, saveWithDate);
   return { message: "Title & description updated successfully" };
 };
 

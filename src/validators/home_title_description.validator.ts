@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+export const metadataTypeSchema = z.enum(["home", "static"]);
+
 export const createHomeTitleDescriptionSchema = z.object({
+  type: metadataTypeSchema.default("home"),
   page: z.string().min(1, "Page is required").max(255),
   meta_title: z.string().min(1, "Meta title is required").max(255),
   meta_description: z.string().min(1, "Meta description is required"),

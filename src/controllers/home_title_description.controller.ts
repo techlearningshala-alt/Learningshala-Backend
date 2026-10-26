@@ -6,9 +6,11 @@ export const getAll = async (req: Request, res: Response) => {
   try {
     const page = parseInt(String(req.query.page || "1"), 10) || 1;
     const limit = parseInt(String(req.query.limit || "10"), 10) || 10;
+    const type = req.query.type ? String(req.query.type) : undefined;
     const data = await HomeTitleDescriptionService.listHomeTitleDescriptions(
       page,
-      limit
+      limit,
+      type
     );
     return successResponse(res, data, "Title & descriptions fetched successfully");
   } catch (error: any) {
@@ -39,11 +41,12 @@ export const getOne = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const { page, meta_title, meta_description } = req.body;
+    const { page, meta_title, meta_description, type = "home" } = req.body;
     const data = await HomeTitleDescriptionService.addHomeTitleDescription(
       page,
       meta_title,
-      meta_description
+      meta_description,
+      type
     );
     return successResponse(res, data, "Title & description created successfully", 201);
   } catch (error: any) {
@@ -62,7 +65,13 @@ export const update = async (req: Request, res: Response) => {
       return errorResponse(res, "Valid ID is required", 400);
     }
 
-    const { page, meta_title, meta_description, saveWithDate = "true" } = req.body;
+    const {
+      page,
+      meta_title,
+      meta_description,
+      type,
+      saveWithDate = "true",
+    } = req.body;
     const saveDateFlag =
       saveWithDate === true || saveWithDate === "true" || saveWithDate === 1;
 
@@ -71,7 +80,8 @@ export const update = async (req: Request, res: Response) => {
       page,
       meta_title,
       meta_description,
-      saveDateFlag
+      saveDateFlag,
+      type
     );
     return successResponse(res, data, "Title & description updated successfully");
   } catch (error: any) {

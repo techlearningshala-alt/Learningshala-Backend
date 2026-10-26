@@ -2,14 +2,19 @@ import pool from "../config/db";
 import { HomeTitleDescription } from "../models/home_title_description.model";
 
 export class HomeTitleDescriptionRepository {
-  async findAll(pageNum = 1, limit = 10) {
+  async findAll(pageNum = 1, limit = 10, type?: string) {
     const offset = (pageNum - 1) * limit;
+    const where = type ? "WHERE type = ?" : "";
+    const params: any[] = type ? [type, limit, offset] : [limit, offset];
+    const countParams: any[] = type ? [type] : [];
+
     const [rows] = await pool.query(
-      "SELECT * FROM home_title_descriptions ORDER BY updated_at DESC LIMIT ? OFFSET ?",
-      [limit, offset]
+      `SELECT * FROM home_title_descriptions ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
+      params
     );
     const [countRows]: any = await pool.query(
-      "SELECT COUNT(*) as total FROM home_title_descriptions"
+      `SELECT COUNT(*) as total FROM home_title_descriptions ${where}`,
+      countParams
     );
     const total = countRows[0].total;
     return { data: rows, page: pageNum, pages: Math.ceil(total / limit), total };
@@ -28,21 +33,26 @@ export class HomeTitleDescriptionRepository {
     item: Omit<HomeTitleDescription, "id" | "created_at" | "updated_at">
   ): Promise<void> {
     await pool.query(
-      `INSERT INTO home_title_descriptions (page, meta_title, meta_description, created_at, updated_at)
-       VALUES (?, ?, ?, NOW(), NOW())`,
-      [item.page, item.meta_title, item.meta_description]
+      `INSERT INTO home_title_descriptions (type, page, meta_title, meta_description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NOW(), NOW())`,
+      [item.type || "home", item.page, item.meta_title, item.meta_description]
     );
   }
 
   async update(
     id: number,
     item: Partial<
-      Pick<HomeTitleDescription, "page" | "meta_title" | "meta_description">
+      Pick<HomeTitleDescription, "type" | "page" | "meta_title" | "meta_description">
     >,
     saveWithDate = true
   ): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
+
+    if (item.type !== undefined && item.type !== null) {
+      fields.push("type = ?");
+      values.push(item.type);
+    }
 
     if (item.page !== undefined && item.page !== null) {
       fields.push("page = ?");
